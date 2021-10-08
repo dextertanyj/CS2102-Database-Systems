@@ -3,7 +3,7 @@ Juniors, Superiors, Seniors, Managers, HealthDeclarations,
 Bookings, Attends, Updates;
 
 CREATE TABLE Departments(
-    did INTEGER,
+    id INTEGER,
     name VARCHAR(255) NOT NULL,
     removal_date DATE,
     PRIMARY KEY (did)
@@ -15,7 +15,7 @@ CREATE TABLE Employees(
     contact_number VARCHAR(20) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     resignation_date DATE,
-    did INTEGER NOT NULL,
+    department_id INTEGER NOT NULL,
     PRIMARY KEY (eid),
     FOREIGN KEY (did) REFERENCES Departments (did)
 );
@@ -77,7 +77,7 @@ CREATE TABLE Bookings(
 );
 
 CREATE TABLE Attends(
-    eid INTEGER,
+    employee_id INTEGER,
     floor INTEGER,
     room INTEGER,
     date DATE,
@@ -88,7 +88,7 @@ CREATE TABLE Attends(
 );
 
 CREATE Table Updates(
-    eid INTEGER,
+    manager_id INTEGER,
     floor INTEGER,
     room INTEGER,
     date DATE,
