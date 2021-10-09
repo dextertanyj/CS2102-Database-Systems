@@ -3,63 +3,63 @@ Juniors, Superiors, Seniors, Managers, HealthDeclarations,
 Bookings, Attends, Updates;
 
 CREATE TABLE Departments(
-    id INTEGER,
+    id SERIAL,
     name VARCHAR(255) NOT NULL,
     removal_date DATE,
-    PRIMARY KEY (did)
+    PRIMARY KEY (id)
 );
 
 CREATE TABLE Employees(
-    eid INTEGER,
+    id SERIAL,
     name VARCHAR(255) NOT NULL,
     contact_number VARCHAR(20) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     resignation_date DATE,
     department_id INTEGER NOT NULL,
-    PRIMARY KEY (eid),
-    FOREIGN KEY (did) REFERENCES Departments (did)
+    PRIMARY KEY (id),
+    FOREIGN KEY (department_id) REFERENCES Departments (id)
 );
 
 CREATE TABLE MeetingRooms(
     floor INTEGER,
     room INTEGER,
-    name VARCHAR(255),
-    did INTEGER NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    department_id INTEGER NOT NULL,
     PRIMARY KEY (floor, room),
-    FOREIGN KEY (did) REFERENCES Departments (did)
+    FOREIGN KEY (department_id) REFERENCES Departments (id)
 );
 
 CREATE TABLE Juniors(
-    eid INTEGER,
-    PRIMARY KEY (eid),
-    FOREIGN KEY (eid) REFERENCES Employees (eid) ON DELETE CASCADE
+    id INTEGER,
+    PRIMARY KEY (id),
+    FOREIGN KEY (id) REFERENCES Employees (id) ON DELETE CASCADE
 );
 
 CREATE TABLE Superiors(
-    eid INTEGER,
-    PRIMARY KEY (eid),
-    FOREIGN KEY (eid) REFERENCES Employees (eid) ON DELETE CASCADE
+    id INTEGER,
+    PRIMARY KEY (id),
+    FOREIGN KEY (id) REFERENCES Employees (id) ON DELETE CASCADE
 );
 
 CREATE TABLE Seniors(
-    eid INTEGER,
-    PRIMARY KEY (eid),
-    FOREIGN KEY (eid) REFERENCES Superiors (eid) ON DELETE CASCADE
+    id INTEGER,
+    PRIMARY KEY (id),
+    FOREIGN KEY (id) REFERENCES Superiors (id) ON DELETE CASCADE
 );
 
 CREATE TABLE Managers(
-    eid INTEGER,
-    PRIMARY KEY (eid),
-    FOREIGN KEY (eid) REFERENCES Superiors (eid) ON DELETE CASCADE
+    id INTEGER,
+    PRIMARY KEY (id),
+    FOREIGN KEY (id) REFERENCES Superiors (id) ON DELETE CASCADE
 );
 
 CREATE TABLE HealthDeclarations(
-    eid INTEGER,
+    id INTEGER,
     date DATE,
     temperature NUMERIC(3, 1) NOT NULL,
-    CHECK (temperature > 0),
-    PRIMARY KEY (eid, date),
-    FOREIGN KEY (eid) REFERENCES Employees (eid) ON DELETE CASCADE
+    CHECK (34.0 <= temperature AND temperature <= 43.0),
+    PRIMARY KEY (id, date),
+    FOREIGN KEY (id) REFERENCES Employees (id) ON DELETE CASCADE
 );
 
 CREATE TABLE Bookings(
@@ -72,8 +72,8 @@ CREATE TABLE Bookings(
     CHECK (0 <= start_hour AND start_hour <= 23),
     PRIMARY KEY (floor, room, date, start_hour),
     FOREIGN KEY (floor, room) REFERENCES MeetingRooms (floor, room) ON DELETE CASCADE,
-    FOREIGN KEY (creator_id) REFERENCES Superiors (eid),
-    FOREIGN KEY (approver_id) REFERENCES Managers (eid)
+    FOREIGN KEY (creator_id) REFERENCES Superiors (id),
+    FOREIGN KEY (approver_id) REFERENCES Managers (id)
 );
 
 CREATE TABLE Attends(
@@ -82,8 +82,8 @@ CREATE TABLE Attends(
     room INTEGER,
     date DATE,
     start_hour INTEGER,
-    PRIMARY KEY (eid, floor, room, date, start_hour),
-    FOREIGN KEY (eid) REFERENCES Employees (eid),
+    PRIMARY KEY (employee_id, floor, room, date, start_hour),
+    FOREIGN KEY (employee_id) REFERENCES Employees (id),
     FOREIGN KEY (floor, room , date, start_hour) REFERENCES Bookings (floor, room, date, start_hour)
 );
 
@@ -94,7 +94,7 @@ CREATE Table Updates(
     date DATE,
     capacity INTEGER NOT NULL,
     CHECK (capacity >= 0),
-    PRIMARY KEY (eid, date, floor, room),
-    FOREIGN KEY (eid) REFERENCES Managers (eid),
+    PRIMARY KEY (manager_id, date, floor, room),
+    FOREIGN KEY (manager_id) REFERENCES Managers (id),
     FOREIGN KEY (floor, room) REFERENCES MeetingRooms (floor, room)
 );
