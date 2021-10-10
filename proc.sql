@@ -40,6 +40,18 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE PROCEDURE change_capacity
+(room_floor INT, update_room INT, new_capacity INT, update_manager_id INT, effective_date DATE)
+AS $$
+BEGIN
+    IF ((SELECT COUNT(*) FROM updates AS U WHERE U.floor = room_floor AND U.room = update_room AND U.date = effective_date) = 1) THEN
+        UPDATE updates SET manager_id = update_manager_id, capacity = new_capacity WHERE floor = room_floor AND room = update_room AND date = effective_date;
+    ELSE
+        INSERT INTO updates VALUES (update_manager_id, room_floor, update_room, effective_date, new_capacity);
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
 CREATE OR REPLACE FUNCTION add_employee
 (IN name VARCHAR(255), IN contact_number VARCHAR(20), IN type VARCHAR(7), IN department_id INT, OUT employee_id INT, OUT employee_email VARCHAR(255))
 RETURNS RECORD AS $$
