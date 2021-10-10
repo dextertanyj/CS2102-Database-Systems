@@ -88,13 +88,13 @@ CREATE TABLE Attends(
 );
 
 CREATE Table Updates(
-    manager_id INTEGER,
+    manager_id INTEGER NOT NULL,
     floor INTEGER,
     room INTEGER,
     date DATE,
     capacity INTEGER NOT NULL,
     CHECK (capacity >= 0),
-    PRIMARY KEY (manager_id, date, floor, room),
+    PRIMARY KEY (date, floor, room),
     FOREIGN KEY (manager_id) REFERENCES Managers (id),
     FOREIGN KEY (floor, room) REFERENCES MeetingRooms (floor, room)
 );
