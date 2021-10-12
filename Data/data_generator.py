@@ -6,8 +6,8 @@ from sqlalchemy import create_engine
 import datetime
 
 # Set up Python to PSQL connection
-username = 'postgres'
-password = 'rlps2008'
+username = ''
+password = ''
 database = 'project'
 path = 'postgresql://' + username + ':' + password + '@localhost:5432/' + database
 engine = create_engine(path)
