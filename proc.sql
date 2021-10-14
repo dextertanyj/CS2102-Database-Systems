@@ -52,6 +52,32 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION generate_email
+(IN name VARCHAR(255), OUT employee_email VARCHAR(255))
+RETURNS VARCHAR(255) AS $$
+DECLARE
+    username VARCHAR;
+    conflict VARCHAR;
+    counter INT := NULL;
+BEGIN
+    SELECT LOWER(REGEXP_REPLACE(TRIM(name), '\s*|_', '', 'g')) INTO username;
+    SELECT MAX(E.email) INTO conflict FROM Employees AS E WHERE E.email SIMILAR TO username || '(_[0-9]*)?' || '@company.com';
+    IF (conflict IS NULL) THEN
+        employee_email := username || '@company.com';
+        RETURN;
+    END IF;
+    SELECT (regexp_matches(conflict, '_([0-9]*)@'))[1] INTO conflict;
+    IF (conflict IS NULL) THEN
+        employee_email := username || '_1' || '@company.com';
+        RETURN;
+    END IF;
+    SELECT CAST(conflict AS INT) INTO counter;
+    counter := counter + 1;
+    employee_email := username || COALESCE(CAST(counter AS VARCHAR(255)),'') || '@company.com'
+    RETURN;
+END;
+$$ LANGUAGE plpgsql;
+
 CREATE OR REPLACE FUNCTION add_employee
 (IN name VARCHAR(255), IN contact_number VARCHAR(20), IN type VARCHAR(7), IN department_id INT, OUT employee_id INT, OUT employee_email VARCHAR(255))
 RETURNS RECORD AS $$
@@ -59,9 +85,9 @@ BEGIN
     If (SELECT * FROM removed_department_guard(department_id)) THEN
         RAISE EXCEPTION 'Department has been removed' USING HINT = 'Department has been removed and no new employees can be assigned to it';
     END IF;
-    INSERT INTO Employees (name, contact_number, email, department_id) VALUES (name, contact_number, ' ', department_id) RETURNING Employees.id INTO employee_id;
-    employee_email := employee_id||'@company.com';
-    UPDATE Employees SET email = employee_email WHERE id = employee_id;
+    name := TRIM(name);
+    SELECT generate_email(name) INTO employee_email;
+    INSERT INTO Employees (name, contact_number, email, department_id) VALUES (name, contact_number, employee_email, department_id) RETURNING Employees.id INTO employee_id;
     IF (LOWER(type) = 'junior') THEN 
         INSERT INTO Juniors VALUES (employee_id);
     ELSIF (LOWER(type) = 'senior') THEN 
