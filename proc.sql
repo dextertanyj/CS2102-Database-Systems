@@ -57,9 +57,9 @@ BEGIN
         RAISE EXCEPTION 'Manager department and room department mismatch' USING HINT = 'Manager and room should belong to the same department';
     END IF;
     IF ((SELECT COUNT(*) FROM updates AS U WHERE U.floor = change_capacity.floor AND U.room = change_capacity.room AND U.date = change_capacity.date) = 1) THEN
-        UPDATE updates SET manager_id = change_capacity.manager_id, capacity = change_capacity.capacity WHERE floor = change_capacity.floor AND room = change_capacity.room AND date = change_capacity.date;
+        UPDATE Updates AS U SET manager_id = change_capacity.manager_id, capacity = change_capacity.capacity WHERE U.floor = change_capacity.floor AND U.room = change_capacity.room AND U.date = change_capacity.date;
     ELSE
-        INSERT INTO updates VALUES (manager_id, floor, room, date, capacity);
+        INSERT INTO Updates VALUES (manager_id, floor, room, date, capacity);
     END IF;
 END;
 $$ LANGUAGE plpgsql;
