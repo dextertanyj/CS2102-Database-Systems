@@ -19,35 +19,47 @@ $$ LANGUAGE sql;
 CREATE OR REPLACE PROCEDURE remove_department
 (department_id INT, date DATE)
 AS $$
-    UPDATE departments SET removal_date = date WHERE Departments.id = department_id;
-$$ LANGUAGE sql;
+DECLARE
+BEGIN
+    IF ((SELECT COUNT(*) FROM Departments WHERE Departments.id = department_id) <> 1) THEN
+        RAISE EXCEPTION 'Department not found';
+    END IF;
+    UPDATE Departments SET removal_date = date WHERE Departments.id = department_id;
+END;
+$$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE PROCEDURE add_room
-(floor INT, room INT, name VARCHAR(255), capacity INT, department_id INT, manager_id INT, effective_date DATE)
+(floor INT, room INT, name VARCHAR(255), capacity INT, manager_id INT, effective_date DATE)
 AS $$
+DECLARE
+    manager_department_id INT;
 BEGIN
-    IF (department_id <> (SELECT E.department_id FROM Employees AS E WHERE E.id = manager_id)) THEN
-        RAISE EXCEPTION 'Manager department and room department mismatch' USING HINT = 'Manager and new room should belong to the same department';
-    END IF;
     IF (SELECT * FROM resigned_employee_guard(manager_id)) THEN
         RAISE EXCEPTION 'Manager has resigned' USING HINT = 'Manager has resigned and can no longer add rooms';
     END IF;
     If (SELECT * FROM removed_department_guard(department_id)) THEN
         RAISE EXCEPTION 'Department has been removed' USING HINT = 'Department has been removed and no new rooms can be assigned to it';
     END IF;
+    SELECT E.department_id INTO manager_department_id FROM Employees AS E WHERE E.id = manager_id;
     INSERT INTO MeetingRooms VALUES (floor, room, name, department_id);
     INSERT INTO Updates VALUES (manager_id, floor, room, effective_date, capacity);
 END;
 $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE PROCEDURE change_capacity
-(room_floor INT, update_room INT, new_capacity INT, update_manager_id INT, effective_date DATE)
+(floor INT, room INT, capacity INT, manager_id INT, date DATE)
 AS $$
+DECLARE
+    manager_department_id INT;
 BEGIN
-    IF ((SELECT COUNT(*) FROM updates AS U WHERE U.floor = room_floor AND U.room = update_room AND U.date = effective_date) = 1) THEN
-        UPDATE updates SET manager_id = update_manager_id, capacity = new_capacity WHERE floor = room_floor AND room = update_room AND date = effective_date;
+    SELECT E.department_id INTO manager_department_id FROM Employees AS E WHERE E.id = manager_id;
+    IF ((SELECT R.department_id FROM MeetingRooms AS R WHERE R.floor = change_capacity.floor AND R.room = change_capacity.room) <> manager_department_id) THEN
+        RAISE EXCEPTION 'Manager department and room department mismatch' USING HINT = 'Manager and room should belong to the same department';
+    END IF;
+    IF ((SELECT COUNT(*) FROM updates AS U WHERE U.floor = change_capacity.floor AND U.room = change_capacity.room AND U.date = change_capacity.date) = 1) THEN
+        UPDATE updates SET manager_id = change_capacity.manager_id, capacity = change_capacity.capacity WHERE floor = change_capacity.floor AND room = change_capacity.room AND date = change_capacity.date;
     ELSE
-        INSERT INTO updates VALUES (update_manager_id, room_floor, update_room, effective_date, new_capacity);
+        INSERT INTO updates VALUES (manager_id, floor, room, date, capacity);
     END IF;
 END;
 $$ LANGUAGE plpgsql;
@@ -105,5 +117,10 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE PROCEDURE remove_employee
 (employee_id INT, date Date)
 AS $$
+BEGIN
+    IF ((SELECT COUNT(*) FROM Employees AS E WHERE E.id = remove_employee.employee_id) <> 1) THEN
+        RAISE EXCEPTION 'Employee not found';
+    END IF;
     UPDATE Employees SET resignation_date = date WHERE id = employee_id;
-$$ LANGUAGE sql;
+END;
+$$ LANGUAGE plpgsql;
