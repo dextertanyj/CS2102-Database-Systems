@@ -21,26 +21,26 @@ SET row_security = off;
 --
 
 COPY public.departments (id, name, removal_date) FROM stdin;
-0	Hill-Watts	\N
-1	Jones Inc	2019-10-01
-2	Bennett, Davies and Hall	\N
-3	Turner, Dawson and Hill	\N
-4	Rice Group	\N
-5	Savage and Sons	\N
-6	Riley Group	\N
-7	Atkins-White	\N
-8	Smart Inc	\N
-9	Finch, Fisher and Evans	\N
-10	Craig-Allen	\N
-11	Clark-Short	\N
-12	Foster Group	\N
-13	Smith, Fuller and Macdonald	\N
-14	Campbell PLC	\N
-15	Bibi Inc	\N
-16	Sykes, Smith and Owen	\N
-17	Thornton, Palmer and Walker	\N
-18	Young-O'Brien	2018-08-05
-19	Rowley, Hart and Yates	\N
+1	James, Ahmed and Davies	\N
+2	Robson, Davies and Lewis	\N
+3	Wheeler, Knight and Welch	\N
+4	Gardiner, Burton and Martin	\N
+5	Norman-Ali	\N
+6	Roberts-Gardiner	\N
+7	Fox-Barnes	\N
+8	Herbert-Atkinson	\N
+9	Wood, Powell and Matthews	\N
+10	Ball Ltd	\N
+11	Little, Mills and Evans	\N
+12	Martin-Bell	\N
+13	Wade LLC	\N
+14	Graham, Marshall and Mason	2021-03-08
+15	Robinson-Turner	\N
+16	Bird, Rogers and Webb	\N
+17	Williams, Cole and Sheppard	\N
+18	Williams, Kaur and Wilson	\N
+19	Dawson LLC	\N
+20	Lewis-Chadwick	\N
 \.
 
 
@@ -49,66 +49,66 @@ COPY public.departments (id, name, removal_date) FROM stdin;
 --
 
 COPY public.employees (id, name, contact_number, email, resignation_date, department_id) FROM stdin;
-0	Nicola Shaw	+44(0)306 999 0690	nicola.shaw@outlook.com	2017-07-16	14
-1	Laura Baker	0121 496 0532	laura.baker@hotmail.com	\N	12
-2	Carly Rogers	0121 4960076	carly.rogers@yahoo.com	\N	4
-3	Benjamin Lawrence	+44(0)1154960271	benjamin.lawrence@hotmail.com	\N	0
-4	Dean Shaw	+4429 2018578	dean.shaw@yahoo.com	\N	11
-5	Abbie Wong	0115 4960458	abbie.wong@yahoo.co.uk	\N	0
-6	Jamie Rogers	(0115)4960423	jamie.rogers@hotmail.com	\N	3
-7	Gary Hutchinson	+44(0)909 8790979	gary.hutchinson@gmail.com	\N	4
-8	Owen Williams	0909 8790613	owen.williams@gmail.com	\N	8
-9	Jeffrey Rogers	029 2018188	jeffrey.rogers@hotmail.com	\N	10
-10	John Martin	0141 496 0851	john.martin@gmail.com	\N	16
-11	Patricia Baker	+441632 960737	patricia.baker@outlook.com	\N	1
-12	Gillian Wade	01414960877	gillian.wade@yahoo.co.uk	\N	14
-13	Emma O'Donnell	08081570685	emma.o'donnell@gmail.com	\N	4
-14	George Williams	+44(0)113 496 0927	george.williams@hotmail.com	\N	4
-15	Abigail Scott	+44(0)121 4960963	abigail.scott@hotmail.co.uk	\N	16
-16	Kirsty O'Brien	0151 4960977	kirsty.o'brien@yahoo.co.uk	\N	18
-17	Harriet King	+44(0)161 4960786	harriet.king@hotmail.co.uk	\N	1
-18	Sheila Thompson	+44151 496 0786	sheila.thompson@hotmail.com	\N	11
-19	Gemma Smith	+449098790637	gemma.smith@gmail.com	2016-01-28	1
-20	Richard Kelly	+44(0)1632 960890	richard.kelly@gmail.com	\N	9
-21	Donna Ward	(0161) 4960136	donna.ward@yahoo.co.uk	\N	2
-22	Claire Gough	+44(0)29 2018572	claire.gough@hotmail.com	\N	17
-23	Sally Begum	+441314960773	sally.begum@yahoo.co.uk	\N	16
-24	Laura Moore	+44141 496 0522	laura.moore@gmail.com	\N	8
-25	Alan Gregory	+44(0)909 879 0655	alan.gregory@hotmail.co.uk	\N	8
-26	Michelle Edwards	(0151) 4960899	michelle.edwards@hotmail.com	2019-05-09	8
-27	John Moss	+44114 496 0502	john.moss@gmail.com	\N	2
-28	Geoffrey Lloyd	+44(0)1314960696	geoffrey.lloyd@hotmail.com	\N	1
-29	Adam Thomas	+441144960026	adam.thomas@hotmail.co.uk	2019-04-12	13
-30	Caroline Curtis	(01632)960577	caroline.curtis@hotmail.co.uk	2019-08-06	11
-31	Fiona Robinson	(0121) 496 0184	fiona.robinson@outlook.com	\N	19
-32	Carolyn Wilson	+44(0)161 4960442	carolyn.wilson@gmail.com	\N	10
-33	Linda Saunders	(0909)8790391	linda.saunders@yahoo.co.uk	\N	13
-34	Naomi Day	+44151 496 0797	naomi.day@gmail.com	\N	4
-35	Annette Richards	029 2018 0188	annette.richards@hotmail.co.uk	\N	8
-36	Mohammed Norton	+44(0)191 4960462	mohammed.norton@yahoo.co.uk	\N	15
-37	Nicole Ward	+441632 960 808	nicole.ward@outlook.com	\N	13
-38	Kate Davidson	(020)74960372	kate.davidson@yahoo.co.uk	\N	18
-39	Tina Thompson	01214960796	tina.thompson@gmail.com	\N	14
-40	Hugh White	(0115) 4960343	hugh.white@yahoo.com	\N	17
-41	Pauline Elliott	+44(0)1144960690	pauline.elliott@yahoo.co.uk	\N	12
-42	Joyce Gray	+44116 496 0626	joyce.gray@gmail.com	\N	15
-43	Martin Marshall	01314960225	martin.marshall@hotmail.co.uk	\N	6
-44	Daniel Young	+441144960227	daniel.young@yahoo.co.uk	\N	9
-45	Carly Thompson	+44(0)3069990968	carly.thompson@hotmail.com	2019-12-12	11
-46	Lynda Begum	+441134960824	lynda.begum@outlook.com	2019-10-20	3
-47	Samantha Gallagher	(0306) 999 0655	samantha.gallagher@yahoo.com	\N	13
-48	Bradley Jones	(0121) 4960416	bradley.jones@outlook.com	\N	15
-49	John Woods	+44(0)1184960653	john.woods@yahoo.co.uk	\N	19
-50	Oliver Lane	+44(0)20 74960487	oliver.lane@gmail.com	\N	6
-51	Sally Robinson	(0909) 8790978	sally.robinson@gmail.com	\N	5
-52	Gail Woodward	(028) 9018786	gail.woodward@hotmail.co.uk	2016-05-22	18
-53	Nigel Poole	+44(0)114 496 0206	nigel.poole@yahoo.com	\N	12
-54	Gerard Chapman	+44(0)909 8790129	gerard.chapman@hotmail.com	\N	19
-55	Lewis Harvey	(0131)4960409	lewis.harvey@hotmail.com	\N	3
-56	Charlie White	(0115) 4960281	charlie.white@outlook.com	\N	0
-57	Nigel Barnes	+44141 496 0784	nigel.barnes@gmail.com	\N	8
-58	Katy Davies	0131 4960211	katy.davies@hotmail.com	\N	9
-59	Trevor Cooke	+441314960807	trevor.cooke@yahoo.co.uk	\N	16
+1	Roy Cook	(0115) 4960666	roy.cook@yahoo.co.uk	\N	12
+2	Phillip Gibbons	(0306) 999 0374	phillip.gibbons@outlook.com	\N	8
+3	Grace Chan	+44151 496 0243	grace.chan@gmail.com	\N	20
+4	Kim Price	+44(0)1154960523	kim.price@outlook.com	\N	19
+5	Shane Harrison	01632 960789	shane.harrison@gmail.com	2019-05-20	5
+6	Marian Gill	+44(0)118 496 0073	marian.gill@hotmail.co.uk	\N	10
+7	Thomas Begum	+44116 496 0162	thomas.begum@outlook.com	\N	8
+8	Pamela Sheppard	(028) 9018100	pamela.sheppard@gmail.com	\N	18
+9	Conor Parker	+441154960293	conor.parker@yahoo.co.uk	\N	16
+10	Jamie Cross	+44808 1570766	jamie.cross@gmail.com	2021-01-03	19
+11	Helen Austin	0161 4960664	helen.austin@gmail.com	\N	17
+12	Gavin Porter	0115 496 0537	gavin.porter@yahoo.co.uk	\N	8
+13	Tom Jones	0151 4960040	tom.jones@outlook.com	\N	8
+14	Brett Ryan	+4420 74960153	brett.ryan@hotmail.co.uk	2019-09-28	16
+15	Gordon King	(0808) 1570986	gordon.king@gmail.com	\N	20
+16	Dennis Wood	+44(0)116 4960117	dennis.wood@yahoo.com	\N	18
+17	Claire Taylor	0191 4960948	claire.taylor@gmail.com	\N	3
+18	Charlotte Osborne	(0115) 4960289	charlotte.osborne@hotmail.co.uk	\N	19
+19	Jordan Jackson	0121 4960018	jordan.jackson@yahoo.com	\N	20
+20	Mathew Page	+44909 8790767	mathew.page@hotmail.co.uk	\N	4
+21	Geraldine Wheeler	0808 157 0181	geraldine.wheeler@yahoo.com	\N	7
+22	Shaun Crawford	+4428 9018 0381	shaun.crawford@outlook.com	\N	14
+23	Jacob Power	+44(0)909 879 0944	jacob.power@hotmail.co.uk	\N	15
+24	Gerald Miles	020 74960664	gerald.miles@outlook.com	\N	9
+25	Emily Read	(028)9018912	emily.read@yahoo.com	\N	17
+26	Tina Poole	+44141 4960581	tina.poole@hotmail.co.uk	\N	4
+27	Malcolm Bishop	01144960423	malcolm.bishop@gmail.com	\N	10
+28	Marian Kaur	+44(0)1214960708	marian.kaur@yahoo.com	\N	6
+29	Julia Sharpe	(01632)960104	julia.sharpe@gmail.com	\N	16
+30	Alan Harris	(0909) 879 0375	alan.harris@yahoo.com	\N	11
+31	Abbie Shaw	+4428 9018932	abbie.shaw@gmail.com	\N	1
+32	Marion Porter	0306 9990450	marion.porter@hotmail.com	\N	2
+33	Glen Richardson	+4429 2018 0584	glen.richardson@gmail.com	\N	11
+34	Samantha Moore	+44(0)28 9018 0681	samantha.moore@hotmail.com	\N	9
+35	Kathryn Todd	(0131) 496 0854	kathryn.todd@yahoo.co.uk	\N	19
+36	Glen Cunningham	+44(0)292018006	glen.cunningham@outlook.com	\N	16
+37	David Middleton	(0115)4960956	david.middleton@gmail.com	\N	8
+38	Roy Lewis	(0118) 4960357	roy.lewis@hotmail.com	\N	9
+39	Josephine Hancock	(0808) 157 0643	josephine.hancock@outlook.com	\N	20
+40	Kate Walker	+441632960623	kate.walker@gmail.com	\N	6
+41	Toby Chapman	(0118) 496 0943	toby.chapman@outlook.com	\N	15
+42	Lindsey Evans	+44(0)2074960052	lindsey.evans@outlook.com	\N	5
+43	Victoria Poole	+44(0)20 74960668	victoria.poole@outlook.com	\N	19
+44	Alexandra Fox	+44141 496 0883	alexandra.fox@hotmail.co.uk	\N	13
+45	Annette Woodward	+44161 496 0144	annette.woodward@hotmail.co.uk	\N	6
+46	Hollie Jones	028 9018 0332	hollie.jones@hotmail.com	\N	4
+47	Clive Barry	+441632960622	clive.barry@yahoo.com	\N	14
+48	Sam Finch	+441614960499	sam.finch@yahoo.com	\N	1
+49	Nicholas Howard	03069990664	nicholas.howard@hotmail.co.uk	\N	3
+50	Robin Lane	(0191) 496 0117	robin.lane@yahoo.co.uk	2018-02-03	3
+51	Anthony Gregory	0808 157 0516	anthony.gregory@gmail.com	\N	20
+52	Rhys Tomlinson	+44(0)1214960514	rhys.tomlinson@hotmail.co.uk	\N	16
+53	Robin Evans	(0115) 496 0305	robin.evans@hotmail.com	\N	14
+54	Frances Turner	+44191 4960261	frances.turner@yahoo.com	\N	15
+55	Naomi Nicholson	(0121)4960230	naomi.nicholson@yahoo.com	\N	9
+56	Kimberley Owens	01184960507	kimberley.owens@outlook.com	\N	15
+57	Kimberley Burgess	01184960526	kimberley.burgess@gmail.com	\N	17
+58	Kerry Hunter	(01632)960951	kerry.hunter@hotmail.com	\N	5
+59	Jacqueline Wilson	03069990759	jacqueline.wilson@yahoo.com	\N	11
+60	Mohammed Rose	+441144960698	mohammed.rose@hotmail.co.uk	\N	7
 \.
 
 
@@ -117,7 +117,6 @@ COPY public.employees (id, name, contact_number, email, resignation_date, depart
 --
 
 COPY public.superiors (id) FROM stdin;
-20
 21
 22
 23
@@ -157,6 +156,7 @@ COPY public.superiors (id) FROM stdin;
 57
 58
 59
+60
 \.
 
 
@@ -165,7 +165,6 @@ COPY public.superiors (id) FROM stdin;
 --
 
 COPY public.managers (id) FROM stdin;
-40
 41
 42
 43
@@ -185,6 +184,7 @@ COPY public.managers (id) FROM stdin;
 57
 58
 59
+60
 \.
 
 
@@ -193,26 +193,26 @@ COPY public.managers (id) FROM stdin;
 --
 
 COPY public.meetingrooms (floor, room, name, department_id) FROM stdin;
-3	4	InCrowd	5
-1	2	InCrowd	10
-1	3	Zaius	9
-3	5	Cloud Technology Partners	15
-1	7	Cloud Technology Partners	15
-2	8	Database Meeting Room	6
-3	2	Bynder	9
-2	6	Crayon	19
-2	7	Bynder	17
-3	9	Bynder	16
-3	8	Bynder	17
-2	9	Zaius	11
-2	4	BevSpot	5
-3	6	Cloud Technology Partners	14
-3	7	Continuum	8
-2	2	Zaius	9
-1	8	Continuum	9
-2	3	Crayon	7
-1	1	Zaius	13
-3	3	Zaius	17
+3	8	Database Meeting Room	4
+2	7	Cloud Technology Partners	10
+1	1	Zaius	4
+2	3	MOO	5
+1	6	Bynder	3
+3	4	InCrowd	7
+1	5	MOO	17
+3	7	MOO	18
+3	6	BevSpot	1
+1	7	InCrowd	13
+2	5	Continuum	15
+2	4	Crayon	15
+3	5	Zaius	16
+2	8	Continuum	12
+1	9	Continuum	13
+3	2	Crayon	1
+1	3	Crayon	4
+3	1	Cloud Technology Partners	19
+2	6	Bynder	6
+3	9	Zaius	12
 \.
 
 
@@ -221,26 +221,26 @@ COPY public.meetingrooms (floor, room, name, department_id) FROM stdin;
 --
 
 COPY public.bookings (floor, room, date, start_hour, creator_id, approver_id) FROM stdin;
-2	2	2021-10-05	17	36	59
-2	9	2021-10-10	9	51	53
-2	7	2021-10-09	15	23	44
-2	9	2021-10-01	5	26	51
-3	6	2021-10-02	11	20	53
-2	4	2021-10-06	0	59	56
-2	9	2021-10-03	4	32	45
-3	4	2021-10-07	23	29	45
-1	2	2021-10-03	22	47	58
-2	4	2021-10-02	13	42	47
-2	6	2021-10-10	17	24	51
-2	4	2021-10-05	19	35	55
-3	4	2021-10-04	10	26	48
-3	2	2021-10-10	9	45	58
-2	7	2021-10-04	18	44	49
-2	7	2021-10-09	23	58	48
-3	9	2021-10-09	6	38	43
-3	5	2021-10-01	16	54	43
-2	3	2021-10-06	17	32	50
-2	3	2021-10-06	5	25	48
+3	1	2021-10-04	9	21	46
+3	5	2021-10-13	22	35	44
+1	3	2021-10-04	20	51	44
+2	6	2021-10-03	12	58	47
+1	7	2021-10-12	11	25	47
+3	9	2021-10-06	17	54	41
+1	1	2021-10-09	12	23	41
+2	8	2021-10-08	10	32	42
+2	4	2021-10-04	10	51	46
+3	8	2021-10-13	6	29	50
+1	5	2021-10-07	7	36	53
+3	9	2021-10-02	17	58	60
+2	8	2021-10-04	17	22	45
+3	8	2021-10-02	3	22	42
+3	4	2021-10-09	3	45	43
+3	8	2021-10-10	21	48	46
+3	9	2021-10-08	13	24	58
+3	4	2021-10-08	1	45	59
+1	9	2021-10-07	14	42	46
+2	7	2021-10-09	12	50	56
 \.
 
 
@@ -249,36 +249,46 @@ COPY public.bookings (floor, room, date, start_hour, creator_id, approver_id) FR
 --
 
 COPY public.attends (employee_id, floor, room, date, start_hour) FROM stdin;
-27	2	9	2021-10-03	4
-20	3	5	2021-10-01	16
-52	3	6	2021-10-02	11
-27	2	6	2021-10-10	17
-33	2	7	2021-10-09	15
-13	3	4	2021-10-04	10
-35	2	9	2021-10-03	4
-20	3	2	2021-10-10	9
-14	3	5	2021-10-01	16
-21	2	9	2021-10-03	4
-49	2	4	2021-10-06	0
-29	2	4	2021-10-05	19
-54	2	7	2021-10-09	23
-24	2	3	2021-10-06	17
-44	3	4	2021-10-07	23
-53	3	9	2021-10-09	6
-47	2	4	2021-10-02	13
-34	2	4	2021-10-06	0
-52	3	4	2021-10-07	23
-31	3	9	2021-10-09	6
-57	3	6	2021-10-02	11
-45	1	2	2021-10-03	22
-17	2	4	2021-10-05	19
-32	2	6	2021-10-10	17
-37	3	9	2021-10-09	6
-23	3	2	2021-10-10	9
-50	2	3	2021-10-06	17
-45	2	9	2021-10-10	9
-23	2	9	2021-10-10	9
-7	2	4	2021-10-02	13
+43	3	9	2021-10-02	17
+9	1	3	2021-10-04	20
+17	2	4	2021-10-04	10
+6	3	9	2021-10-06	17
+1	3	4	2021-10-09	3
+18	1	7	2021-10-12	11
+59	1	3	2021-10-04	20
+20	3	9	2021-10-08	13
+50	1	7	2021-10-12	11
+35	2	6	2021-10-03	12
+19	2	6	2021-10-03	12
+52	2	7	2021-10-09	12
+52	1	5	2021-10-07	7
+37	3	1	2021-10-04	9
+41	2	4	2021-10-04	10
+28	3	9	2021-10-08	13
+10	3	9	2021-10-08	13
+41	3	5	2021-10-13	22
+39	3	5	2021-10-13	22
+42	3	5	2021-10-13	22
+35	1	1	2021-10-09	12
+14	3	1	2021-10-04	9
+20	1	7	2021-10-12	11
+10	3	8	2021-10-02	3
+24	3	1	2021-10-04	9
+43	3	9	2021-10-08	13
+31	2	6	2021-10-03	12
+30	3	8	2021-10-13	6
+12	3	4	2021-10-09	3
+2	1	7	2021-10-12	11
+39	2	8	2021-10-04	17
+29	1	7	2021-10-12	11
+22	3	9	2021-10-06	17
+10	3	8	2021-10-10	21
+32	3	5	2021-10-13	22
+25	1	9	2021-10-07	14
+31	3	9	2021-10-06	17
+14	2	4	2021-10-04	10
+34	3	8	2021-10-10	21
+42	3	9	2021-10-02	17
 \.
 
 
@@ -287,26 +297,46 @@ COPY public.attends (employee_id, floor, room, date, start_hour) FROM stdin;
 --
 
 COPY public.healthdeclarations (id, date, temperature) FROM stdin;
-19	2021-10-02	35.4
-13	2021-10-09	42.2
-1	2021-10-01	41.1
-6	2021-10-08	34.5
-3	2021-10-07	37.0
-6	2021-10-11	35.5
-15	2021-10-01	41.0
-13	2021-10-06	37.8
-4	2021-10-02	42.0
-4	2021-10-06	35.5
-18	2021-10-03	34.7
-18	2021-10-09	35.4
-4	2021-10-05	41.5
-12	2021-10-04	37.3
-2	2021-10-08	34.5
-3	2021-10-06	34.7
-5	2021-10-03	36.2
-11	2021-10-10	41.1
-16	2021-10-06	40.0
-13	2021-10-01	39.7
+6	2021-10-03	36.5
+29	2021-10-02	36.2
+4	2021-10-06	34.9
+29	2021-10-06	37.0
+40	2021-10-12	40.3
+39	2021-10-01	35.1
+23	2021-10-11	36.7
+22	2021-10-12	37.2
+30	2021-10-01	36.4
+13	2021-10-02	34.6
+28	2021-10-10	34.9
+3	2021-10-03	35.1
+41	2021-10-09	41.5
+37	2021-10-08	36.7
+24	2021-10-08	36.4
+4	2021-10-07	35.0
+20	2021-10-03	35.4
+4	2021-10-01	35.1
+7	2021-10-06	36.3
+12	2021-10-01	35.9
+3	2021-10-09	36.5
+39	2021-10-07	36.7
+5	2021-10-04	36.2
+13	2021-10-03	37.1
+11	2021-10-12	35.0
+26	2021-10-02	36.9
+22	2021-10-06	34.2
+12	2021-10-03	35.1
+38	2021-10-02	36.6
+10	2021-10-13	37.2
+42	2021-10-10	41.9
+26	2021-10-03	34.6
+26	2021-10-12	34.7
+16	2021-10-13	34.6
+28	2021-10-08	35.9
+19	2021-10-02	37.4
+42	2021-10-11	42.9
+7	2021-10-07	36.2
+34	2021-10-10	37.0
+39	2021-10-12	35.5
 \.
 
 
@@ -315,7 +345,6 @@ COPY public.healthdeclarations (id, date, temperature) FROM stdin;
 --
 
 COPY public.juniors (id) FROM stdin;
-0
 1
 2
 3
@@ -335,6 +364,7 @@ COPY public.juniors (id) FROM stdin;
 17
 18
 19
+20
 \.
 
 
@@ -343,7 +373,6 @@ COPY public.juniors (id) FROM stdin;
 --
 
 COPY public.seniors (id) FROM stdin;
-20
 21
 22
 23
@@ -363,6 +392,7 @@ COPY public.seniors (id) FROM stdin;
 37
 38
 39
+40
 \.
 
 
@@ -371,26 +401,26 @@ COPY public.seniors (id) FROM stdin;
 --
 
 COPY public.updates (manager_id, floor, room, date, capacity) FROM stdin;
-50	3	6	2021-10-06	3
-41	2	7	2021-10-05	5
-50	3	2	2021-10-01	1
-46	2	6	2021-10-11	5
-45	3	8	2021-10-11	6
-58	3	2	2021-10-11	1
-56	3	5	2021-10-09	9
-43	1	8	2021-10-04	7
-56	3	9	2021-10-11	8
-44	3	2	2021-10-05	4
-42	1	7	2021-10-09	3
-57	1	8	2021-10-01	2
-54	1	8	2021-10-06	2
-48	2	7	2021-10-11	3
-42	2	4	2021-10-11	6
-55	2	7	2021-10-06	8
-54	2	4	2021-10-07	6
-50	1	3	2021-10-09	0
-50	1	3	2021-10-10	5
-43	3	8	2021-10-02	1
+58	2	6	2021-10-03	6
+51	1	6	2021-10-12	5
+42	1	6	2021-10-01	7
+51	2	7	2021-10-07	8
+42	1	3	2021-10-02	6
+43	3	9	2021-10-01	0
+42	1	6	2021-10-08	0
+54	2	4	2021-10-01	3
+59	3	2	2021-10-02	1
+43	2	3	2021-10-09	5
+54	1	9	2021-10-13	4
+45	3	4	2021-10-13	6
+58	3	1	2021-10-07	3
+45	3	7	2021-10-02	6
+57	1	5	2021-10-07	9
+53	3	2	2021-10-09	3
+58	1	1	2021-10-01	2
+58	2	6	2021-10-07	2
+53	1	1	2021-10-13	7
+41	1	5	2021-10-02	7
 \.
 
 
