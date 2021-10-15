@@ -233,8 +233,10 @@ CREATE OR REPLACE PROCEDURE approve_meeting
 (floor_number INT, room_number INT, meeting_date DATE, starting_hour INT, ending_hour INT, manager_id INT)
 AS $$
 BEGIN
+    IF (SELECT id FROM Managers WHERE id = manager_id) IS NULL THEN
+        RAISE EXCEPTION 'Employeee % is not a manager', manager_id;
     -- manager approving belongs to the a different department
-    IF (SELECT department_id FROM Employee WHERE id = manager_id) <> (SELECT department_id FROM MeetingRooms WHERE floor = floor_number AND room = room_number) THEN
+    ELSIF (SELECT department_id FROM Employee WHERE id = manager_id) <> (SELECT department_id FROM MeetingRooms WHERE floor = floor_number AND room = room_number) THEN
         RAISE EXCEPTION 'Approving manager does not belong to the same department as meeting room';
     ELSE
         LOOP
