@@ -125,7 +125,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- core --
+-------------------------- CORE --------------------------
 
 CREATE OR REPLACE FUNCTION has_fever
 (IN e_id INT) RETURNS BOOLEAN 
@@ -250,5 +250,44 @@ BEGIN
         END LOOP;
     END IF;
     -- 
+END;
+$$ LANGUAGE plpgsql;
+
+-------------------------- ADMIN --------------------------
+
+CREATE OR REPLACE FUNCTION view_future_meeting
+(IN start_date DATE, IN e_id INT)
+RETURNS TABLE (floor INT, room INT, date DATE, start_hour INT) 
+AS $$
+BEGIN
+    RETURN QUERY
+            SELECT a.floor, a.room, a.date, a.start_hour
+            FROM Attends a
+            NATURAL JOIN Bookings b
+            WHERE a.employee_id = e_id
+            AND date >= start_date
+            AND b.approver_id IS NOT NULL
+            ORDER BY a.date ASC, a.start_hour ASC;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION view_manager_report
+(IN start_date DATE, IN manager_id INT)
+RETURNS TABLE (floor INT, room INT, date DATE, start_hour INT, m_id INT) 
+AS $$
+BEGIN
+    IF (SELECT id FROM Manager WHERE id = manager_id) IS NULL THEN
+        RETURN;
+    ELSE
+        RETURN QUERY
+                SELECT a.floor, a.room, a.date, a.start_hour, manager_id
+                FROM Bookings
+                NATURAL JOIN MeetingRooms
+                WHERE date >= start_date
+                AND approver_id IS NULL
+                AND department_id = (SELECT department_id 
+                                        FROM Employee
+                                        WHERE id = manager_id);
+    END IF;
 END;
 $$ LANGUAGE plpgsql;
