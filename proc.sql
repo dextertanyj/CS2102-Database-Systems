@@ -94,7 +94,7 @@ CREATE OR REPLACE FUNCTION add_employee
 (IN name VARCHAR(255), IN contact_number VARCHAR(20), IN type VARCHAR(7), IN department_id INT, OUT employee_id INT, OUT employee_email VARCHAR(255))
 RETURNS RECORD AS $$
 BEGIN
-    If (SELECT * FROM removed_department_guard(department_id)) THEN
+    IF (SELECT * FROM removed_department_guard(department_id)) THEN
         RAISE EXCEPTION 'Department has been removed' USING HINT = 'Department has been removed and no new employees can be assigned to it';
     END IF;
     name := TRIM(name);
@@ -122,5 +122,98 @@ BEGIN
         RAISE EXCEPTION 'Employee not found';
     END IF;
     UPDATE Employees SET resignation_date = date WHERE id = employee_id;
+END;
+$$ LANGUAGE plpgsql;
+
+-- core --
+
+CREATE OR REPLACE FUNCTION has_fever
+(IN e_id INT) RETURNS BOOLEAN 
+AS $$
+BEGIN
+    IF (SELECT temperature 
+            FROM HealthDeclarations 
+            WHERE id = e_id
+            ORDER BY date DESC
+            LIMIT 1) > 37.5 THEN 
+        RETURN TRUE;
+    ELSE
+        RETURN FALSE;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION has_resigned
+(IN e_id INT) RETURNS BOOLEAN 
+AS $$
+BEGIN
+    IF (SELECT resignation_date
+            FROM Employees 
+            WHERE id = e_id) IS NOT NULL THEN
+        RETURN TRUE;
+    ELSE 
+        RETURN FALSE;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+-- book_room should call on this function on the booker
+-- need to check for missing booking?
+CREATE OR REPLACE PROCEDURE join_meeting
+(floor_number INT, room_number INT, join_date DATE, starting_hour INT, ending_hour INT, e_id INT)
+AS $$
+BEGIN
+    IF has_fever(e_id) = TRUE THEN
+        RAISE EXCEPTION 'Employee % has a fever', e_id;
+
+    ELSIF has_resigned(e_id) = TRUE THEN
+        RAISE EXCEPTION 'Employee % has resigned', e_id;
+    ELSE
+        LOOP
+            EXIT WHEN starting_hour = ending_hour;
+            INSERT INTO Bookings(floor, room, date, start_hour, creator_id) VALUES (floor_number, room_number, join_date, starting_hour, e_id);
+            starting_hour := starting_hour + 1;
+        END LOOP;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE PROCEDURE leave_meeting
+(floor_number INT, room_number INT, meeting_date DATE, starting_hour INT, ending_hour INT, e_id INT)
+AS $$
+BEGIN
+    -- check if booking even exists
+    IF (SELECT *
+            FROM Bookings
+            WHERE floor = floor_number
+            AND room = room_number
+            AND date = meeting_date
+            AND start_hour = starting_hour) IS NULL THEN
+        RAISE EXCEPTION 'Meeting does not exist';
+    -- check if the employee is even inside the booking
+    ELSIF (SELECT employee_id
+            FROM Attends
+            WHERE employee_id = e_id
+            AND floor = floor_number
+            AND room = room_number
+            AND date = meeting_date
+            AND start_hour = starting_hour) IS NULL THEN
+        RAISE EXCEPTION 'Employee % does not attend this meeting', e_id;
+    -- check if the booking has already been approved
+    ELSIF (SELECT approval_id
+            FROM Bookings
+            WHERE floor = floor_number
+            AND room = room_number
+            AND date = meeting_date
+            AND start_hour = starting_hour) IS NOT NULL THEN
+        RAISE EXCEPTION 'Meeting has already been approved';
+    ELSE
+        DELETE FROM Attends 
+        WHERE employee_id = e_id
+        AND floor = floor_number
+        AND room = room_number
+        AND date = meeting_date
+        AND start_hour = starting_hour;
+    END IF;
 END;
 $$ LANGUAGE plpgsql;
