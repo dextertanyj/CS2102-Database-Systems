@@ -157,6 +157,21 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION search_bookings
+(IN floor_number INT, IN room_number INT, IN meeting_date DATE, IN starting_hour INT)
+RETURNS TABLE (floor INT, room INT, date DATE, start_hour INT, creator_id INT, approver_id INT) 
+AS $$
+BEGIN
+    RETURN QUERY
+            SELECT *
+            FROM Bookings
+            WHERE floor = floor_number
+            AND room = room_number
+            AND date = meeting_date
+            AND start_hour = starting_hour;
+END;
+$$ LANGUAGE plpgsql;
+
 -- book_room should call on this function on the booker
 -- need to check for missing booking?
 CREATE OR REPLACE PROCEDURE join_meeting
@@ -182,16 +197,8 @@ CREATE OR REPLACE PROCEDURE leave_meeting
 (floor_number INT, room_number INT, meeting_date DATE, starting_hour INT, ending_hour INT, e_id INT)
 AS $$
 BEGIN
-    -- check if booking even exists
-    IF (SELECT *
-            FROM Bookings
-            WHERE floor = floor_number
-            AND room = room_number
-            AND date = meeting_date
-            AND start_hour = starting_hour) IS NULL THEN
-        RAISE EXCEPTION 'Meeting does not exist';
     -- check if the employee is even inside the booking
-    ELSIF (SELECT employee_id
+    IF (SELECT employee_id
             FROM Attends
             WHERE employee_id = e_id
             AND floor = floor_number
@@ -200,7 +207,7 @@ BEGIN
             AND start_hour = starting_hour) IS NULL THEN
         RAISE EXCEPTION 'Employee % does not attend this meeting', e_id;
     -- check if the booking has already been approved
-    ELSIF (SELECT approval_id
+    ELSIF (SELECT approver_id
             FROM Bookings
             WHERE floor = floor_number
             AND room = room_number
@@ -208,12 +215,38 @@ BEGIN
             AND start_hour = starting_hour) IS NOT NULL THEN
         RAISE EXCEPTION 'Meeting has already been approved';
     ELSE
-        DELETE FROM Attends 
-        WHERE employee_id = e_id
-        AND floor = floor_number
-        AND room = room_number
-        AND date = meeting_date
-        AND start_hour = starting_hour;
+        LOOP
+            EXIT WHEN starting_hour = ending_hour;
+            DELETE FROM Attends 
+            WHERE employee_id = e_id
+            AND floor = floor_number
+            AND room = room_number
+            AND date = meeting_date
+            AND start_hour = starting_hour;
+            starting_hour := starting_hour + 1;
+        END LOOP;
     END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE PROCEDURE approve_meeting
+(floor_number INT, room_number INT, meeting_date DATE, starting_hour INT, ending_hour INT, manager_id INT)
+AS $$
+BEGIN
+    -- manager approving belongs to the a different department
+    IF (SELECT department_id FROM Employee WHERE id = manager_id) <> (SELECT department_id FROM MeetingRooms WHERE floor = floor_number AND room = room_number) THEN
+        RAISE EXCEPTION 'Approving manager does not belong to the same department as meeting room';
+    ELSE
+        LOOP
+            EXIT WHEN starting_hour = ending_hour;
+            UPDATE Bookings SET approver_id = manager_id
+            WHERE floor = floor_number
+            AND room = room_number
+            AND date = meeting_date
+            AND start_hour = starting_hour;
+            starting_hour := starting_hour + 1;
+        END LOOP;
+    END IF;
+    -- 
 END;
 $$ LANGUAGE plpgsql;
