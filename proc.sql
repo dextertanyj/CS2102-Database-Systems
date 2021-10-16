@@ -124,3 +124,17 @@ BEGIN
     UPDATE Employees SET resignation_date = date WHERE id = employee_id;
 END;
 $$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION non_compliance
+(in start_date date, in end_date date)
+RETURNS TABLE(employee_id int, number_of_days int) AS $$
+    SELECT id AS employee_id, date_part('day', end_date::TIMESTAMP - start_date::TIMESTAMP) AS number_of_days FROM
+        (SELECT id FROM employees EXCEPT SELECT id FROM healthdeclarations WHERE date >= start_date AND date <= end_date) x
+    ORDER BY number_of_days DESC;
+$$ LANGUAGE sql;
+
+CREATE OR REPLACE FUNCTION view_booking_report
+(in start_date date, in employee_id int)
+RETURNS TABLE (floor_number int, room_number int, date date, start_hour int, is_approved boolean) AS $$
+    SELECT FLOOR AS floor_number, room AS room_number, date, start_hour, CASE WHEN approver_id IS NULL THEN FALSE ELSE TRUE END AS is_approved FROM bookings WHERE date = start_date AND creator_id = employee_id
+$$ LANGUAGE sql;
