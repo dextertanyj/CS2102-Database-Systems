@@ -280,7 +280,7 @@ BEGIN
         RETURN;
     ELSE
         RETURN QUERY
-                SELECT a.floor, a.room, a.date, a.start_hour, manager_id
+                SELECT floor, room, date, start_hour, manager_id
                 FROM Bookings
                 NATURAL JOIN MeetingRooms
                 WHERE date >= start_date
