@@ -126,15 +126,24 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION non_compliance
-(in start_date date, in end_date date)
-RETURNS TABLE(employee_id int, number_of_days int) AS $$
-    SELECT id AS employee_id, date_part('day', end_date::TIMESTAMP - start_date::TIMESTAMP) AS number_of_days FROM
-        (SELECT id FROM employees EXCEPT SELECT id FROM healthdeclarations WHERE date >= start_date AND date <= end_date) x
-    ORDER BY number_of_days DESC;
+(IN start_date DATE, IN end_date DATE, OUT employee_id INT, OUT number_of_days INT)
+RETURNS SETOF RECORD AS $$
+    WITH NumberOfDaysTemperatureUndeclared AS (
+        SELECT id, date_part('day', end_date::TIMESTAMP - start_date::TIMESTAMP) - count(id) + 1 AS number_of_days
+        FROM HealthDeclarations
+        WHERE date >= start_date AND date <= end_date
+        GROUP BY id
+    ) SELECT *
+    FROM (SELECT x.id AS employee_id, coalesce(number_of_days, date_part('day', end_date::TIMESTAMP - start_date::TIMESTAMP) + 1) AS number_of_days
+    FROM (SELECT id FROM Employees) x
+    LEFT OUTER JOIN
+    NumberOfDaysTemperatureUndeclared ON x.id = NumberOfDaysTemperatureUndeclared.id
+    ORDER BY number_of_days DESC) z
+    WHERE number_of_days > 0;
 $$ LANGUAGE sql;
 
 CREATE OR REPLACE FUNCTION view_booking_report
-(in start_date date, in employee_id int)
-RETURNS TABLE (floor_number int, room_number int, date date, start_hour int, is_approved boolean) AS $$
-    SELECT FLOOR AS floor_number, room AS room_number, date, start_hour, CASE WHEN approver_id IS NULL THEN FALSE ELSE TRUE END AS is_approved FROM bookings WHERE date = start_date AND creator_id = employee_id
+(IN start_date DATE, IN employee_id INT, OUT floor_number INT, OUT room_number INT, OUT date DATE, OUT start_hour INT, OUT is_approved BOOLEAN)
+RETURNS SETOF RECORD AS $$
+    SELECT FLOOR AS floor_number, room AS room_number, date, start_hour, CASE WHEN approver_id IS NULL THEN FALSE ELSE TRUE END AS is_approved FROM Bookings WHERE date = start_date AND creator_id = employee_id
 $$ LANGUAGE sql;
