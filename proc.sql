@@ -304,3 +304,50 @@ BEGIN
     END IF;
 END;
 $$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE PROCEDURE declare_health
+(id INT, date DATE, temperature NUMERIC(3, 1))
+AS $$
+BEGIN
+    IF ((SELECT COUNT(*) FROM HealthDeclarations AS H WHERE H.id = declare_health.id AND H.date = declare_health.date) <> 0) THEN
+        UPDATE HealthDeclarations AS H SET temperature = declare_health.temperature WHERE H.id = declare_health.id AND H.date = declare_health.date;
+        RETURN;
+    END IF;
+    INSERT INTO HealthDeclarations VALUES (id, date, temperature);
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION contact_tracing
+(IN id INT, IN date DATE, OUT employee_id INT)
+RETURNS SETOF INT AS $$
+DECLARE
+    cursor refcursor;
+BEGIN
+    IF ((SELECT H.temperature FROM HealthDeclarations AS H WHERE H.id = contact_tracing.id AND H.date = contact_tracing.date) <= 37.5) THEN
+        RETURN;
+    END IF;
+    DELETE FROM Bookings AS B WHERE B.date >= contact_tracing.date AND B.creator_id = contact_tracing.id;
+    OPEN cursor FOR 
+        WITH CTE AS (
+            SELECT A.* 
+            FROM Attends AS A NATURAL JOIN Bookings AS B 
+            WHERE B.approver_id IS NOT NULL 
+                AND A.date BETWEEN contact_tracing.date - 3 AND contact_tracing.date
+        ) SELECT DISTINCT A.employee_id 
+        FROM CTE AS A JOIN CTE AS B 
+            ON A.floor = B.floor 
+                AND A.room = B.room 
+                AND A.date = B.date 
+                AND A.start_hour = B.start_hour 
+                AND A.employee_id IS DISTINCT FROM B.employee_id 
+        WHERE B.employee_id = contact_tracing.id;
+    LOOP
+        FETCH NEXT FROM cursor INTO employee_id;
+        EXIT WHEN NOT FOUND;
+        DELETE FROM Bookings AS B WHERE B.creator_id = contact_tracing.employee_id AND A.date BETWEEN contact_tracing.date AND contact_tracing.date + 7;
+        DELETE FROM Attends AS A WHERE A.employee_id = contact_tracing.employee_id AND A.date BETWEEN contact_tracing.date AND contact_tracing.date + 7;
+        RETURN NEXT;
+    END LOOP;
+    CLOSE cursor;
+END;
+$$ LANGUAGE plpgsql;
