@@ -128,22 +128,23 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION non_compliance
 (IN start_date DATE, IN end_date DATE, OUT employee_id INT, OUT number_of_days INT)
 RETURNS SETOF RECORD AS $$
-    WITH NumberOfDaysTemperatureUndeclared AS (
-        SELECT id, date_part('day', end_date::TIMESTAMP - start_date::TIMESTAMP) - count(id) + 1 AS number_of_days
-        FROM HealthDeclarations
-        WHERE date >= start_date AND date <= end_date
-        GROUP BY id
-    ) SELECT *
-    FROM (SELECT x.id AS employee_id, coalesce(number_of_days, date_part('day', end_date::TIMESTAMP - start_date::TIMESTAMP) + 1) AS number_of_days
-    FROM (SELECT id FROM Employees) x
-    LEFT OUTER JOIN
-    NumberOfDaysTemperatureUndeclared ON x.id = NumberOfDaysTemperatureUndeclared.id
-    ORDER BY number_of_days DESC) z
-    WHERE number_of_days > 0;
+WITH CTE AS (
+    SELECT H.id AS id, COUNT(*) AS days_declared
+    FROM HealthDeclarations AS H
+    WHERE H.date BETWEEN start_date AND end_date 
+    GROUP BY H.id
+) SELECT E.id, COALESCE(
+        (CASE WHEN E.resignation_date < end_date THEN resignation_date ELSE end_date END) - start_date - C.days_declared + 1,
+        (CASE WHEN E.resignation_date < end_date THEN resignation_date ELSE end_date END) - start_date + 1
+    )
+FROM Employees AS E LEFT JOIN CTE AS C ON E.id = C.id
+WHERE (E.resignation_date IS NULL OR E.resignation_date >= start_date)
+    AND (C.days_declared IS NULL OR C.days_declared < end_date - start_date + 1);
 $$ LANGUAGE sql;
 
 CREATE OR REPLACE FUNCTION view_booking_report
 (IN start_date DATE, IN employee_id INT, OUT floor_number INT, OUT room_number INT, OUT date DATE, OUT start_hour INT, OUT is_approved BOOLEAN)
 RETURNS SETOF RECORD AS $$
-    SELECT FLOOR AS floor_number, room AS room_number, date, start_hour, CASE WHEN approver_id IS NULL THEN FALSE ELSE TRUE END AS is_approved FROM Bookings WHERE date = start_date AND creator_id = employee_id
-$$ LANGUAGE sql;
+    SELECT floor AS floor_number, room AS room_number, date, start_hour, CASE WHEN approver_id IS NULL THEN FALSE ELSE TRUE END AS is_approved 
+    FROM Bookings 
+    WHERE date = start_date AND creator_id = employee_id;
