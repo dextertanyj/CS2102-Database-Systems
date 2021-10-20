@@ -37,11 +37,8 @@ BEGIN
     IF (SELECT * FROM resigned_employee_guard(manager_id)) THEN
         RAISE EXCEPTION 'Manager has resigned' USING HINT = 'Manager has resigned and can no longer add rooms';
     END IF;
-    If (SELECT * FROM removed_department_guard(department_id)) THEN
-        RAISE EXCEPTION 'Department has been removed' USING HINT = 'Department has been removed and no new rooms can be assigned to it';
-    END IF;
     SELECT E.department_id INTO manager_department_id FROM Employees AS E WHERE E.id = manager_id;
-    INSERT INTO MeetingRooms VALUES (floor, room, name, department_id);
+    INSERT INTO MeetingRooms VALUES (floor, room, name, manager_department_id);
     INSERT INTO Updates VALUES (manager_id, floor, room, effective_date, capacity);
 END;
 $$ LANGUAGE plpgsql;
@@ -148,3 +145,4 @@ RETURNS SETOF RECORD AS $$
     SELECT floor AS floor_number, room AS room_number, date, start_hour, CASE WHEN approver_id IS NULL THEN FALSE ELSE TRUE END AS is_approved 
     FROM Bookings 
     WHERE date = start_date AND creator_id = employee_id;
+$$ LANGUAGE sql;
