@@ -67,12 +67,15 @@ def insert(tablename, values):
 
 @pytest.fixture(scope='session', autouse=True)
 def before_all():
-    reset()
     os.system('psql -d {database} -f proc.sql'.format(database=database))
 
 
-def test_add_department():
+@pytest.fixture(autouse=True)
+def before_each():
     reset()
+
+
+def test_add_department():
     with engine.connect() as con:
         con.execute("CALL add_department(1, 'Department 1');")
         for r in con.execute("SELECT COUNT(*) FROM departments;"):
@@ -87,7 +90,6 @@ def test_add_department():
 
 
 def test_remove_department():
-    reset()
     insert('Departments', [(1, 'Department 1'), (2, 'Department 2'), (3, 'Department 3')])
     with engine.connect() as con:
         con.execute("""
@@ -99,7 +101,6 @@ def test_remove_department():
 
 
 def test_add_room():
-    reset()
     insert('Departments', [(1, 'Department 1'), (2, 'Department 2'), (3, 'Department 3')])
     with engine.connect() as con:
         con.execute("""
@@ -119,17 +120,17 @@ def test_add_room():
             CALL add_room(1, 1, 'Room 1', 10, 1, CURRENT_DATE);
             CALL add_room(2, 1, 'Room 2', 10, 3, CURRENT_DATE);
         """)
-        #     con.execute("""
-        #     CALL add_room(1, 1, 'Room 3', 10, 1, CURRENT_DATE);
-        #     CALL add_room(1, 1, 'Room 4', 10, 3, CURRENT_DATE);
-        #     CALL add_room(3, 1, 'Room 5', 10, 4, CURRENT_DATE);
-        #     CALL add_room(4, 1, 'Room 6', 10, 5, CURRENT_DATE);
-        #     CALL add_room(5, 1, 'Room 7', 10, 6, CURRENT_DATE);
-        # """)
+        with pytest.raises(sqlalchemy.exc.IntegrityError):
+            assert con.execute("""
+                CALL add_room(1, 1, 'Room 3', 10, 1, CURRENT_DATE);
+                CALL add_room(1, 1, 'Room 4', 10, 3, CURRENT_DATE);
+                CALL add_room(3, 1, 'Room 5', 10, 4, CURRENT_DATE);
+                CALL add_room(4, 1, 'Room 6', 10, 5, CURRENT_DATE);
+                CALL add_room(5, 1, 'Room 7', 10, 6, CURRENT_DATE);
+            """) is not None
 
 
 def test_change_capacity():
-    reset()
     insert('Departments', [(1, 'Department 1'), (2, 'Department 2'), (3, 'Department 3')])
     with engine.connect() as con:
         con.execute("""
@@ -159,7 +160,6 @@ def test_change_capacity():
 
 
 def test_add_employee():
-    reset()
     insert('Departments', [(1, 'Department 1'), (2, 'Department 2'), (3, 'Department 3')])
     with engine.connect() as con:
         con.execute("""
@@ -179,7 +179,6 @@ def test_add_employee():
 
 
 def test_remove_employees():
-    reset()
     insert('Departments', [(1, 'Department 1'), (2, 'Department 2'), (3, 'Department 3')])
     insert('Employees', [
         (1, 'Manager 1', 'Contact 1', 'manager1@company.com', 'NULL', 1),
