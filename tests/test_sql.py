@@ -5,9 +5,9 @@ import os
 
 
 ########### Configure these ############
-username = ''
-password = ''
-database = 'cs2102_proj'
+username = 'postgres'
+password = 'postgres'
+database = 'project'
 ########################################
 
 sql_url = 'postgresql://{username}:{password}@localhost:5432/{database}'\
