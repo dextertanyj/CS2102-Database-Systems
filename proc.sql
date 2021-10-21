@@ -332,3 +332,28 @@ DROP TRIGGER IF EXISTS insert_meeting_creator_trigger ON Bookings;
 CREATE TRIGGER insert_meeting_creator_trigger
 AFTER INSERT OR UPDATE ON Bookings
 FOR EACH ROW EXECUTE FUNCTION insert_meeting_creator();
+
+CREATE OR REPLACE FUNCTION prevent_creator_removal()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF (EXISTS
+        (SELECT * 
+        FROM Bookings AS B 
+        WHERE B.creator_id = OLD.employee_id 
+            AND B.room = OLD.room 
+            AND B.floor = OLD.floor 
+            AND B.date = OLD.date 
+            AND B.start_hour = OLD.start_hour)
+    ) THEN
+        RAISE EXCEPTION 'Unable to update or remove employee attendance'
+    END IF;
+    OLD = COALESCE(NEW, OLD);
+    RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS prevent_creator_removal_trigger ON Attends;
+
+CREATE TRIGGER prevent_creator_removal_trigger
+BEFORE DELETE OR UPDATE ON Attends
+FOR EACH ROW EXECUTE FUNCTION prevent_creator_removal();

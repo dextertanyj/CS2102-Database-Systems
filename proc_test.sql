@@ -1140,7 +1140,28 @@ SELECT * FROM Attends; -- Expects (1, 1, CURRENT_DATE + 1, 1), (1, 1, CURRENT_DA
 CALL reset();
 -- END TEST
 
+-- TEST prevent_creator_removal_trigger
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+INSERT INTO Employees VALUES
+(1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+(2, 'Junior 2', 'Contact 2', 'junior2@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Juniors VALUES (2);
+INSERT INTO Managers VALUES (1);
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 1, NULL), (1, 1, CURRENT_DATE + 1, 2, 1, NULL);
+INSERT INTO Attends VALUES (2, 1, 1, CURRENT_DATE + 1, 1);
+-- TEST
+DELETE FROM Attends WHERE employee_id = 1; -- Failure
+UPDATE Attends SET start_hour = 3 WHERE employee_id = 1; -- Failure
+UPDATE Attends SET start_hour = 2 WHERE employee_id = 2; -- Success
+DELETE FROM Attends WHERE employee_id = 2; -- Success
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
 --
 DROP PROCEDURE IF EXISTS reset();
 SET client_min_messages TO NOTICE;
-
