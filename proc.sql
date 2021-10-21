@@ -124,6 +124,47 @@ $$ LANGUAGE plpgsql;
 
 -------------------------- CORE --------------------------
 
+CREATE OR REPLACE VIEW RoomCapacity AS 
+SELECT floor, room, date, capacity
+FROM Updates NATURAL JOIN (SELECT floor, room, MAX(date) AS date FROM Updates GROUP BY (floor, room)) AS LatestUpdate;
+
+CREATE OR REPLACE FUNCTION search_room
+(IN search_capacity INT, IN search_date DATE, IN search_start_hour INT, IN search_end_hour INT, OUT floor INT, OUT room INT, OUT department_id INT, OUT capacity INT)
+RETURNS SETOF RECORD AS $$
+    WITH RelevantBookings AS (
+        SELECT *
+        FROM Bookings AS B
+        WHERE B.start_hour BETWEEN search_start_hour AND (search_end_hour - 1)
+        AND B.date = search_date
+    ) SELECT M.floor AS floor, M.room AS room, M.department_id AS department_id, R.capacity AS capacity
+    FROM MeetingRooms AS M JOIN RoomCapacity AS R ON M.floor = R.floor AND M.room = R.room LEFT JOIN RelevantBookings AS B ON M.floor = B.floor AND M.room = B.room
+    WHERE R.capacity >= search_capacity AND B.creator_id IS NULL
+    ORDER BY R.capacity ASC;
+$$ LANGUAGE sql;
+
+CREATE OR REPLACE PROCEDURE book_room
+(floor INT, room INT, date DATE, start_hour INT, end_hour INT, employee_id INT)
+AS $$
+BEGIN
+    WHILE start_hour < end_hour LOOP
+        INSERT INTO Bookings VALUES (book_room.floor, book_room.room, book_room.date, book_room.start_hour, book_room.employee_id);
+        INSERT INTO Attends VALUES (book_room.employee_id, book_room.floor, book_room.room, book_room.date, book_room.start_hour);
+        start_hour := start_hour + 1;
+    END LOOP;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE PROCEDURE unbook_room
+(floor INT, room INT, date DATE, start_hour INT, end_hour INT, employee_id INT)
+AS $$
+BEGIN
+    WHILE start_hour < end_hour LOOP
+        DELETE FROM Bookings AS B WHERE B.floor = unbook_room.floor AND B.room = unbook_room.room AND B.creator_id = unbook_room.employee_id AND B.start_hour BETWEEN unbook_room.start_hour AND (unbook_room.end_hour - 1);
+        start_hour := start_hour + 1;
+    END LOOP;
+END;
+$$ LANGUAGE plpgsql;
+
 CREATE OR REPLACE VIEW latest_recorded_temperature AS
 SELECT id, temperature, date
 FROM HealthDeclarations h1
