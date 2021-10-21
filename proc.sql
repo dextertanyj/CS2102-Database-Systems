@@ -149,11 +149,12 @@ $$ LANGUAGE sql;
 
 -------------------------- CORE --------------------------
 
-CREATE OR REPLACE VIEW latest_temperature AS
+CREATE OR REPLACE VIEW latest_recorded_temperature AS
 SELECT id, temperature, date
-FROM HealthDeclarations
-WHERE date = (SELECT MAX(DATE)
-                FROM HealthDeclarations);
+FROM HealthDeclarations h1
+WHERE h1.date >= (SELECT MAX(h2.date) FROM HealthDeclarations h2
+                    WHERE h1.id = h2.id
+                    GROUP BY h2.id);
 
 CREATE OR REPLACE VIEW resigned_employees AS
 SELECT id, name, contact_number, email, resignation_date, department_id
@@ -214,7 +215,7 @@ BEGIN
     IF (SELECT id FROM Managers WHERE id = manager_id) IS NULL THEN
         RAISE EXCEPTION 'Employeee % is not a manager', manager_id;
     -- manager approving belongs to the a different department
-    ELSIF (SELECT department_id FROM Employee WHERE id = manager_id) <> (SELECT department_id FROM MeetingRooms WHERE floor = floor_number AND room = room_number) THEN
+    ELSIF (SELECT department_id FROM Employees WHERE id = manager_id) <> (SELECT department_id FROM MeetingRooms WHERE floor = floor_number AND room = room_number) THEN
         RAISE EXCEPTION 'Approving manager does not belong to the same department as meeting room';
     ELSE
         WHILE starting_hour < ending_hour LOOP
@@ -234,7 +235,6 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION view_future_meeting
 (IN start_date DATE, IN e_id INT, OUT floor INT, OUT room INT, OUT date DATE, OUT start_hour INT)
 RETURNS SETOF RECORD AS $$
-BEGIN
     SELECT a.floor, a.room, a.date, a.start_hour
     FROM Attends a
     NATURAL JOIN Bookings b
@@ -242,24 +242,23 @@ BEGIN
     AND date >= start_date
     AND b.approver_id IS NOT NULL
     ORDER BY a.date ASC, a.start_hour ASC;
-END;
 $$ LANGUAGE sql;
 
 CREATE OR REPLACE FUNCTION view_manager_report
-(IN start_date DATE, IN manager_id INT, OUT floor INT, OUT room INT, OUT date DATE, OUT start_hour INT, OUT m_id INT)
+(IN start_date DATE, IN manager_id INT, OUT floor INT, OUT room INT, OUT date DATE, OUT start_hour INT, OUT creator_id INT, OUT approval_id INT)
 RETURNS SETOF RECORD AS $$
 BEGIN
-    IF (SELECT id FROM Manager WHERE id = manager_id) IS NULL THEN
+    IF (SELECT id FROM Managers WHERE id = manager_id) IS NULL THEN
         RETURN;
     ELSE
-        RETURN
-            SELECT floor, room, date, start_hour, manager_id
-            FROM Bookings
-            NATURAL JOIN MeetingRooms
-            WHERE date >= start_date
-            AND approver_id IS NULL
-            AND department_id = (SELECT department_id 
-                                    FROM Employee
+        RETURN QUERY
+            SELECT b.floor, b.room, b.date, b.start_hour, b.creator_id, b.approver_id
+            FROM Bookings b
+            NATURAL JOIN MeetingRooms m
+            WHERE b.date >= start_date
+            AND b.approver_id IS NULL
+            AND m.department_id = (SELECT department_id 
+                                    FROM Employees
                                     WHERE id = manager_id);
     END IF;
 END;
