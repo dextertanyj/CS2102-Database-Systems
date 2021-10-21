@@ -186,7 +186,7 @@ BEGIN
     ELSE
         LOOP
             EXIT WHEN starting_hour = ending_hour;
-            INSERT INTO Bookings(floor, room, date, start_hour, creator_id) VALUES (floor_number, room_number, join_date, starting_hour, e_id);
+            INSERT INTO Attends(employee_id, floor, room, date, start_hour) VALUES (e_id, floor_number, room_number, join_date, starting_hour);
             starting_hour := starting_hour + 1;
         END LOOP;
     END IF;
@@ -256,18 +256,16 @@ $$ LANGUAGE plpgsql;
 -------------------------- ADMIN --------------------------
 
 CREATE OR REPLACE FUNCTION view_future_meeting
-(IN start_date DATE, IN e_id INT)
-RETURNS TABLE (floor INT, room INT, date DATE, start_hour INT) 
-AS $$
+(IN start_date DATE, IN e_id INT, OUT floor INT, OUT room INT, OUT date DATE, OUT start_hour INT)
+RETURNS SETOF RECORD AS $$
 BEGIN
-    RETURN QUERY
-            SELECT a.floor, a.room, a.date, a.start_hour
-            FROM Attends a
-            NATURAL JOIN Bookings b
-            WHERE a.employee_id = e_id
-            AND date >= start_date
-            AND b.approver_id IS NOT NULL
-            ORDER BY a.date ASC, a.start_hour ASC;
+    SELECT a.floor, a.room, a.date, a.start_hour
+    FROM Attends a
+    NATURAL JOIN Bookings b
+    WHERE a.employee_id = e_id
+    AND date >= start_date
+    AND b.approver_id IS NOT NULL
+    ORDER BY a.date ASC, a.start_hour ASC;
 END;
 $$ LANGUAGE plpgsql;
 
