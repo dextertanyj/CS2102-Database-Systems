@@ -245,6 +245,7 @@ BEGIN
         NATURAL JOIN Attends
         WHERE capacity < NEW.capacity
         AND date > NEW.date OR (date = NEW.date AND start_hour > current_hours_into_the_day));
+    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
