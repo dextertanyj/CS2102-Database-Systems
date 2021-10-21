@@ -160,22 +160,6 @@ SELECT id, name, contact_number, email, resignation_date, department_id
 FROM Employees
 WHERE resignation_date IS NOT NULL;
 
--- helper function
-CREATE OR REPLACE FUNCTION search_bookings
-(IN floor_number INT, IN room_number INT, IN meeting_date DATE, IN starting_hour INT, OUT floor INT, OUT room INT, OUT date DATE, OUT start_hour INT, OUT creator_id INT, OUT approver_id INT)
-RETURNS SETOF RECORD AS $$
-BEGIN
-    SELECT floor, room, date, start_hour, creator_id, approver_id
-    FROM Bookings
-    WHERE floor = floor_number
-    AND room = room_number
-    AND date = meeting_date
-    AND start_hour = starting_hour;
-END;
-$$ LANGUAGE sql;
-
--- book_room should call on this function on the booker
--- need to check for missing booking?
 CREATE OR REPLACE PROCEDURE join_meeting
 (floor_number INT, room_number INT, join_date DATE, starting_hour INT, ending_hour INT, e_id INT)
 AS $$
