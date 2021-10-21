@@ -194,7 +194,7 @@ RETURNS TRIGGER AS $$
 DECLARE
     current_hours_into_the_day INT := DATE_PART('HOUR', CURRENT_TIMESTAMP);
 BEGIN
-    IF (NEW.date < CURRENT_DATE OR (NEW.date == CURRENT_DATE AND NEW.start_hour <= current_hours_into_the_day)) THEN
+    IF (NEW.date < CURRENT_DATE OR (NEW.date = CURRENT_DATE AND NEW.start_hour <= current_hours_into_the_day)) THEN
         RAISE NOTICE 'Cannot join meetings in the past';
         RETURN NULL;
     ELSE
@@ -215,7 +215,7 @@ RETURNS TRIGGER AS $$
 DECLARE
     current_hours_into_the_day INT := DATE_PART('HOUR', CURRENT_TIMESTAMP);
 BEGIN
-    IF (NEW.date < CURRENT_DATE OR (NEW.date == CURRENT_DATE AND NEW.start_hour <= current_hours_into_the_day)) THEN
+    IF (NEW.date < CURRENT_DATE OR (NEW.date = CURRENT_DATE AND NEW.start_hour <= current_hours_into_the_day)) THEN
         RAISE NOTICE 'Cannot approve meetings of the past';
         RETURN NULL;
     ELSE
@@ -244,7 +244,7 @@ BEGIN
         NATURAL JOIN Bookings
         NATURAL JOIN Attends
         WHERE capacity < NEW.capacity
-        AND date > NEW.date OR (date == NEW.date AND date > current_hours_into_the_day));
+        AND date > NEW.date OR (date = NEW.date AND date > current_hours_into_the_day));
 END;
 $$ LANGUAGE plpgsql;
 
