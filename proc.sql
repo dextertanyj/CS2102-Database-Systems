@@ -304,3 +304,31 @@ BEGIN
     END IF;
 END;
 $$ LANGUAGE plpgsql;
+
+/***************************************
+                TRIGGERS
+***************************************/
+
+CREATE OR REPLACE FUNCTION insert_meeting_creator()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF (NOT EXISTS 
+        (SELECT * 
+        FROM Attends AS A 
+        WHERE A.employee_id = NEW.creator_id 
+            AND A.room = NEW.room 
+            AND A.floor = NEW.floor 
+            AND A.date = NEW.date 
+            AND A.start_hour = NEW.start_hour)
+    ) THEN
+        INSERT INTO Attends VALUES (NEW.creator_id, NEW.floor, NEW.room, NEW.date, NEW.start_hour);
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS insert_meeting_creator_trigger ON Bookings;
+
+CREATE TRIGGER insert_meeting_creator_trigger
+AFTER INSERT OR UPDATE ON Bookings
+FOR EACH ROW EXECUTE FUNCTION insert_meeting_creator();
