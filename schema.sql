@@ -9,7 +9,8 @@ DROP TABLE IF EXISTS
     HealthDeclarations,
     Bookings,
     Attends,
-    Updates;
+    Updates
+CASCADE;
 
 CREATE TABLE Departments(
     id SERIAL,
