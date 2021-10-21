@@ -37,11 +37,8 @@ BEGIN
     IF (SELECT * FROM resigned_employee_guard(manager_id)) THEN
         RAISE EXCEPTION 'Manager has resigned' USING HINT = 'Manager has resigned and can no longer add rooms';
     END IF;
-    If (SELECT * FROM removed_department_guard(department_id)) THEN
-        RAISE EXCEPTION 'Department has been removed' USING HINT = 'Department has been removed and no new rooms can be assigned to it';
-    END IF;
     SELECT E.department_id INTO manager_department_id FROM Employees AS E WHERE E.id = manager_id;
-    INSERT INTO MeetingRooms VALUES (floor, room, name, department_id);
+    INSERT INTO MeetingRooms VALUES (floor, room, name, manager_department_id);
     INSERT INTO Updates VALUES (manager_id, floor, room, effective_date, capacity);
 END;
 $$ LANGUAGE plpgsql;
@@ -94,7 +91,7 @@ CREATE OR REPLACE FUNCTION add_employee
 (IN name VARCHAR(255), IN contact_number VARCHAR(20), IN type VARCHAR(7), IN department_id INT, OUT employee_id INT, OUT employee_email VARCHAR(255))
 RETURNS RECORD AS $$
 BEGIN
-    IF (SELECT * FROM removed_department_guard(department_id)) THEN
+    If (SELECT * FROM removed_department_guard(department_id)) THEN
         RAISE EXCEPTION 'Department has been removed' USING HINT = 'Department has been removed and no new employees can be assigned to it';
     END IF;
     name := TRIM(name);
@@ -125,23 +122,38 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION non_compliance
+(IN start_date DATE, IN end_date DATE, OUT employee_id INT, OUT number_of_days INT)
+RETURNS SETOF RECORD AS $$
+WITH CTE AS (
+    SELECT H.id AS id, COUNT(*) AS days_declared
+    FROM HealthDeclarations AS H
+    WHERE H.date BETWEEN start_date AND end_date 
+    GROUP BY H.id
+) SELECT E.id, COALESCE(
+        (CASE WHEN E.resignation_date < end_date THEN resignation_date ELSE end_date END) - start_date - C.days_declared + 1,
+        (CASE WHEN E.resignation_date < end_date THEN resignation_date ELSE end_date END) - start_date + 1
+    )
+FROM Employees AS E LEFT JOIN CTE AS C ON E.id = C.id
+WHERE (E.resignation_date IS NULL OR E.resignation_date >= start_date)
+    AND (C.days_declared IS NULL OR C.days_declared < end_date - start_date + 1);
+$$ LANGUAGE sql;
+
+CREATE OR REPLACE FUNCTION view_booking_report
+(IN start_date DATE, IN employee_id INT, OUT floor_number INT, OUT room_number INT, OUT date DATE, OUT start_hour INT, OUT is_approved BOOLEAN)
+RETURNS SETOF RECORD AS $$
+    SELECT floor AS floor_number, room AS room_number, date, start_hour, CASE WHEN approver_id IS NULL THEN FALSE ELSE TRUE END AS is_approved 
+    FROM Bookings 
+    WHERE date = start_date AND creator_id = employee_id;
+$$ LANGUAGE sql;
+
 -------------------------- CORE --------------------------
 
-CREATE OR REPLACE FUNCTION has_fever
-(IN e_id INT) RETURNS BOOLEAN 
-AS $$
-BEGIN
-    IF (SELECT temperature 
-            FROM HealthDeclarations 
-            WHERE id = e_id
-            ORDER BY date DESC
-            LIMIT 1) > 37.5 THEN 
-        RETURN TRUE;
-    ELSE
-        RETURN FALSE;
-    END IF;
-END;
-$$ LANGUAGE plpgsql;
+CREATE OR REPLACE VIEW latest_temperature AS
+SELECT id, temperature 
+FROM HealthDeclarations
+WHERE date = (SELECT MAX(DATE)
+                FROM HealthDeclarations);
 
 CREATE OR REPLACE FUNCTION has_resigned
 (IN e_id INT) RETURNS BOOLEAN 

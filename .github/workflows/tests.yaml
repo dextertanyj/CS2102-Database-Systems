@@ -1,0 +1,41 @@
+name: unit-test-actions
+on: [push]
+jobs:
+  runner-job:
+    runs-on: ubuntu-latest
+    services:
+      postgres: 
+        image: postgres
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v2
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-client
+      - name: Setup database
+        run: |
+          psql -h localhost -U postgres -c 'CREATE DATABASE project;'
+          psql -h localhost -U postgres -d project -f schema.sql
+        env:
+          PGPASSWORD: postgres
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Install requirements
+        run: |
+          pip install -r requirements.txt
+      - name: Execute test script
+        run: |
+          pytest -s

@@ -132,3 +132,30 @@ CALL reset();
 --
 DROP PROCEDURE IF EXISTS reset();
 SET client_min_messages TO NOTICE;
+
+-- TEST non_compliance
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2'), (3, 'Department 3');
+INSERT INTO Employees VALUES 
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 2),
+    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE - 1, 1),
+    (4, 'Senior 4', 'Contact 4', 'senior4@company.com', NULL, 1),
+    (5, 'Junior 5', 'Contact 5', 'junior5@company.com', NULL, 1);
+INSERT INTO HealthDeclarations VALUES
+    (1, CURRENT_DATE - 3, 37.0),
+    (1, CURRENT_DATE - 2, 37.0),
+    (1, CURRENT_DATE - 1, 37.0),
+    (1, CURRENT_DATE, 37.0),
+    (2, CURRENT_DATE - 3, 37.0),
+    (2, CURRENT_DATE - 1, 37.0),
+    (2, CURRENT_DATE, 37.0),
+    (3, CURRENT_DATE - 3, 37.0),
+    (3, CURRENT_DATE - 1, 37.0),
+    (5, CURRENT_DATE - 2, 37.0),
+    (5, CURRENT_DATE - 1, 37.0);
+-- TEST
+SELECT * FROM non_compliance(CURRENT_DATE - 3, CURRENT_DATE); -- Expected: (2,1), (3,1), (4,4), (5,2)
+-- AFTER TEST
+-- END TEST
