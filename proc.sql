@@ -159,7 +159,7 @@ RETURNS SETOF RECORD AS $$
         FROM Bookings AS B
         WHERE B.start_hour BETWEEN search_start_hour AND (search_end_hour - 1)
         AND B.date = search_date
-    ) SELECT M.floor AS floor, M.room AS room, M.department_id AS department_id, R.capacity As capacity
+    ) SELECT M.floor AS floor, M.room AS room, M.department_id AS department_id, R.capacity AS capacity
     FROM MeetingRooms AS M JOIN RoomCapacity AS R ON M.floor = R.floor AND M.room = R.room LEFT JOIN RelevantBookings AS B ON M.floor = B.floor AND M.room = B.room
     WHERE R.capacity >= search_capacity AND B.creator_id IS NULL
     ORDER BY R.capacity ASC;
