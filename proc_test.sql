@@ -129,9 +129,107 @@ CALL remove_employee(10, CURRENT_DATE); -- Failure
 CALL reset();
 -- TEST END
 
---
-DROP PROCEDURE IF EXISTS reset();
-SET client_min_messages TO NOTICE;
+-- TEST search_room
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2'), (3, 'Department 3');
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
+INSERT INTO MeetingRooms VALUES
+    (1, 1, 'Room 1', 1),
+    (1, 2, 'Room 2', 1),
+    (2, 1, 'Room 3', 2);
+INSERT INTO Updates VALUES
+    (1, 1, 1, CURRENT_DATE, 10),
+    (1, 1, 2, CURRENT_DATE, 5),
+    (1, 2, 1, CURRENT_DATE, 10);
+INSERT INTO Bookings VALUES 
+    (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
+    (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
+    (1, 1, CURRENT_DATE + 1, 3, 1, NULL);
+INSERT INTO Attends VALUES
+    (1, 1, 1, CURRENT_DATE + 1, 1),
+    (1, 1, 1, CURRENT_DATE + 1, 2),
+    (1, 1, 1, CURRENT_DATE + 1, 3);
+-- TEST
+SELECT search_room(10, CURRENT_DATE + 1, 4, 8); -- Returns (1, 1, 1, 10), (2, 1, 2, 10)
+SELECT search_room(5, CURRENT_DATE + 1, 4, 8); -- Returns (1, 2, 1, 5), (1, 1, 1, 10), (2, 1, 2, 10)
+SELECT search_room(10, CURRENT_DATE + 1, 1, 4); -- Returns (2, 1, 2, 10)
+SELECT search_room(10, CURRENT_DATE + 1, 3, 4); -- Returns (2, 1, 2, 10)
+SELECT search_room(10, CURRENT_DATE + 1, 4, 5); -- Returns (1, 1, 1, 10), (2, 1, 2, 10)
+SELECT search_room(10, CURRENT_DATE + 2, 1, 3); -- Returns (1, 1, 1, 10), (2, 1, 2, 10)
+-- AFTER TEST
+CALL reset();
+-- TEST END
+
+-- TEST book_room
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2'), (3, 'Department 3');
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
+INSERT INTO MeetingRooms VALUES
+    (1, 1, 'Room 1', 1),
+    (1, 2, 'Room 2', 1),
+    (2, 1, 'Room 3', 2);
+INSERT INTO Updates VALUES
+    (1, 1, 1, CURRENT_DATE, 10),
+    (1, 1, 2, CURRENT_DATE, 5),
+    (1, 2, 1, CURRENT_DATE, 10);
+INSERT INTO Bookings VALUES 
+    (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
+    (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
+    (1, 1, CURRENT_DATE + 1, 3, 1, NULL);
+INSERT INTO Attends VALUES
+    (1, 1, 1, CURRENT_DATE + 1, 1),
+    (1, 1, 1, CURRENT_DATE + 1, 2),
+    (1, 1, 1, CURRENT_DATE + 1, 3);
+-- TEST
+CALL book_room(1, 1, CURRENT_DATE + 1, 4, 5, 1); -- Success
+CALL book_room(1, 1, CURRENT_DATE + 1, 5, 7, 1); -- Success
+CALL book_room(1, 1, CURRENT_DATE + 1, 1, 2, 1); -- Failure
+CALL book_room(1, 1, CURRENT_DATE + 1, 1, 10, 1); -- Failure
+CALL book_room(1, 1, CURRENT_DATE + 1, 5, 10, 1); -- Failure
+CALL book_room(1, 1, CURRENT_DATE + 1, 8, 10, 1); -- Success
+-- AFTER TEST
+CALL reset();
+-- TEST END
+
+-- TEST unbook_room
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2'), (3, 'Department 3');
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
+INSERT INTO MeetingRooms VALUES
+    (1, 1, 'Room 1', 1),
+    (1, 2, 'Room 2', 1),
+    (2, 1, 'Room 3', 2);
+INSERT INTO Updates VALUES
+    (1, 1, 1, CURRENT_DATE, 10),
+    (1, 1, 2, CURRENT_DATE, 5),
+    (1, 2, 1, CURRENT_DATE, 10);
+INSERT INTO Bookings VALUES 
+    (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
+    (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
+    (1, 1, CURRENT_DATE + 1, 3, 1, NULL);
+INSERT INTO Attends VALUES
+    (1, 1, 1, CURRENT_DATE + 1, 1),
+    (1, 1, 1, CURRENT_DATE + 1, 2),
+    (1, 1, 1, CURRENT_DATE + 1, 3);
+-- TEST
+CALL unbook_room(1, 1, CURRENT_DATE + 1, 1, 3, 2); -- Failure
+CALL unbook_room(1, 1, CURRENT_DATE + 1, 1, 2, 1); -- Success
+CALL unbook_room(1, 1, CURRENT_DATE + 1, 2, 4, 1); -- Success
+-- AFTER TEST
+CALL reset();
+-- TEST END
 
 -- TEST non_compliance
 -- BEFORE TEST
@@ -158,4 +256,9 @@ INSERT INTO HealthDeclarations VALUES
 -- TEST
 SELECT * FROM non_compliance(CURRENT_DATE - 3, CURRENT_DATE); -- Expected: (2,1), (3,1), (4,4), (5,2)
 -- AFTER TEST
+CALL reset();
 -- END TEST
+
+--
+DROP PROCEDURE IF EXISTS reset();
+SET client_min_messages TO NOTICE;
