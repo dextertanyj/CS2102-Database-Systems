@@ -154,12 +154,12 @@ INSERT INTO Attends VALUES
     (1, 1, 1, CURRENT_DATE + 1, 2),
     (1, 1, 1, CURRENT_DATE + 1, 3);
 -- TEST
-SELECT search_room(10, CURRENT_DATE + 1, 4, 8);
-SELECT search_room(5, CURRENT_DATE + 1, 4, 8);
-SELECT search_room(10, CURRENT_DATE + 1, 1, 4);
-SELECT search_room(10, CURRENT_DATE + 1, 3, 4);
-SELECT search_room(10, CURRENT_DATE + 1, 4, 5);
-SELECT search_room(10, CURRENT_DATE + 2, 1, 3);
+SELECT search_room(10, CURRENT_DATE + 1, 4, 8); -- Returns (1, 1, 1, 10), (2, 1, 2, 10)
+SELECT search_room(5, CURRENT_DATE + 1, 4, 8); -- Returns (1, 2, 1, 5), (1, 1, 1, 10), (2, 1, 2, 10)
+SELECT search_room(10, CURRENT_DATE + 1, 1, 4); -- Returns (2, 1, 2, 10)
+SELECT search_room(10, CURRENT_DATE + 1, 3, 4); -- Returns (2, 1, 2, 10)
+SELECT search_room(10, CURRENT_DATE + 1, 4, 5); -- Returns (1, 1, 1, 10), (2, 1, 2, 10)
+SELECT search_room(10, CURRENT_DATE + 2, 1, 3); -- Returns (1, 1, 1, 10), (2, 1, 2, 10)
 -- AFTER TEST
 CALL reset();
 -- TEST END
@@ -231,10 +231,6 @@ CALL unbook_room(1, 1, CURRENT_DATE + 1, 2, 4, 1); -- Success
 CALL reset();
 -- TEST END
 
---
-DROP PROCEDURE IF EXISTS reset();
-SET client_min_messages TO NOTICE;
-
 -- TEST non_compliance
 -- BEFORE TEST
 CALL reset();
@@ -260,4 +256,9 @@ INSERT INTO HealthDeclarations VALUES
 -- TEST
 SELECT * FROM non_compliance(CURRENT_DATE - 3, CURRENT_DATE); -- Expected: (2,1), (3,1), (4,4), (5,2)
 -- AFTER TEST
+CALL reset();
 -- END TEST
+
+--
+DROP PROCEDURE IF EXISTS reset();
+SET client_min_messages TO NOTICE;
