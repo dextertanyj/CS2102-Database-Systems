@@ -67,7 +67,8 @@ def insert(tablename, values):
 
 @pytest.fixture(scope='session', autouse=True)
 def before_all():
-    os.system('psql -d {database} -f proc.sql'.format(database=database))
+    os.environ['PGPASSWORD'] = password
+    os.system('psql -h localhost -U {username} -d {database} -f proc.sql'.format(username=username, database=database))
 
 
 @pytest.fixture(autouse=True)
