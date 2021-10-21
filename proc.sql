@@ -244,7 +244,7 @@ BEGIN
         NATURAL JOIN Bookings
         NATURAL JOIN Attends
         WHERE capacity < NEW.capacity
-        AND date > NEW.date OR (date = NEW.date AND date > current_hours_into_the_day));
+        AND date > NEW.date OR (date = NEW.date AND start_hour > current_hours_into_the_day));
 END;
 $$ LANGUAGE plpgsql;
 
