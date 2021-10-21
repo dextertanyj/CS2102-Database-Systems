@@ -150,24 +150,15 @@ $$ LANGUAGE sql;
 -------------------------- CORE --------------------------
 
 CREATE OR REPLACE VIEW latest_temperature AS
-SELECT id, temperature 
+SELECT id, temperature, date
 FROM HealthDeclarations
 WHERE date = (SELECT MAX(DATE)
                 FROM HealthDeclarations);
 
-CREATE OR REPLACE FUNCTION has_resigned
-(IN e_id INT) RETURNS BOOLEAN 
-AS $$
-BEGIN
-    IF (SELECT resignation_date
-            FROM Employees 
-            WHERE id = e_id) IS NOT NULL THEN
-        RETURN TRUE;
-    ELSE 
-        RETURN FALSE;
-    END IF;
-END;
-$$ LANGUAGE plpgsql;
+CREATE OR REPLACE VIEW resigned_employees AS
+SELECT id, name, contact_number, email, resignation_date, department_id
+FROM Employees
+WHERE resignation_date IS NOT NULL;
 
 CREATE OR REPLACE FUNCTION search_bookings
 (IN floor_number INT, IN room_number INT, IN meeting_date DATE, IN starting_hour INT)
