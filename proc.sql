@@ -160,20 +160,19 @@ SELECT id, name, contact_number, email, resignation_date, department_id
 FROM Employees
 WHERE resignation_date IS NOT NULL;
 
+-- helper function
 CREATE OR REPLACE FUNCTION search_bookings
-(IN floor_number INT, IN room_number INT, IN meeting_date DATE, IN starting_hour INT)
-RETURNS TABLE (floor INT, room INT, date DATE, start_hour INT, creator_id INT, approver_id INT) 
-AS $$
+(IN floor_number INT, IN room_number INT, IN meeting_date DATE, IN starting_hour INT, OUT floor INT, OUT room INT, OUT date DATE, OUT start_hour INT, OUT creator_id INT, OUT approver_id INT)
+RETURNS SETOF RECORD AS $$
 BEGIN
-    RETURN QUERY
-            SELECT *
-            FROM Bookings
-            WHERE floor = floor_number
-            AND room = room_number
-            AND date = meeting_date
-            AND start_hour = starting_hour;
+    SELECT floor, room, date, start_hour, creator_id, approver_id
+    FROM Bookings
+    WHERE floor = floor_number
+    AND room = room_number
+    AND date = meeting_date
+    AND start_hour = starting_hour;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE sql;
 
 -- book_room should call on this function on the booker
 -- need to check for missing booking?
@@ -181,18 +180,10 @@ CREATE OR REPLACE PROCEDURE join_meeting
 (floor_number INT, room_number INT, join_date DATE, starting_hour INT, ending_hour INT, e_id INT)
 AS $$
 BEGIN
-    IF has_fever(e_id) = TRUE THEN
-        RAISE EXCEPTION 'Employee % has a fever', e_id;
-
-    ELSIF has_resigned(e_id) = TRUE THEN
-        RAISE EXCEPTION 'Employee % has resigned', e_id;
-    ELSE
-        LOOP
-            EXIT WHEN starting_hour = ending_hour;
-            INSERT INTO Attends(employee_id, floor, room, date, start_hour) VALUES (e_id, floor_number, room_number, join_date, starting_hour);
-            starting_hour := starting_hour + 1;
-        END LOOP;
-    END IF;
+    WHILE starting_hour < ending_hour LOOP
+        INSERT INTO Attends(employee_id, floor, room, date, start_hour) VALUES (e_id, floor_number, room_number, join_date, starting_hour);
+        starting_hour := starting_hour + 1;
+    END LOOP;
 END;
 $$ LANGUAGE plpgsql;
 
