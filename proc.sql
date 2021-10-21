@@ -377,3 +377,19 @@ DROP TRIGGER IF EXISTS meeting_approver_department_check_trigger ON Bookings;
 CREATE TRIGGER meeting_approver_department_check_trigger
 BEFORE INSERT OR UPDATE OF approver_id ON Bookings
 FOR EACH ROW EXECUTE FUNCTION meeting_approver_department_check();
+
+CREATE OR REPLACE FUNCTION booking_date_check()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF (NEW.date < CURRENT_DATE) THEN
+        RAISE EXCEPTION 'Selected meeting date is in the past';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS booking_date_check_trigger ON Bookings;
+
+CREATE TRIGGER booking_date_check_trigger
+BEFORE INSERT OR UPDATE ON Bookings
+FOR EACH ROW EXECUTE FUNCTION booking_date_check();

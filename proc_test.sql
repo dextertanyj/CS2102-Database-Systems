@@ -1182,6 +1182,25 @@ INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 3, 1, 2); -- Failure
 CALL reset();
 -- END TEST
 
+-- TEST booking_date_check_trigger
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
+-- TEST
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE - 1, 1, 1, NULL); -- Failure
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE, 1, 1, NULL); -- Success
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 1, NULL); -- Success
+UPDATE Bookings SET date = CURRENT_DATE - 2 WHERE date = CURRENT_DATE + 1;
+UPDATE Bookings SET date = CURRENT_DATE + 2 WHERE date = CURRENT_DATE + 1;
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
 --
 DROP PROCEDURE IF EXISTS reset();
 SET client_min_messages TO NOTICE;
