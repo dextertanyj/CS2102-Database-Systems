@@ -187,3 +187,69 @@ BEGIN
     END LOOP;
 END;
 $$ LANGUAGE plpgsql;
+
+-- an employee can only join future meetings
+CREATE OR REPLACE FUNCTION employee_join_only_future_meetings_trigger()
+RETURNS TRIGGER AS $$
+DECLARE
+    current_hours_into_the_day INT := DATE_PART('HOUR', CURRENT_TIMESTAMP);
+BEGIN
+    IF (NEW.date < CURRENT_DATE OR (NEW.date == CURRENT_DATE AND NEW.start_hour <= current_hours_into_the_day)) THEN
+        RAISE NOTICE 'Cannot join meetings in the past';
+        RETURN NULL;
+    ELSE
+        RETURN NEW;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS employee_join_only_future_meetings_trigger ON Attends;
+
+CREATE TRIGGER employee_join_only_future_meetings_trigger
+AFTER INSERT ON Attends
+FOR EACH ROW EXECUTE FUNCTION employee_join_only_future_meetings_trigger();
+
+-- An approval can only be made for future meetings
+CREATE OR REPLACE FUNCTION approval_only_for_future_meetings_trigger()
+RETURNS TRIGGER AS $$
+DECLARE
+    current_hours_into_the_day INT := DATE_PART('HOUR', CURRENT_TIMESTAMP);
+BEGIN
+    IF (NEW.date < CURRENT_DATE OR (NEW.date == CURRENT_DATE AND NEW.start_hour <= current_hours_into_the_day)) THEN
+        RAISE NOTICE 'Cannot approve meetings of the past';
+        RETURN NULL;
+    ELSE
+        RETURN NEW;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS approval_only_for_future_meetings_trigger ON Bookings;
+
+CREATE TRIGGER approval_only_for_future_meetings_trigger
+AFTER INSERT OR UPDATE ON Bookings
+FOR EACH ROW EXECUTE FUNCTION approval_only_for_future_meetings_trigger();
+
+-- If a meeting room has its capacity changed, all future meetings that exceed the new capacity will be removed
+CREATE OR REPLACE FUNCTION check_future_meetings_on_capacity_change_trigger()
+RETURNS TRIGGER AS $$
+DECLARE
+    current_hours_into_the_day INT := DATE_PART('HOUR', CURRENT_TIMESTAMP);
+BEGIN
+    DELETE FROM Bookings 
+    WHERE ROW(floor, room, date, start_hour) IN 
+    (SELECT floor, room, date, start_hour
+        FROM Updates
+        NATURAL JOIN MeetingRooms
+        NATURAL JOIN Bookings
+        NATURAL JOIN Attends
+        WHERE capacity < NEW.capacity
+        AND date > NEW.date OR (date == NEW.date AND date > current_hours_into_the_day));
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS check_future_meetings_on_capacity_change_trigger ON Updates;
+
+CREATE TRIGGER check_future_meetings_on_capacity_change_trigger
+AFTER INSERT OR UPDATE ON Updates
+FOR EACH ROW EXECUTE FUNCTION check_future_meetings_on_capacity_change_trigger();
