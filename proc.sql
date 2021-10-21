@@ -357,3 +357,23 @@ DROP TRIGGER IF EXISTS prevent_creator_removal_trigger ON Attends;
 CREATE TRIGGER prevent_creator_removal_trigger
 BEFORE DELETE OR UPDATE ON Attends
 FOR EACH ROW EXECUTE FUNCTION prevent_creator_removal();
+
+CREATE OR REPLACE FUNCTION meeting_approver_department_check()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF (NEW.approver_id IS NOT NULL AND
+        ((SELECT department_id FROM Employees AS E WHERE E.id = NEW.approver_id)
+        IS DISTINCT FROM 
+        (SELECT department_id FROM MeetingRooms AS M WHERE M.floor = NEW.floor AND M.room = NEW.room))
+    ) THEN 
+        RAISE EXCEPTION 'Manager does not have permissions to approve selected meeting';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS meeting_approver_department_check_trigger ON Bookings;
+
+CREATE TRIGGER meeting_approver_department_check_trigger
+BEFORE INSERT OR UPDATE OF approver_id ON Bookings
+FOR EACH ROW EXECUTE FUNCTION meeting_approver_department_check();

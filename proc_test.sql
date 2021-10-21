@@ -1162,6 +1162,26 @@ DELETE FROM Attends WHERE employee_id = 2; -- Success
 CALL reset();
 -- END TEST
 
+-- TEST meeting_approver_department_check_trigger
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 2);
+INSERT INTO Superiors VALUES (1), (2);
+INSERT INTO Managers VALUES (1), (2);
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 1, NULL);
+-- TEST
+UPDATE Bookings SET approver_id = 2; -- Failure
+UPDATE Bookings SET approver_id = 1; -- Success
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 2, 1, 1); -- Success
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 3, 1, 2); -- Failure
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
 --
 DROP PROCEDURE IF EXISTS reset();
 SET client_min_messages TO NOTICE;
