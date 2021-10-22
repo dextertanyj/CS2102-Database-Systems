@@ -1035,6 +1035,60 @@ SELECT * FROM non_compliance(CURRENT_DATE - 3, CURRENT_DATE); -- Expected: (2,1)
 CALL reset();
 -- END TEST
 
+-- TEST triggers 12, 22, 23, 24
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2'), (3, 'Department 3');
+INSERT INTO Employees VALUES 
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
+    (3, 'Manager 3', 'Contact 3', 'manager3@company.com', NULL, 2),
+    (4, 'Resigned Manager 4', 'Contact 4', 'manager4@company.com', CURRENT_DATE, 1),
+    (5, 'Senior 5', 'Contact 5', 'senior5@company.com', NULL, 1),
+    (6, 'Junior 6', 'Contact 6', 'junior6@company.com', NULL, 1);
+INSERT INTO Juniors VALUES (6);
+INSERT INTO Superiors VALUES (1), (2), (3), (4), (5);
+INSERT INTO Seniors VALUES (5);
+INSERT INTO Managers VALUES (1), (2), (3), (4);
+INSERT INTO MeetingRooms VALUES
+    (3, 101, '3rd floor, room 101, Dept 1', 1),
+    (4, 101, '4th floor, room 101, Dept 2', 2);
+INSERT INTO Bookings VALUES
+    (3, 101, CURRENT_DATE, 10, 2, NULL),
+    (3, 101, CURRENT_DATE, 15, 2, NULL);
+INSERT INTO Attends VALUES
+    (1, 3, 101, CURRENT_DATE, 15),
+    (2, 3, 101, CURRENT_DATE, 15),
+    (6, 3, 101, CURRENT_DATE, 15);
+INSERT INTO Attends VALUES
+    (2, 3, 101, CURRENT_DATE, 10),
+    (6, 3, 101, CURRENT_DATE, 10);
+UPDATE Bookings SET approver_id = 1 WHERE 
+    floor = 3 AND room = 101 AND date = CURRENT_DATE AND start_hour = 15;
+-- TEST
+-- trigger 12
+INSERT INTO Juniors VALUES (1); -- Failure
+INSERT INTO Seniors VALUES (6); -- Failure
+INSERT INTO Managers VALUES (5); -- Failure
+
+-- trigger 22
+UPDATE Bookings SET approver_id = 2 WHERE 
+    floor = 3 AND room = 101 AND date = CURRENT_DATE AND start_hour = 15; -- Failure
+
+-- trigger 23
+INSERT INTO Attends VALUES (5, 3, 101, CURRENT_DATE, 15); -- Failure
+UPDATE Attends SET employee_id = 5 WHERE employee_id = 2; -- Failure
+DELETE FROM Attends WHERE employee_id = 2; -- Failure
+
+--trigger 24
+INSERT INTO Updates VALUES (1, 3, 101, CURRENT_DATE, 10); -- Success
+INSERT INTO Updates VALUES (6, 3, 101, CURRENT_DATE, 10); -- Failure
+INSERT INTO Updates VALUES (3, 3, 101, CURRENT_DATE, 10); -- Failure
+
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
 --
 DROP PROCEDURE IF EXISTS reset();
 SET client_min_messages TO NOTICE;
