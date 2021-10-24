@@ -1,3 +1,21 @@
+SET client_min_messages TO WARNING;
+CREATE OR REPLACE PROCEDURE reset()
+AS $$
+    TRUNCATE
+    Departments,
+    Employees,
+    Juniors,
+    Superiors,
+    Seniors,
+    Managers,
+    HealthDeclarations,
+    MeetingRooms,
+    Bookings,
+    Attends,
+    Updates 
+CASCADE;
+$$ LANGUAGE sql;
+
 -- TEST trigger 34 Meeting room booking or approval insert_employee_booking_success
 -- BEFORE TEST
 CALL reset();
@@ -295,3 +313,7 @@ UPDATE Updates SET manager_id = 3 WHERE manager_id = 1; -- Failure
 -- AFTER TEST
 CALL reset();
 -- TEST END
+
+--
+DROP PROCEDURE IF EXISTS reset();
+SET client_min_messages TO NOTICE;
