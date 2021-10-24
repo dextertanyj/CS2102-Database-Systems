@@ -1035,7 +1035,7 @@ INSERT INTO HealthDeclarations VALUES
 SELECT * FROM non_compliance(CURRENT_DATE - 3, CURRENT_DATE); -- Expected: (4,4), (5,2), (2,1), (3,1)
 -- AFTER TEST
 CALL reset();
--- END TEST
+-- TEST END
 
 -- TEST view_booking_report
 -- BEFORE TEST
@@ -1059,7 +1059,7 @@ INSERT INTO Bookings VALUES
 SELECT * FROM view_booking_report(CURRENT_DATE, 1); -- Expected: (1,1,2021-10-24,1,f), (1,1,2021-10-25,1,t), (1,1,2021-10-25,2,f), (1,1,2021-10-26,1,f)
 -- AFTER TEST
 CALL reset();
--- END TEST
+-- TEST END
 
 --
 DROP PROCEDURE IF EXISTS reset();
