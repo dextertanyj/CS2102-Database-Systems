@@ -1,17 +1,19 @@
 SET client_min_messages TO WARNING;
 CREATE OR REPLACE PROCEDURE reset()
 AS $$
-    TRUNCATE Departments CASCADE;
-    TRUNCATE Employees CASCADE;
-    TRUNCATE Juniors CASCADE;
-    TRUNCATE Superiors CASCADE;
-    TRUNCATE Seniors CASCADE;
-    TRUNCATE Managers CASCADE;
-    TRUNCATE HealthDeclarations CASCADE;
-    TRUNCATE MeetingRooms CASCADE;
-    TRUNCATE Bookings CASCADE;
-    TRUNCATE Attends CASCADE;
-    TRUNCATE Updates CASCADE;
+    TRUNCATE
+    Departments,
+    Employees,
+    Juniors,
+    Superiors,
+    Seniors,
+    Managers,
+    HealthDeclarations,
+    MeetingRooms,
+    Bookings,
+    Attends,
+    Updates 
+CASCADE;
 $$ LANGUAGE sql;
 
 -- TEST add_department_unique_name_unique_id_success
@@ -1030,7 +1032,31 @@ INSERT INTO HealthDeclarations VALUES
     (5, CURRENT_DATE - 2, 37.0),
     (5, CURRENT_DATE - 1, 37.0);
 -- TEST
-SELECT * FROM non_compliance(CURRENT_DATE - 3, CURRENT_DATE); -- Expected: (2,1), (3,1), (4,4), (5,2)
+SELECT * FROM non_compliance(CURRENT_DATE - 3, CURRENT_DATE); -- Expected: (4,4), (5,2), (2,1), (3,1)
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST view_booking_report
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+INSERT INTO Employees VALUES 
+    (1, 'Superior 1', 'Contact 1', 'superior1@company.com', NULL, 1),
+    (2, 'Superior 2', 'Contact 2', 'superior2@company.com', NULL, 1),
+    (3, 'Manager 3', 'Contact 3', 'manager3@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2), (3);
+INSERT INTO Managers VALUES (3);
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
+INSERT INTO Bookings VALUES
+    (1, 1, CURRENT_DATE + 2, 1, 1, NULL),
+    (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
+    (1, 1, CURRENT_DATE, 1, 1, NULL),
+    (1, 1, CURRENT_DATE + 1, 1, 1, 3),
+    (1, 1, CURRENT_DATE, 2, 2, NULL),
+    (1, 1, CURRENT_DATE, 3, 2, NULL);
+-- TEST
+SELECT * FROM view_booking_report(CURRENT_DATE, 1); -- Expected: (1,1,2021-10-24,1,f), (1,1,2021-10-25,1,t), (1,1,2021-10-25,2,f), (1,1,2021-10-26,1,f)
 -- AFTER TEST
 CALL reset();
 -- END TEST
