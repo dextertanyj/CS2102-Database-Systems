@@ -229,9 +229,11 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
 INSERT INTO Superiors VALUES (1);
 INSERT INTO Managers VALUES (1);
+COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
 -- TEST
 INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 1, NULL), (1, 1, CURRENT_DATE + 1, 2, 1, NULL);
@@ -244,12 +246,14 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES
 (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
 (2, 'Junior 2', 'Contact 2', 'junior2@company.com', NULL, 1);
 INSERT INTO Superiors VALUES (1);
 INSERT INTO Juniors VALUES (2);
 INSERT INTO Managers VALUES (1);
+COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
 INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 1, NULL), (1, 1, CURRENT_DATE + 1, 2, 1, NULL);
 INSERT INTO Attends VALUES (2, 1, 1, CURRENT_DATE + 1, 1);
@@ -266,11 +270,13 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
     (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 2);
 INSERT INTO Superiors VALUES (1), (2);
 INSERT INTO Managers VALUES (1), (2);
+COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
 INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 1, NULL);
 -- TEST
@@ -286,10 +292,12 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
 INSERT INTO Superiors VALUES (1);
 INSERT INTO Managers VALUES (1);
+COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
 -- TEST
 INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE - 1, 1, 1, NULL); -- Failure
