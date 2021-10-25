@@ -280,7 +280,7 @@ RETURNS SETOF RECORD AS $$
     FROM Attends a
     NATURAL JOIN Bookings b
     WHERE a.employee_id = e_id
-    AND date >= start_date
+    AND a.date >= start_date
     AND b.approver_id IS NOT NULL
     ORDER BY a.date ASC, a.start_hour ASC;
 $$ LANGUAGE sql;
@@ -300,7 +300,8 @@ BEGIN
             AND b.approver_id IS NULL
             AND m.department_id = (SELECT department_id 
                                     FROM Employees
-                                    WHERE id = manager_id);
+                                    WHERE id = manager_id)
+            ORDER BY b.date ASC, b.start_hour ASC;
     END IF;
 END;
 $$ LANGUAGE plpgsql;

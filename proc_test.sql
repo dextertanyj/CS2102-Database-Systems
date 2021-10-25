@@ -1033,7 +1033,7 @@ SELECT COUNT(*) FROM Attends; -- Returns 3
 CALL reset();
 -- TEST END
 
--- TEST unbook_room_non_existant_booking_failure
+-- TEST unbook_room_non_existent_booking_failure
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -1062,7 +1062,7 @@ SELECT COUNT(*) FROM Attends; -- Returns 3
 CALL reset();
 -- TEST END
 
--- TEST unbook_room_non_existant_room_failure
+-- TEST unbook_room_non_existent_room_failure
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -1121,6 +1121,96 @@ INSERT INTO HealthDeclarations VALUES
     (5, CURRENT_DATE - 1, 37.0);
 -- TEST
 SELECT * FROM non_compliance(CURRENT_DATE - 3, CURRENT_DATE); -- Expected: (2,1), (3,1), (4,4), (5,2)
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST join_meeting
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Superior 2', 'Contact 2', 'superior2@company.com', NULL, 1),
+    (3, 'Junior 3', 'Contact 3', 'junior3@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2);
+INSERT INTO Managers VALUES (1);
+INSERT INTO Juniors VALUES (3);
+INSERT INTO MeetingRooms VALUES (1, 1, 'Meeting Room 1', 1);
+COMMIT;
+INSERT INTO Bookings VALUES 
+    (1, 1, CURRENT_DATE + 1, 10, 2),
+    (1, 1, CURRENT_DATE + 1, 11, 2);
+
+CALL join_meeting(1, 1, CURRENT_DATE + 1, 10, 12, 3);
+CALL join_meeting(1, 1, CURRENT_DATE + 1, 10, 12, 2);
+
+-- TEST
+SELECT COUNT(*) FROM Attends WHERE ROW(floor, room, date, start_hour) = (1, 1, CURRENT_DATE + 1, 10); -- Expected: 2
+SELECT COUNT(*) FROM Attends WHERE ROW(floor, room, date, start_hour) = (1, 1, CURRENT_DATE + 1, 11); -- Expected: 2
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST leave_meeting
+
+-- TEST approve_meeting
+
+
+-- TEST view_future_meeting
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Superior 2', 'Contact 2', 'superior2@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2);
+INSERT INTO Managers VALUES (1);
+COMMIT;
+INSERT INTO MeetingRooms VALUES (1, 1, 'Meeting Room 1', 1);
+INSERT INTO Bookings VALUES
+    (1, 1, CURRENT_DATE - 1, 10, 1),
+    (1, 1, CURRENT_DATE, 11, 1),
+    (1, 1, CURRENT_DATE + 1, 11, 1),
+    (1, 1, CURRENT_DATE + 1, 10, 1),
+    (1, 1, CURRENT_DATE + 2, 10, 2),
+    (1, 1, CURRENT_DATE + 2, 11, 2);
+INSERT INTO Attends VALUES
+    (2, 1, 1, CURRENT_DATE - 1, 10),
+    (2, 1, 1, CURRENT_DATE, 11),
+    (2, 1, 1, CURRENT_DATE + 1, 11),
+    (2, 1, 1, CURRENT_DATE + 1, 10),
+    (2, 1, 1, CURRENT_DATE + 2, 10),
+    (2, 1, 1, CURRENT_DATE + 2, 11);
+UPDATE Bookings SET approver_id = 1
+    WHERE 1 = 1;
+-- TEST
+SELECT * FROM view_future_meeting(CURRENT_DATE, 2); -- Expected: (1, 1, CURRENT_DATE, 11), (1, 1, CURRENT_DATE + 1, 10), (1, 1, CURRENT_DATE + 1, 11), (1, 1, CURRENT_DATE + 2, 10), (1, 1, CURRENT_DATE + 2, 11);
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST view_manager_report
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Superior 2', 'Contact 2', 'superior2@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2);
+INSERT INTO Managers VALUES (1);
+COMMIT;
+INSERT INTO MeetingRooms VALUES (1, 1, 'Meeting Room 1', 1);
+INSERT INTO Bookings VALUES
+    (1, 1, '2021-11-20', 11, 1),
+    (1, 1, '2021-11-20', 10, 1),
+    (1, 1, '2021-11-21', 10, 2),
+    (1, 1, '2021-11-21', 11, 2);
+-- TEST
+SELECT * FROM view_manager_report('2021-10-26', 1); -- Expected: sorted order of all tuples inserted into Bookings table
 -- AFTER TEST
 CALL reset();
 -- END TEST
