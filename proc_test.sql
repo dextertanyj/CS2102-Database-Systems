@@ -72,6 +72,7 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
     (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 2),
@@ -82,6 +83,7 @@ INSERT INTO Juniors VALUES (5);
 INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
+COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1), (1, 2, 'Room 1-2', 2);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10), (2, 1, 2, CURRENT_DATE, 10);
 -- TEST
@@ -96,6 +98,7 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
     (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 2),
@@ -106,6 +109,7 @@ INSERT INTO Juniors VALUES (5);
 INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
+COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1), (1, 2, 'Room 1-2', 2);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10), (2, 1, 2, CURRENT_DATE, 10);
 -- TEST
@@ -120,6 +124,7 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
     (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 2),
@@ -130,6 +135,7 @@ INSERT INTO Juniors VALUES (5);
 INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
+COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1), (1, 2, 'Room 1-2', 2);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10), (2, 1, 2, CURRENT_DATE, 10);
 -- TEST
@@ -142,6 +148,7 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
     (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 2),
@@ -152,6 +159,7 @@ INSERT INTO Juniors VALUES (5);
 INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
+COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1), (1, 2, 'Room 1-2', 2);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10), (2, 1, 2, CURRENT_DATE, 10);
 -- TEST
@@ -164,6 +172,7 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
     (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 2),
@@ -174,6 +183,7 @@ INSERT INTO Juniors VALUES (5);
 INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
+COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1), (1, 2, 'Room 1-2', 2);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10), (2, 1, 2, CURRENT_DATE, 10);
 -- TEST
@@ -186,6 +196,7 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
     (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 2),
@@ -196,6 +207,7 @@ INSERT INTO Juniors VALUES (5);
 INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
+COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1), (1, 2, 'Room 1-2', 2);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10), (2, 1, 2, CURRENT_DATE, 10);
 -- TEST
@@ -208,6 +220,7 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
     (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 2),
@@ -218,6 +231,7 @@ INSERT INTO Juniors VALUES (5);
 INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
+COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1), (1, 2, 'Room 1-2', 2);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10), (2, 1, 2, CURRENT_DATE, 10);
 -- TEST
@@ -230,6 +244,7 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
     (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
@@ -241,6 +256,7 @@ INSERT INTO Juniors VALUES (6);
 INSERT INTO Superiors VALUES (1), (2), (3), (4), (5);
 INSERT INTO Seniors VALUES (5);
 INSERT INTO Managers VALUES (1), (2), (3), (4);
+COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 10);
 -- TEST
@@ -254,6 +270,7 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
     (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
@@ -265,6 +282,7 @@ INSERT INTO Juniors VALUES (6);
 INSERT INTO Superiors VALUES (1), (2), (3), (4), (5);
 INSERT INTO Seniors VALUES (5);
 INSERT INTO Managers VALUES (1), (2), (3), (4);
+COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 10);
 -- TEST
@@ -277,6 +295,7 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
     (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
@@ -288,6 +307,7 @@ INSERT INTO Juniors VALUES (6);
 INSERT INTO Superiors VALUES (1), (2), (3), (4), (5);
 INSERT INTO Seniors VALUES (5);
 INSERT INTO Managers VALUES (1), (2), (3), (4);
+COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 10);
 -- TEST
@@ -300,6 +320,7 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
     (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
@@ -311,6 +332,7 @@ INSERT INTO Juniors VALUES (6);
 INSERT INTO Superiors VALUES (1), (2), (3), (4), (5);
 INSERT INTO Seniors VALUES (5);
 INSERT INTO Managers VALUES (1), (2), (3), (4);
+COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 10);
 -- TEST
@@ -323,6 +345,7 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
     (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
@@ -334,6 +357,7 @@ INSERT INTO Juniors VALUES (6);
 INSERT INTO Superiors VALUES (1), (2), (3), (4), (5);
 INSERT INTO Seniors VALUES (5);
 INSERT INTO Managers VALUES (1), (2), (3), (4);
+COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 10);
 -- TEST
@@ -346,6 +370,7 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
     (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
@@ -357,6 +382,7 @@ INSERT INTO Juniors VALUES (6);
 INSERT INTO Superiors VALUES (1), (2), (3), (4), (5);
 INSERT INTO Seniors VALUES (5);
 INSERT INTO Managers VALUES (1), (2), (3), (4);
+COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 10);
 -- TEST
@@ -369,10 +395,12 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
 INSERT INTO Seniors VALUES (1);
 INSERT INTO Managers VALUES (1);
+COMMIT;
 -- TEST
 SELECT add_employee('John Doe', 'Contact 1', 'manager', 1); -- Success
 SELECT * FROM Managers AS M JOIN Employees AS E ON M.id = E.id WHERE E.name = 'John Doe';
@@ -384,10 +412,12 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
 INSERT INTO Seniors VALUES (1);
 INSERT INTO Managers VALUES (1);
+COMMIT;
 -- TEST
 SELECT add_employee('John Doe', 'Contact 1', 'manager', 1); -- Success
 SELECT * FROM Managers AS M JOIN Employees AS E ON M.id = E.id WHERE E.name = 'John Doe';
@@ -401,10 +431,12 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
 INSERT INTO Seniors VALUES (1);
 INSERT INTO Managers VALUES (1);
+COMMIT;
 -- TEST
 SELECT add_employee('John Doe', 'Contact 1', 'junior' , 1); -- Success
 SELECT * FROM Seniors AS J JOIN Employees AS E ON J.id = E.id WHERE E.name = 'John Doe';
@@ -416,10 +448,12 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
 INSERT INTO Seniors VALUES (1);
 INSERT INTO Managers VALUES (1);
+COMMIT;
 -- TEST
 SELECT add_employee('John Doe', 'Contact 1', 'junior', 2); -- Failure
 -- AFTER TEST
@@ -430,10 +464,12 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
 INSERT INTO Seniors VALUES (1);
 INSERT INTO Managers VALUES (1);
+COMMIT;
 -- TEST
 SELECT add_employee('John Doe', 'Contact 1', 'Unknown' , 1); -- Failure
 -- AFTER TEST
@@ -444,10 +480,12 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
 INSERT INTO Seniors VALUES (1);
 INSERT INTO Managers VALUES (1);
+COMMIT;
 -- TEST
 SELECT add_employee('Manager 1', 'Contact 2', 'manager' , 1); -- Success
 SELECT * FROM Seniors AS J JOIN Employees AS E ON J.id = E.id WHERE E.name = 'Manager 1' AND E.contact = 'Contact 2';
@@ -459,9 +497,13 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Resigned Manager 2', 'Contact 2', 'manager2@company.com', CURRENT_DATE - 1, 1),
+    (2, 'Resigned Manager 2', 'Contact 2', 'manager2@company.com', CURRENT_DATE - 1, 1);
+INSERT INTO Superiors VALUES (1), (2);
+INSERT INTO Managers VALUES (1), (2);
+COMMIT;
 -- TEST
 CALL remove_employee(1, CURRENT_DATE); -- Success
 SELECT E.resignation_date FROM Employees AS E WHERE E.id = 1; -- Returns CURRENT_DATE
@@ -473,9 +515,13 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Resigned Manager 2', 'Contact 2', 'manager2@company.com', CURRENT_DATE - 1, 1),
+    (2, 'Resigned Manager 2', 'Contact 2', 'manager2@company.com', CURRENT_DATE - 1, 1);
+INSERT INTO Superiors VALUES (1), (2);
+INSERT INTO Managers VALUES (1), (2);
+COMMIT;
 -- TEST
 CALL remove_employee(2, CURRENT_DATE); -- Failure
 SELECT E.resignation_date FROM Employees AS E WHERE E.id = 2; -- Returns CURRENT_DATE - 1
@@ -487,9 +533,13 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Resigned Manager 2', 'Contact 2', 'manager2@company.com', CURRENT_DATE - 1, 1),
+    (2, 'Resigned Manager 2', 'Contact 2', 'manager2@company.com', CURRENT_DATE - 1, 1);
+INSERT INTO Superiors VALUES (1), (2);
+INSERT INTO Managers VALUES (1), (2);
+COMMIT;
 -- TEST
 CALL remove_employee(3, CURRENT_DATE); -- Failure
 -- AFTER TEST
@@ -500,10 +550,12 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2'), (3, 'Department 3');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
 INSERT INTO Superiors VALUES (1);
 INSERT INTO Managers VALUES (1);
+COMMIT;
 INSERT INTO MeetingRooms VALUES
     (1, 1, 'Room 1', 1),
     (1, 2, 'Room 2', 1),
@@ -535,6 +587,7 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
     (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 2),
@@ -545,6 +598,7 @@ INSERT INTO Juniors VALUES (5);
 INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
+COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 INSERT INTO Bookings VALUES 
@@ -566,6 +620,7 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
     (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 2),
@@ -576,6 +631,7 @@ INSERT INTO Juniors VALUES (5);
 INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
+COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 INSERT INTO Bookings VALUES 
@@ -597,6 +653,7 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
     (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 2),
@@ -607,6 +664,7 @@ INSERT INTO Juniors VALUES (5);
 INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
+COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 INSERT INTO Bookings VALUES 
@@ -628,6 +686,7 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
     (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 2),
@@ -638,6 +697,7 @@ INSERT INTO Juniors VALUES (5);
 INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
+COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 INSERT INTO Bookings VALUES 
@@ -659,6 +719,7 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
     (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 2),
@@ -669,6 +730,7 @@ INSERT INTO Juniors VALUES (5);
 INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
+COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 INSERT INTO Bookings VALUES 
@@ -690,6 +752,7 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
     (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 2),
@@ -700,6 +763,7 @@ INSERT INTO Juniors VALUES (5);
 INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
+COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 INSERT INTO Bookings VALUES 
@@ -721,6 +785,7 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
     (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 2),
@@ -731,6 +796,7 @@ INSERT INTO Juniors VALUES (5);
 INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
+COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 INSERT INTO Bookings VALUES 
@@ -752,6 +818,7 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
     (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 2),
@@ -762,6 +829,7 @@ INSERT INTO Juniors VALUES (5);
 INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
+COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 INSERT INTO Bookings VALUES 
@@ -783,6 +851,7 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
     (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 2),
@@ -793,6 +862,7 @@ INSERT INTO Juniors VALUES (5);
 INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
+COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 INSERT INTO Bookings VALUES 
@@ -814,6 +884,7 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
     (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 2),
@@ -824,6 +895,7 @@ INSERT INTO Juniors VALUES (5);
 INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
+COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 INSERT INTO Bookings VALUES 
@@ -845,6 +917,7 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
     (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 2),
@@ -855,6 +928,7 @@ INSERT INTO Juniors VALUES (5);
 INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
+COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 INSERT INTO Bookings VALUES 
@@ -876,11 +950,13 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
     (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1);
 INSERT INTO Superiors VALUES (1), (2);
 INSERT INTO Managers VALUES (1), (2);
+COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 INSERT INTO Bookings VALUES 
@@ -903,11 +979,13 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
     (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1);
 INSERT INTO Superiors VALUES (1), (2);
 INSERT INTO Managers VALUES (1), (2);
+COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 INSERT INTO Bookings VALUES 
@@ -930,11 +1008,13 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
     (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1);
 INSERT INTO Superiors VALUES (1), (2);
 INSERT INTO Managers VALUES (1), (2);
+COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 INSERT INTO Bookings VALUES 
@@ -957,11 +1037,13 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
     (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1);
 INSERT INTO Superiors VALUES (1), (2);
 INSERT INTO Managers VALUES (1), (2);
+COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 INSERT INTO Bookings VALUES 
@@ -984,11 +1066,13 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
     (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1);
 INSERT INTO Superiors VALUES (1), (2);
 INSERT INTO Managers VALUES (1), (2);
+COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 INSERT INTO Bookings VALUES 
@@ -1011,12 +1095,18 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2'), (3, 'Department 3');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
     (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 2),
     (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE - 1, 1),
     (4, 'Senior 4', 'Contact 4', 'senior4@company.com', NULL, 1),
     (5, 'Junior 5', 'Contact 5', 'junior5@company.com', NULL, 1);
+INSERT INTO Juniors VALUES (5);
+INSERT INTO Superiors VALUES (1), (2), (3), (4);
+INSERT INTO Managers VALUES (1), (2), (3);
+INSERT INTO Seniors VALUES (4);
+COMMIT;
 INSERT INTO HealthDeclarations VALUES
     (1, CURRENT_DATE - 3, 37.0),
     (1, CURRENT_DATE - 2, 37.0),
