@@ -122,30 +122,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION non_compliance
-(IN start_date DATE, IN end_date DATE, OUT employee_id INT, OUT number_of_days INT)
-RETURNS SETOF RECORD AS $$
-WITH CTE AS (
-    SELECT H.id AS id, COUNT(*) AS days_declared
-    FROM HealthDeclarations AS H
-    WHERE H.date BETWEEN start_date AND end_date 
-    GROUP BY H.id
-) SELECT E.id, COALESCE(
-        (CASE WHEN E.resignation_date < end_date THEN resignation_date ELSE end_date END) - start_date - C.days_declared + 1,
-        (CASE WHEN E.resignation_date < end_date THEN resignation_date ELSE end_date END) - start_date + 1
-    )
-FROM Employees AS E LEFT JOIN CTE AS C ON E.id = C.id
-WHERE (E.resignation_date IS NULL OR E.resignation_date >= start_date)
-    AND (C.days_declared IS NULL OR C.days_declared < end_date - start_date + 1);
-$$ LANGUAGE sql;
-
-CREATE OR REPLACE FUNCTION view_booking_report
-(IN start_date DATE, IN employee_id INT, OUT floor_number INT, OUT room_number INT, OUT date DATE, OUT start_hour INT, OUT is_approved BOOLEAN)
-RETURNS SETOF RECORD AS $$
-    SELECT floor AS floor_number, room AS room_number, date, start_hour, CASE WHEN approver_id IS NULL THEN FALSE ELSE TRUE END AS is_approved 
-    FROM Bookings 
-    WHERE date = start_date AND creator_id = employee_id;
-$$ LANGUAGE sql;
+-------------------------- CORE --------------------------
 
 CREATE OR REPLACE VIEW RoomCapacity AS 
 SELECT floor, room, date, capacity
@@ -185,5 +162,145 @@ BEGIN
         DELETE FROM Bookings AS B WHERE B.floor = unbook_room.floor AND B.room = unbook_room.room AND B.creator_id = unbook_room.employee_id AND B.start_hour BETWEEN unbook_room.start_hour AND (unbook_room.end_hour - 1);
         start_hour := start_hour + 1;
     END LOOP;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE VIEW latest_recorded_temperature AS
+SELECT id, temperature, date
+FROM HealthDeclarations h1
+WHERE h1.date >= (SELECT MAX(h2.date) FROM HealthDeclarations h2
+                    WHERE h1.id = h2.id
+                    GROUP BY h2.id);
+
+CREATE OR REPLACE VIEW resigned_employees AS
+SELECT id, name, contact_number, email, resignation_date, department_id
+FROM Employees
+WHERE resignation_date IS NOT NULL;
+
+CREATE OR REPLACE PROCEDURE join_meeting
+(floor_number INT, room_number INT, join_date DATE, starting_hour INT, ending_hour INT, e_id INT)
+AS $$
+BEGIN
+    WHILE starting_hour < ending_hour LOOP
+        INSERT INTO Attends(employee_id, floor, room, date, start_hour) VALUES (e_id, floor_number, room_number, join_date, starting_hour);
+        starting_hour := starting_hour + 1;
+    END LOOP;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE PROCEDURE leave_meeting
+(floor_number INT, room_number INT, meeting_date DATE, starting_hour INT, ending_hour INT, e_id INT)
+AS $$
+BEGIN
+    -- check if the employee is even inside the booking
+    IF (SELECT employee_id
+            FROM Attends
+            WHERE employee_id = e_id
+            AND floor = floor_number
+            AND room = room_number
+            AND date = meeting_date
+            AND start_hour = starting_hour) IS NULL THEN
+        RAISE EXCEPTION 'Employee % does not attend this meeting', e_id;
+    -- check if the booking has already been approved
+    ELSIF (SELECT approver_id
+            FROM Bookings
+            WHERE floor = floor_number
+            AND room = room_number
+            AND date = meeting_date
+            AND start_hour = starting_hour) IS NOT NULL THEN
+        RAISE EXCEPTION 'Meeting has already been approved';
+    ELSE
+        LOOP
+            EXIT WHEN starting_hour = ending_hour;
+            DELETE FROM Attends 
+            WHERE employee_id = e_id
+            AND floor = floor_number
+            AND room = room_number
+            AND date = meeting_date
+            AND start_hour = starting_hour;
+            starting_hour := starting_hour + 1;
+        END LOOP;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE PROCEDURE approve_meeting
+(floor_number INT, room_number INT, meeting_date DATE, starting_hour INT, ending_hour INT, manager_id INT)
+AS $$
+BEGIN
+    IF (SELECT id FROM Managers WHERE id = manager_id) IS NULL THEN
+        RAISE EXCEPTION 'Employeee % is not a manager', manager_id;
+    -- manager approving belongs to the a different department
+    ELSIF (SELECT department_id FROM Employees WHERE id = manager_id) <> (SELECT department_id FROM MeetingRooms WHERE floor = floor_number AND room = room_number) THEN
+        RAISE EXCEPTION 'Approving manager does not belong to the same department as meeting room';
+    ELSE
+        WHILE starting_hour < ending_hour LOOP
+            UPDATE Bookings SET approver_id = manager_id
+            WHERE floor = floor_number
+            AND room = room_number
+            AND date = meeting_date
+            AND start_hour = starting_hour;
+            starting_hour := starting_hour + 1;
+        END LOOP;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+-------------------------- ADMIN --------------------------
+
+CREATE OR REPLACE FUNCTION non_compliance
+(IN start_date DATE, IN end_date DATE, OUT employee_id INT, OUT number_of_days INT)
+RETURNS SETOF RECORD AS $$
+WITH CTE AS (
+    SELECT H.id AS id, COUNT(*) AS days_declared
+    FROM HealthDeclarations AS H
+    WHERE H.date BETWEEN start_date AND end_date 
+    GROUP BY H.id
+) SELECT E.id, COALESCE(
+        (CASE WHEN E.resignation_date < end_date THEN resignation_date ELSE end_date END) - start_date - C.days_declared + 1,
+        (CASE WHEN E.resignation_date < end_date THEN resignation_date ELSE end_date END) - start_date + 1
+    )
+FROM Employees AS E LEFT JOIN CTE AS C ON E.id = C.id
+WHERE (E.resignation_date IS NULL OR E.resignation_date >= start_date)
+    AND (C.days_declared IS NULL OR C.days_declared < end_date - start_date + 1);
+$$ LANGUAGE sql;
+
+CREATE OR REPLACE FUNCTION view_booking_report
+(IN start_date DATE, IN employee_id INT, OUT floor_number INT, OUT room_number INT, OUT date DATE, OUT start_hour INT, OUT is_approved BOOLEAN)
+RETURNS SETOF RECORD AS $$
+    SELECT floor AS floor_number, room AS room_number, date, start_hour, CASE WHEN approver_id IS NULL THEN FALSE ELSE TRUE END AS is_approved 
+    FROM Bookings 
+    WHERE date = start_date AND creator_id = employee_id;
+$$ LANGUAGE sql;
+
+CREATE OR REPLACE FUNCTION view_future_meeting
+(IN start_date DATE, IN e_id INT, OUT floor INT, OUT room INT, OUT date DATE, OUT start_hour INT)
+RETURNS SETOF RECORD AS $$
+    SELECT a.floor, a.room, a.date, a.start_hour
+    FROM Attends a
+    NATURAL JOIN Bookings b
+    WHERE a.employee_id = e_id
+    AND date >= start_date
+    AND b.approver_id IS NOT NULL
+    ORDER BY a.date ASC, a.start_hour ASC;
+$$ LANGUAGE sql;
+
+CREATE OR REPLACE FUNCTION view_manager_report
+(IN start_date DATE, IN manager_id INT, OUT floor INT, OUT room INT, OUT date DATE, OUT start_hour INT, OUT creator_id INT, OUT approval_id INT)
+RETURNS SETOF RECORD AS $$
+BEGIN
+    IF (SELECT id FROM Managers WHERE id = manager_id) IS NULL THEN
+        RETURN;
+    ELSE
+        RETURN QUERY
+            SELECT b.floor, b.room, b.date, b.start_hour, b.creator_id, b.approver_id
+            FROM Bookings b
+            NATURAL JOIN MeetingRooms m
+            WHERE b.date >= start_date
+            AND b.approver_id IS NULL
+            AND m.department_id = (SELECT department_id 
+                                    FROM Employees
+                                    WHERE id = manager_id);
+    END IF;
 END;
 $$ LANGUAGE plpgsql;
