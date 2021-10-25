@@ -193,12 +193,8 @@ $$ LANGUAGE plpgsql;
 -- trigger 12 non-overlapping junior
 CREATE OR REPLACE FUNCTION check_junior_insertion() RETURNS TRIGGER AS $$
 BEGIN
-    IF NEW.id IN (SELECT id FROM Seniors) THEN
-        RAISE EXCEPTION 'Employee % already exists in Seniors', NEW.id;
-        RETURN NULL;
-    ELSIF NEW.id IN (SELECT id FROM Managers) THEN
-        RAISE EXCEPTION 'Employee % already exists in Managers', NEW.id;
-        RETURN NULL;
+    IF NEW.id IN (SELECT id FROM Superiors) THEN
+        RAISE EXCEPTION 'Employee % already exists in Superiors', NEW.id;
     END IF;
     RETURN NEW;
 END;
@@ -213,12 +209,10 @@ FOR EACH ROW EXECUTE FUNCTION check_junior_insertion();
 -- trigger 12 non-overlapping senior
 CREATE OR REPLACE FUNCTION check_senior_insertion() RETURNS TRIGGER AS $$
 BEGIN
-    IF NEW.id IN (SELECT id FROM Juniors) THEN
-        RAISE EXCEPTION 'Employee % already exists in Juniors', NEW.id;
-        RETURN NULL;
+    IF NEW.id NOT IN (SELECT id FROM Superiors) THEN
+        RAISE EXCEPTION 'Employee % does not exist in Superiors', NEW.id;
     ELSIF NEW.id IN (SELECT id FROM Managers) THEN
         RAISE EXCEPTION 'Employee % already exists in Managers', NEW.id;
-        RETURN NULL;
     END IF;
     RETURN NEW;
 END;
@@ -233,12 +227,10 @@ FOR EACH ROW EXECUTE FUNCTION check_senior_insertion();
 -- trigger 12 non-overlapping manager
 CREATE OR REPLACE FUNCTION check_manager_insertion() RETURNS TRIGGER AS $$
 BEGIN
-    IF NEW.id IN (SELECT id FROM Juniors) THEN
-        RAISE EXCEPTION 'Employee % already exists in Juniors', NEW.id;
-        RETURN NULL;
+    IF NEW.id NOT IN (SELECT id FROM Superiors) THEN
+        RAISE EXCEPTION 'Employee % does not exist in Superiors', NEW.id;
     ELSIF NEW.id IN (SELECT id FROM Seniors) THEN
         RAISE EXCEPTION 'Employee % already exists in Seniors', NEW.id;
-        RETURN NULL;
     END IF;
     RETURN NEW;
 END;
@@ -260,7 +252,6 @@ BEGIN
             AND start_hour = NEW.start_hour) IS NOT NULL THEN
         RAISE EXCEPTION 'Booking (floor: %, room: %, date: %, start_hour: %) has already been approved', 
             NEW.floor, NEW.room, NEW.date, NEW.start_hour;
-        RETURN NULL;
     END IF;
     RETURN NEW;
 END;
@@ -283,7 +274,6 @@ BEGIN
                 AND start_hour = OLD.start_hour) IS NOT NULL THEN
             RAISE EXCEPTION 'Booking (floor: %, room: %, date: %, start_hour: %) has already been approved.', 
                 OLD.floor, OLD.room, OLD.date, OLD.start_hour;
-            RETURN NULL;
         END IF;
         RETURN OLD;
     ELSE
@@ -294,7 +284,6 @@ BEGIN
                 AND start_hour = NEW.start_hour) IS NOT NULL THEN
             RAISE EXCEPTION 'Booking (floor: %, room: %, date: %, start_hour: %) has already been approved.', 
                 NEW.floor, NEW.room, NEW.date, NEW.start_hour;           
-            RETURN NULL;
         END IF;
         RETURN NEW;
     END IF;
@@ -310,14 +299,9 @@ FOR EACH ROW EXECUTE FUNCTION check_attends_change();
 -- trigger 24 Only managers in same departments have permission to change capacity
 CREATE OR REPLACE FUNCTION check_update_capacity_perms() RETURNS TRIGGER AS $$
 BEGIN
-    IF NEW.manager_id NOT IN (SELECT id FROM Managers) THEN
-        RAISE EXCEPTION 'Only Managers have permission to update rooms';
-        RETURN NULL;
-    END IF;
     IF (SELECT department_id FROM Employees WHERE id = NEW.manager_id) <>
         (SELECT department_id FROM MeetingRooms WHERE floor = NEW.floor AND room = NEW.room) THEN
         RAISE EXCEPTION 'Manager does not have permissions to update this room';
-        RETURN NULL;
     END IF;
     RETURN NEW;
 END;
