@@ -250,7 +250,7 @@ BEGIN
             AND B.date = OLD.date 
             AND B.start_hour = OLD.start_hour)
     ) THEN
-        RAISE EXCEPTION 'Unable to update or remove employee attendance'
+        RAISE EXCEPTION 'Unable to update or remove employee attendance';
     END IF;
     OLD = COALESCE(NEW, OLD);
     RETURN OLD;
