@@ -309,6 +309,125 @@ UPDATE Bookings SET date = CURRENT_DATE + 2 WHERE date = CURRENT_DATE + 1;
 CALL reset();
 -- END TEST
 
+-- TEST approval_for_future_meetings_only_allow_future_meeting_bookings
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2);
+INSERT INTO Managers VALUES (1);
+INSERT INTO Seniors VALUES (2);
+COMMIT;
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
+-- TEST
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 2, NULL);
+UPDATE Bookings SET approver_id = 1 WHERE ROW (floor, room, date, start_hour) = (1, 1, CURRENT_DATE + 1, 1); -- SUCCESS
+SELECT COUNT(*) from Bookings WHERE approver_id IS NOT NULL; -- Expected: 1
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST approval_for_future_meetings_past_meetings_failure ------------- CANNOT TEST IT NOW YET
+-- BEFORE TEST
+CALL reset();
+ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+ALTER TABLE Attends DISABLE TRIGGER employee_join_only_future_meetings_trigger;
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2);
+INSERT INTO Managers VALUES (1);
+INSERT INTO Seniors VALUES (2);
+COMMIT;
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
+-- TEST
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE - 1, 1, 2, NULL);
+UPDATE Bookings SET approver_id = 1 WHERE ROW (floor, room, date, start_hour) = (1, 1, CURRENT_DATE - 1, 1); -- RAISE EXCEPTION: Cannot approve meetings of the past
+SELECT COUNT(*) from Bookings WHERE approver_id IS NOT NULL; -- Expected: 0
+-- AFTER TEST
+ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+ALTER TABLE Attends ENABLE TRIGGER employee_join_only_future_meetings_trigger;
+CALL reset();
+-- END TEST
+
+-- TEST employee_join_only_future_meetings_trigger_success
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2);
+INSERT INTO Managers VALUES (1);
+INSERT INTO Seniors VALUES (2);
+COMMIT;
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
+-- TEST
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 2, NULL);
+INSERT INTO Attends VALUES (1, 1, 1, CURRENT_DATE + 1, 1); -- Should pass
+SELECT COUNT(*) from Attends; -- Expected: 2
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST employee_join_only_future_meetings_trigger_failure
+-- BEFORE TEST
+CALL reset();
+ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2);
+INSERT INTO Managers VALUES (1);
+INSERT INTO Seniors VALUES (2);
+COMMIT;
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
+-- TEST
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE - 1, 1, 2, NULL); -- EXCEPTION RAISE: Cannot join meetings in the past
+SELECT COUNT(*) from Attends; -- Expected: 0
+-- AFTER TEST
+ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+CALL reset();
+-- END TEST
+
+-- TEST check_future_meetings_on_capacity_change_trigger_success
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1),
+    (3, 'Junior 3', 'Contact 3', 'junior3@company.com', NULL, 1),
+    (4, 'Junior 4', 'Contact 4', 'junior4@company.com', NULL, 1),
+    (5, 'Junior 5', 'Contact 5', 'junior5@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2);
+INSERT INTO Managers VALUES (1);
+INSERT INTO Seniors VALUES (2);
+INSERT INTO Juniors VALUES (3), (4), (5);
+COMMIT;
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 3, 5);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 4);
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 2, NULL);
+-- TEST
+INSERT INTO Attends VALUES (1, 1, 1, CURRENT_DATE + 1, 1);
+INSERT INTO Attends VALUES (3, 1, 1, CURRENT_DATE + 1, 1);
+INSERT INTO Attends VALUES (4, 1, 1, CURRENT_DATE + 1, 1);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 2);
+SELECT COUNT(*) from Bookings; -- Expected: 0
+SELECT COUNT(*) from Attends; -- Expected: 0
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
 --
 DROP PROCEDURE IF EXISTS reset();
 SET client_min_messages TO NOTICE;
