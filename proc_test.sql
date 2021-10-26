@@ -1101,7 +1101,7 @@ BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
     (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 2),
-    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE - 1, 1),
+    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', NULL, 1),
     (4, 'Senior 4', 'Contact 4', 'senior4@company.com', NULL, 1),
     (5, 'Junior 5', 'Contact 5', 'junior5@company.com', NULL, 1);
 INSERT INTO Juniors VALUES (5);
@@ -1121,6 +1121,8 @@ INSERT INTO HealthDeclarations VALUES
     (3, CURRENT_DATE - 1, 37.0),
     (5, CURRENT_DATE - 2, 37.0),
     (5, CURRENT_DATE - 1, 37.0);
+-- Set Manager 3 to Resigned after declaring temperature (Otherwise temperature declaration is not allowed by trigger)
+UPDATE Employees SET resignation_date = CURRENT_DATE - 1 WHERE id = 3;
 -- TEST
 SELECT * FROM non_compliance(CURRENT_DATE - 3, CURRENT_DATE); -- Expected: (4,4), (5,2), (2,1), (3,1)
 -- AFTER TEST
