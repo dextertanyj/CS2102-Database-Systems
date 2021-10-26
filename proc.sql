@@ -10,17 +10,7 @@ RETURNS SETOF RECORD AS $$
     ) AS LatestRelevantUpdate;
 $$ LANGUAGE sql;
 
-CREATE OR REPLACE FUNCTION removed_department_guard
-(IN department_id INT, OUT resigned BOOLEAN)
-RETURNS BOOLEAN AS $$
-    SELECT CASE WHEN D.removal_date IS NULL THEN false ELSE true END AS resigned FROM Departments AS D WHERE D.id = department_id;
-$$ LANGUAGE sql;
-
-CREATE OR REPLACE FUNCTION resigned_employee_guard
-(IN employee_id INT, OUT resigned BOOLEAN)
-RETURNS BOOLEAN AS $$
-    SELECT CASE WHEN E.resignation_date IS NULL THEN false ELSE true END AS resigned FROM Employees AS E WHERE E.id = employee_id;
-$$ LANGUAGE sql;
+-------------------------- ADMIN --------------------------
 
 CREATE OR REPLACE PROCEDURE add_department 
 (id INT, name VARCHAR(255)) 
@@ -29,14 +19,17 @@ AS $$
 $$ LANGUAGE sql;
 
 CREATE OR REPLACE PROCEDURE remove_department
-(department_id INT, date DATE)
+(id INT, date DATE)
 AS $$
 DECLARE
 BEGIN
-    IF ((SELECT COUNT(*) FROM Departments WHERE Departments.id = department_id) <> 1) THEN
-        RAISE EXCEPTION 'Department not found';
+    IF (NOT EXISTS (SELECT * FROM Departments AS D WHERE D.id = remove_department.id)) THEN
+        RAISE EXCEPTION 'Department % not found', remove_department.id;
     END IF;
-    UPDATE Departments SET removal_date = date WHERE Departments.id = department_id;
+    IF ((SELECT removal_date FROM Departments AS D WHERE D.id = remove_department.id) IS NOT NULL) THEN
+        RAISE EXCEPTION 'Department % has been removed', remove_department.id;
+    END IF;
+    UPDATE Departments SET removal_date = date WHERE Departments.id = remove_department.id;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -46,9 +39,6 @@ AS $$
 DECLARE
     manager_department_id INT;
 BEGIN
-    IF (SELECT * FROM resigned_employee_guard(manager_id)) THEN
-        RAISE EXCEPTION 'Manager has resigned' USING HINT = 'Manager has resigned and can no longer add rooms';
-    END IF;
     SELECT E.department_id INTO manager_department_id FROM Employees AS E WHERE E.id = manager_id;
     INSERT INTO MeetingRooms VALUES (floor, room, name, manager_department_id);
     INSERT INTO Updates VALUES (manager_id, floor, room, effective_date, capacity);
@@ -58,15 +48,13 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE PROCEDURE change_capacity
 (floor INT, room INT, capacity INT, manager_id INT, date DATE)
 AS $$
-DECLARE
-    manager_department_id INT;
 BEGIN
-    SELECT E.department_id INTO manager_department_id FROM Employees AS E WHERE E.id = manager_id;
-    IF ((SELECT R.department_id FROM MeetingRooms AS R WHERE R.floor = change_capacity.floor AND R.room = change_capacity.room) <> manager_department_id) THEN
-        RAISE EXCEPTION 'Manager department and room department mismatch' USING HINT = 'Manager and room should belong to the same department';
-    END IF;
-    IF ((SELECT COUNT(*) FROM updates AS U WHERE U.floor = change_capacity.floor AND U.room = change_capacity.room AND U.date = change_capacity.date) = 1) THEN
-        UPDATE Updates AS U SET manager_id = change_capacity.manager_id, capacity = change_capacity.capacity WHERE U.floor = change_capacity.floor AND U.room = change_capacity.room AND U.date = change_capacity.date;
+    IF (EXISTS 
+        (SELECT * FROM Updates AS U
+        WHERE U.floor = change_capacity.floor AND U.room = change_capacity.room AND U.date = change_capacity.date)
+    ) THEN
+        UPDATE Updates AS U SET manager_id = change_capacity.manager_id, capacity = change_capacity.capacity
+        WHERE U.floor = change_capacity.floor AND U.room = change_capacity.room AND U.date = change_capacity.date;
     ELSE
         INSERT INTO Updates VALUES (manager_id, floor, room, date, capacity);
     END IF;
@@ -103,12 +91,11 @@ CREATE OR REPLACE FUNCTION add_employee
 (IN name VARCHAR(255), IN contact_number VARCHAR(20), IN type VARCHAR(7), IN department_id INT, OUT employee_id INT, OUT employee_email VARCHAR(255))
 RETURNS RECORD AS $$
 BEGIN
-    If (SELECT * FROM removed_department_guard(department_id)) THEN
-        RAISE EXCEPTION 'Department has been removed' USING HINT = 'Department has been removed and no new employees can be assigned to it';
-    END IF;
     name := TRIM(name);
     SELECT generate_email(name) INTO employee_email;
-    INSERT INTO Employees (name, contact_number, email, department_id) VALUES (name, contact_number, employee_email, department_id) RETURNING Employees.id INTO employee_id;
+    INSERT INTO Employees (name, contact_number, email, department_id) 
+        VALUES (name, contact_number, employee_email, department_id) 
+        RETURNING Employees.id INTO employee_id;
     IF (LOWER(type) = 'junior') THEN 
         INSERT INTO Juniors VALUES (employee_id);
     ELSIF (LOWER(type) = 'senior') THEN 
@@ -124,13 +111,13 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE PROCEDURE remove_employee
-(employee_id INT, date Date)
+(id INT, date Date)
 AS $$
 BEGIN
-    IF ((SELECT COUNT(*) FROM Employees AS E WHERE E.id = remove_employee.employee_id) <> 1) THEN
-        RAISE EXCEPTION 'Employee not found';
+    IF (NOT EXISTS(SELECT COUNT(*) FROM Employees AS E WHERE E.id = remove_employee.id)) THEN
+        RAISE EXCEPTION 'Employee % not found', remove_employee.id;
     END IF;
-    UPDATE Employees SET resignation_date = date WHERE id = employee_id;
+    UPDATE Employees AS E SET resignation_date = date WHERE E.id = remove_employee.id;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -139,18 +126,23 @@ SELECT floor, room, date, capacity
 FROM Updates NATURAL JOIN (SELECT floor, room, MAX(date) AS date FROM Updates GROUP BY (floor, room)) AS LatestUpdate;
 
 CREATE OR REPLACE FUNCTION search_room
-(IN search_capacity INT, IN search_date DATE, IN search_start_hour INT, IN search_end_hour INT, OUT floor INT, OUT room INT, OUT department_id INT, OUT capacity INT)
+(IN required_capacity INT, IN date DATE, IN start_hour INT, IN end_hour INT, OUT floor INT, OUT room INT, OUT department_id INT, OUT capacity INT)
 RETURNS SETOF RECORD AS $$
+BEGIN
+    IF (SELECT timestamp_converter(search_room.date, start_hour) < NOW()) THEN
+        RAISE EXCEPTION 'Unable to search for past time period';
+    END IF;
     WITH RelevantBookings AS (
         SELECT *
         FROM Bookings AS B
-        WHERE B.start_hour BETWEEN search_start_hour AND (search_end_hour - 1)
-        AND B.date = search_date
+        WHERE B.start_hour BETWEEN serach_room.start_hour AND (search_room.end_hour - 1)
+        AND B.date = search_room.date
     ) SELECT M.floor AS floor, M.room AS room, M.department_id AS department_id, R.capacity AS capacity
     FROM MeetingRooms AS M JOIN RoomCapacity AS R ON M.floor = R.floor AND M.room = R.room LEFT JOIN RelevantBookings AS B ON M.floor = B.floor AND M.room = B.room
-    WHERE R.capacity >= search_capacity AND B.creator_id IS NULL
+    WHERE R.capacity >= search_room.required_capacity AND B.creator_id IS NULL
     ORDER BY R.capacity ASC;
-$$ LANGUAGE sql;
+END;
+$$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE PROCEDURE book_room
 (floor INT, room INT, date DATE, start_hour INT, end_hour INT, employee_id INT)
@@ -158,7 +150,6 @@ AS $$
 BEGIN
     WHILE start_hour < end_hour LOOP
         INSERT INTO Bookings VALUES (book_room.floor, book_room.room, book_room.date, book_room.start_hour, book_room.employee_id);
-        INSERT INTO Attends VALUES (book_room.employee_id, book_room.floor, book_room.room, book_room.date, book_room.start_hour);
         start_hour := start_hour + 1;
     END LOOP;
 END;
@@ -169,9 +160,29 @@ CREATE OR REPLACE PROCEDURE unbook_room
 AS $$
 BEGIN
     WHILE start_hour < end_hour LOOP
-        DELETE FROM Bookings AS B WHERE B.floor = unbook_room.floor AND B.room = unbook_room.room AND B.creator_id = unbook_room.employee_id AND B.start_hour BETWEEN unbook_room.start_hour AND (unbook_room.end_hour - 1);
+        IF (NOT EXISTS 
+            (SELECT COUNT(*) FROM Bookings AS B 
+            WHERE B.floor = unbook_room.floor 
+                AND B.room = unbook_room.room 
+                AND B.start_hour = unbook_room.start_hour)
+        ) THEN
+            RAISE EXCEPTION 'No existing booking found for floor:% room:% date:% start hour:%', unbook_room.floor, unbook_room.room, unbook_room.date, unbook_room.start_hour;
+        END IF;
+        IF ((SELECT COUNT(*) FROM Bookings AS B 
+            WHERE B.floor = unbook_room.floor 
+                AND B.room = unbook_room.room 
+                AND B.start_hour = unbook_room.start_hour) 
+            IS DISTINCT FROM unbook_room.employee_id
+        ) THEN
+            RAISE EXCEPTION 'Employee does not have permission to remove booking for floor:% room:% date:% start hour:%', unbook_room.floor, unbook_room.room, unbook_room.date, unbook_room.start_hour;
+        END IF;
         start_hour := start_hour + 1;
     END LOOP;
+    DELETE FROM Bookings AS B
+    WHERE B.floor = unbook_room.floor
+        AND B.room = unbook_room.room
+        AND B.creator_id = unbook_room.employee_id
+        AND B.start_hour BETWEEN unbook_room.start_hour AND (unbook_room.end_hour - 1);
 END;
 $$ LANGUAGE plpgsql;
 
