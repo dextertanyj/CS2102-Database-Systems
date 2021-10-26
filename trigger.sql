@@ -213,3 +213,88 @@ DROP TRIGGER IF EXISTS check_resignation_updates_trigger ON Updates;
 CREATE TRIGGER check_resignation_updates_trigger
 BEFORE INSERT OR UPDATE ON Updates
 FOR EACH ROW EXECUTE FUNCTION check_resignation_updates();
+
+CREATE OR REPLACE FUNCTION insert_meeting_creator()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF (NOT EXISTS 
+        (SELECT * 
+        FROM Attends AS A 
+        WHERE A.employee_id = NEW.creator_id 
+            AND A.room = NEW.room 
+            AND A.floor = NEW.floor 
+            AND A.date = NEW.date 
+            AND A.start_hour = NEW.start_hour)
+    ) THEN
+        INSERT INTO Attends VALUES (NEW.creator_id, NEW.floor, NEW.room, NEW.date, NEW.start_hour);
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS insert_meeting_creator_trigger ON Bookings;
+
+CREATE TRIGGER insert_meeting_creator_trigger
+AFTER INSERT OR UPDATE ON Bookings
+FOR EACH ROW EXECUTE FUNCTION insert_meeting_creator();
+
+CREATE OR REPLACE FUNCTION prevent_creator_removal()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF (EXISTS
+        (SELECT * 
+        FROM Bookings AS B 
+        WHERE B.creator_id = OLD.employee_id 
+            AND B.room = OLD.room 
+            AND B.floor = OLD.floor 
+            AND B.date = OLD.date 
+            AND B.start_hour = OLD.start_hour)
+    ) THEN
+        RAISE EXCEPTION 'Unable to update or remove employee attendance';
+    END IF;
+    OLD = COALESCE(NEW, OLD);
+    RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS prevent_creator_removal_trigger ON Attends;
+
+CREATE TRIGGER prevent_creator_removal_trigger
+BEFORE DELETE OR UPDATE ON Attends
+FOR EACH ROW EXECUTE FUNCTION prevent_creator_removal();
+
+CREATE OR REPLACE FUNCTION meeting_approver_department_check()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF (NEW.approver_id IS NOT NULL AND
+        ((SELECT department_id FROM Employees AS E WHERE E.id = NEW.approver_id)
+        IS DISTINCT FROM 
+        (SELECT department_id FROM MeetingRooms AS M WHERE M.floor = NEW.floor AND M.room = NEW.room))
+    ) THEN 
+        RAISE EXCEPTION 'Manager does not have permissions to approve selected meeting';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS meeting_approver_department_check_trigger ON Bookings;
+
+CREATE TRIGGER meeting_approver_department_check_trigger
+BEFORE INSERT OR UPDATE OF approver_id ON Bookings
+FOR EACH ROW EXECUTE FUNCTION meeting_approver_department_check();
+
+CREATE OR REPLACE FUNCTION booking_date_check()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF (NEW.date < CURRENT_DATE) THEN
+        RAISE EXCEPTION 'Selected meeting date is in the past';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS booking_date_check_trigger ON Bookings;
+
+CREATE TRIGGER booking_date_check_trigger
+BEFORE INSERT OR UPDATE ON Bookings
+FOR EACH ROW EXECUTE FUNCTION booking_date_check();
