@@ -22,7 +22,7 @@ CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
 -- TEST
 CALL add_department(3, 'Department 3'); -- Success
-SELECT COUNT(*) FROM departments; -- Return 3;
+SELECT * FROM Departments ORDER BY id; -- Returns (1, 'Department 1', NULL), (2, 'Department 2', NULL), (3, 'Department 3', NULL)
 -- AFTER TEST
 CALL reset();
 -- TEST END
@@ -33,7 +33,7 @@ CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
 -- TEST
 CALL add_department(3, 'Department 1'); -- Success
-SELECT COUNT(*) FROM departments; -- Return 3;
+SELECT * FROM Departments ORDER BY id; -- Returns (1, 'Department 1', NULL), (2, 'Department 2', NULL), (3, 'Department 1', NULL)
 -- AFTER TEST
 CALL reset();
 -- TEST END
@@ -43,8 +43,8 @@ CALL reset();
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
 -- TEST
-CALL add_department(1, 'Department 4'); -- Failure
-SELECT COUNT(*) FROM departments; -- Return 2;
+CALL add_department(1, 'Department 4'); -- Failure (duplicate key value violates unique constraint "departments_pkey")
+SELECT * FROM Departments ORDER BY id; -- Returns (1, 'Department 1', NULL), (2, 'Department 2', NULL)
 -- AFTER TEST
 CALL reset();
 -- TEST END
@@ -55,7 +55,7 @@ CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
 -- TEST
 CALL remove_department(1, CURRENT_DATE); -- Success
-SELECT removal_date FROM Departments WHERE id = 1; -- Returns CURRENT_DATE
+SELECT * FROM Departments ORDER BY id; -- Returns (1, 'Department 1', CURRENT_DATE), (2, 'Department 2', NULL)
 -- AFTER TEST
 CALL reset();
 -- TEST END
@@ -65,7 +65,8 @@ CALL reset();
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
 -- TEST
-CALL remove_department(3, CURRENT_DATE); -- Failure
+CALL remove_department(3, CURRENT_DATE); -- Failure (Department 3 not found)
+SELECT * FROM Departments ORDER BY id; -- Returns (1, 'Department 1', NULL), (2, 'Department 2', NULL)
 -- AFTER TEST
 CALL reset();
 -- TEST END
@@ -92,8 +93,36 @@ INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10), (2, 1, 2, CURRENT_DATE, 
 COMMIT;
 -- TEST
 CALL add_room(2, 1, 'Room 2-1', 10, 1, CURRENT_DATE); -- Success
-SELECT COUNT(*) FROM MeetingRooms; -- Returns 3
-SELECT COUNT(*) FROM Updates; -- Returns 3
+SELECT * FROM MeetingRooms ORDER BY floor, room; -- Returns (1, 1, 'Room 1-1', 1), (1, 2, 'Room 1-2', 2), (2, 1, 'Room 2-1', 1)
+SELECT * FROM Updates ORDER BY floor, room, date; -- Returns (1, 1, 1, CURRENT_DATE, 10), (2, 1, 2, CURRENT_DATE, 10), (1, 2, 1, CURRENT_DATE, 10)
+-- AFTER TEST
+CALL reset();
+-- TEST END
+
+-- TEST add_room_success_department_mapping
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES 
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 2),
+    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE, 1),
+    (4, 'Senior 4', 'Contact 4', 'senior5@company.com', NULL, 1),
+    (5, 'Junior 5', 'Contact 5', 'junior6@company.com', NULL, 1);
+INSERT INTO Juniors VALUES (5);
+INSERT INTO Superiors VALUES (1), (2), (3), (4);
+INSERT INTO Seniors VALUES (4);
+INSERT INTO Managers VALUES (1), (2), (3);
+COMMIT;
+BEGIN TRANSACTION;
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1), (1, 2, 'Room 1-2', 2);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10), (2, 1, 2, CURRENT_DATE, 10);
+COMMIT;
+-- TEST
+CALL add_room(2, 1, 'Room 1-1', 10, 2, CURRENT_DATE); -- Success
+SELECT * FROM MeetingRooms ORDER BY floor, room; -- Returns (1, 1, 'Room 1-1', 1), (1, 2, 'Room 1-2', 2), (2, 1, 'Room 1-1', 2)
+SELECT * FROM Updates ORDER BY floor, room, date; -- Returns (1, 1, 1, CURRENT_DATE, 10), (2, 1, 2, CURRENT_DATE, 10), (2, 2, 1, CURRENT_DATE, 10)
 -- AFTER TEST
 CALL reset();
 -- TEST END
@@ -103,7 +132,7 @@ CALL reset();
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
 BEGIN TRANSACTION;
-INSERT INTO Employees VALUES 
+INSERT INTO Employees VALUES
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
     (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 2),
     (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE, 1),
@@ -120,8 +149,8 @@ INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10), (2, 1, 2, CURRENT_DATE, 
 COMMIT;
 -- TEST
 CALL add_room(2, 1, 'Room 1-1', 10, 1, CURRENT_DATE); -- Success
-SELECT COUNT(*) FROM MeetingRooms; -- Returns 3
-SELECT COUNT(*) FROM Updates; -- Returns 3
+SELECT * FROM MeetingRooms ORDER BY floor, room; -- Returns (1, 1, 'Room 1-1', 1), (1, 2, 'Room 1-2', 2), (2, 1, 'Room 1-1', 1)
+SELECT * FROM Updates ORDER BY floor, room, date; -- Returns (1, 1, 1, CURRENT_DATE, 10), (2, 1, 2, CURRENT_DATE, 10), (1, 2, 1, CURRENT_DATE, 10)
 -- AFTER TEST
 CALL reset();
 -- TEST END
@@ -147,33 +176,9 @@ INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1), (1, 2, 'Room 1-2', 2);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10), (2, 1, 2, CURRENT_DATE, 10);
 COMMIT;
 -- TEST
-CALL add_room(1, 1, 'Room Unique Name', 10, 1, CURRENT_DATE); -- Failure
--- AFTER TEST
-CALL reset();
--- TEST END
-
--- TEST add_room_duplicate_location_failure
--- BEFORE TEST
-CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
-BEGIN TRANSACTION;
-INSERT INTO Employees VALUES 
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 2),
-    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE, 1),
-    (4, 'Senior 4', 'Contact 4', 'senior5@company.com', NULL, 1),
-    (5, 'Junior 5', 'Contact 5', 'junior6@company.com', NULL, 1);
-INSERT INTO Juniors VALUES (5);
-INSERT INTO Superiors VALUES (1), (2), (3), (4);
-INSERT INTO Seniors VALUES (4);
-INSERT INTO Managers VALUES (1), (2), (3);
-COMMIT;
-BEGIN TRANSACTION;
-INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1), (1, 2, 'Room 1-2', 2);
-INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10), (2, 1, 2, CURRENT_DATE, 10);
-COMMIT;
--- TEST
-CALL add_room(1, 1, 'Room Unique Name', 10, 1, CURRENT_DATE); -- Failure
+CALL add_room(1, 1, 'Room Unique Name', 10, 1, CURRENT_DATE); -- Failure (duplicate key value violates unique constraint "meetingrooms_pkey")
+SELECT * FROM MeetingRooms ORDER BY floor, room; -- Returns (1, 1, 'Room 1-1', 1), (1, 2, 'Room 1-2', 2)
+SELECT * FROM Updates ORDER BY floor, room, date; -- Returns (1, 1, 1, CURRENT_DATE, 10), (2, 1, 2, CURRENT_DATE, 10)
 -- AFTER TEST
 CALL reset();
 -- TEST END
@@ -199,7 +204,9 @@ INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1), (1, 2, 'Room 1-2', 2);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10), (2, 1, 2, CURRENT_DATE, 10);
 COMMIT;
 -- TEST
-CALL add_room(2, 1, 'Room 2-1', 10, 3, CURRENT_DATE); -- Failure
+CALL add_room(2, 1, 'Room 2-1', 10, 3, CURRENT_DATE); -- Failure (Employee attempting to update meeting room capacity has resigned)
+SELECT * FROM MeetingRooms ORDER BY floor, room; -- Returns (1, 1, 'Room 1-1', 1), (1, 2, 'Room 1-2', 2)
+SELECT * FROM Updates ORDER BY floor, room, date; -- Returns (1, 1, 1, CURRENT_DATE, 10), (2, 1, 2, CURRENT_DATE, 10)
 -- AFTER TEST
 CALL reset();
 -- TEST END
@@ -225,7 +232,9 @@ INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1), (1, 2, 'Room 1-2', 2);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10), (2, 1, 2, CURRENT_DATE, 10);
 COMMIT;
 -- TEST
-CALL add_room(2, 1, 'Room 2-1', 10, 4, CURRENT_DATE); -- Failure
+CALL add_room(2, 1, 'Room 2-1', 10, 4, CURRENT_DATE); -- Failure (insert or update on table "updates" violates foreign key constraint "updates_manager_id_fkey")
+SELECT * FROM MeetingRooms ORDER BY floor, room; -- Returns (1, 1, 'Room 1-1', 1), (1, 2, 'Room 1-2', 2)
+SELECT * FROM Updates ORDER BY floor, room, date; -- Returns (1, 1, 1, CURRENT_DATE, 10), (2, 1, 2, CURRENT_DATE, 10)
 -- AFTER TEST
 CALL reset();
 -- TEST END
@@ -251,7 +260,9 @@ INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1), (1, 2, 'Room 1-2', 2);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10), (2, 1, 2, CURRENT_DATE, 10);
 COMMIT;
 -- TEST
-CALL add_room(2, 1, 'Room 2-1', 10, 5, CURRENT_DATE); -- Failure
+CALL add_room(2, 1, 'Room 2-1', 10, 5, CURRENT_DATE); -- Failure (insert or update on table "updates" violates foreign key constraint "updates_manager_id_fkey")
+SELECT * FROM MeetingRooms ORDER BY floor, room; -- Returns (1, 1, 'Room 1-1', 1), (1, 2, 'Room 1-2', 2)
+SELECT * FROM Updates ORDER BY floor, room, date; -- Returns (1, 1, 1, CURRENT_DATE, 10), (2, 1, 2, CURRENT_DATE, 10)
 -- AFTER TEST
 CALL reset();
 -- TEST END
@@ -279,7 +290,7 @@ INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 10);
 COMMIT;
 -- TEST
 CALL change_capacity(1, 1, 20, 2, CURRENT_DATE); -- Success
-SELECT capacity FROM Updates WHERE floor = 1 AND room = 1 AND date = CURRENT_DATE; -- Returns 20
+SELECT * FROM Updates ORDER BY floor, room, date; -- Returns (1, 1, 1, CURRENT_DATE - 1, 10), (1, 1, 1, CURRENT_DATE, 20)
 -- AFTER TEST
 CALL reset();
 -- TEST END
@@ -307,6 +318,7 @@ INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 10);
 COMMIT;
 -- TEST
 CALL change_capacity(1, 1, 20, 3, CURRENT_DATE); -- Failure
+SELECT * FROM Updates ORDER BY floor, room, date; -- Returns (1, 1, 1, CURRENT_DATE - 1, 10)
 -- AFTER TEST
 CALL reset();
 -- TEST END
@@ -334,6 +346,7 @@ INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 10);
 COMMIT;
 -- TEST
 CALL change_capacity(1, 1, 20, 2, CURRENT_DATE); -- Failure
+SELECT * FROM Updates ORDER BY floor, room, date; -- Returns (1, 1, 1, CURRENT_DATE - 1, 10)
 -- AFTER TEST
 CALL reset();
 -- TEST END
@@ -360,7 +373,8 @@ INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 10);
 COMMIT;
 -- TEST
-CALL change_capacity(1, 1, 20, 5, CURRENT_DATE); -- Success
+CALL change_capacity(1, 1, 20, 5, CURRENT_DATE); -- Failure
+SELECT * FROM Updates ORDER BY floor, room, date; -- Returns (1, 1, 1, CURRENT_DATE - 1, 10)
 -- AFTER TEST
 CALL reset();
 -- TEST END
@@ -387,7 +401,8 @@ INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 10);
 COMMIT;
 -- TEST
-CALL change_capacity(1, 1, 20, 6, CURRENT_DATE); -- Success
+CALL change_capacity(1, 1, 20, 6, CURRENT_DATE); -- Failure
+SELECT * FROM Updates ORDER BY floor, room, date; -- Returns (1, 1, 1, CURRENT_DATE - 1, 10)
 -- AFTER TEST
 CALL reset();
 -- TEST END
@@ -415,6 +430,7 @@ INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 10);
 COMMIT;
 -- TEST
 CALL change_capacity(2, 1, 20, 1, CURRENT_DATE); -- Failure
+SELECT * FROM Updates ORDER BY floor, room, date; -- Returns (1, 1, 1, CURRENT_DATE - 1, 10)
 -- AFTER TEST
 CALL reset();
 -- TEST END
