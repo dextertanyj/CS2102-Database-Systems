@@ -122,7 +122,180 @@ BEGIN TRANSACTION;
 DELETE FROM Managers WHERE id = 1;
 INSERT INTO Seniors VALUES (1);
 END; -- Success
+-- AFTER TEST
+CALL reset();
+-- END TEST
 
+/***************************************************************************
+* A-3 If an employee is having a fever, they cannot join a booked meeting. *
+***************************************************************************/
+
+-- TEST Insert Success 
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2);
+INSERT INTO Managers VALUES (1);
+INSERT INTO Seniors VALUES (2);
+COMMIT;
+INSERT INTO HealthDeclarations VALUES 
+    (1, CURRENT_DATE, 37.0);
+BEGIN TRANSACTION;
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
+ALTER TABLE Bookings DISABLE TRIGGER insert_meeting_creator_trigger;
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 1, NULL);
+ALTER TABLE Bookings ENABLE TRIGGER insert_meeting_creator_trigger;
+-- TEST
+INSERT INTO Attends VALUES (1, 1, 1, CURRENT_DATE + 1, 1);
+SELECT * FROM Attends ORDER BY date, start_hour, floor, room, employee_id; -- Returns (1, 1, 1, CURRENT_DATE + 1, 1)
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST Insert No Declaration Success
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2);
+INSERT INTO Managers VALUES (1);
+INSERT INTO Seniors VALUES (2);
+COMMIT;
+INSERT INTO HealthDeclarations VALUES 
+    (1, CURRENT_DATE, 37.0);
+BEGIN TRANSACTION;
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 1, NULL);
+-- TEST
+INSERT INTO Attends VALUES (2, 1, 1, CURRENT_DATE + 1, 1);
+SELECT * FROM Attends ORDER BY date, start_hour, floor, room, employee_id; -- Returns (1, 1, 1, CURRENT_DATE + 1, 1), (2, 1, 1, CURRENT_DATE + 1, 1)
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST Insert Fever Failure 
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2);
+INSERT INTO Managers VALUES (1);
+INSERT INTO Seniors VALUES (2);
+COMMIT;
+INSERT INTO HealthDeclarations VALUES 
+    (1, CURRENT_DATE, 37.0),
+    (2, CURRENT_DATE, 37.6);
+BEGIN TRANSACTION;
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 1, NULL);
+-- TEST
+INSERT INTO Attends VALUES (2, 1, 1, CURRENT_DATE + 1, 1); -- Failure
+SELECT * FROM Attends ORDER BY date, start_hour, floor, room, employee_id; -- Returns (1, 1, 1, CURRENT_DATE + 1, 1)
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST Update Success 
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1),
+    (3, 'Senior 3', 'Contact 3', 'senior3@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2), (3);
+INSERT INTO Managers VALUES (1);
+INSERT INTO Seniors VALUES (2), (3);
+COMMIT;
+INSERT INTO HealthDeclarations VALUES 
+    (1, CURRENT_DATE, 37.0),
+    (2, CURRENT_DATE, 37.0),
+    (3, CURRENT_DATE, 37.5);
+BEGIN TRANSACTION;
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 1, NULL);
+INSERT INTO Attends VALUES (2, 1, 1, CURRENT_DATE + 1, 1);
+-- TEST
+UPDATE Attends SET employee_id = 3 WHERE employee_id = 2;
+SELECT * FROM Attends ORDER BY date, start_hour, floor, room, employee_id; -- Returns (1, 1, 1, CURRENT_DATE + 1, 1), (3, 1, 1, CURRENT_DATE + 1, 1)
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST Update No Declaration Success 
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1),
+    (3, 'Senior 3', 'Contact 3', 'senior3@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2), (3);
+INSERT INTO Managers VALUES (1);
+INSERT INTO Seniors VALUES (2), (3);
+COMMIT;
+INSERT INTO HealthDeclarations VALUES 
+    (1, CURRENT_DATE, 37.0),
+    (2, CURRENT_DATE, 37.0);
+BEGIN TRANSACTION;
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 1, NULL);
+INSERT INTO Attends VALUES (2, 1, 1, CURRENT_DATE + 1, 1);
+-- TEST
+UPDATE Attends SET employee_id = 3 WHERE employee_id = 2;
+SELECT * FROM Attends ORDER BY date, start_hour, floor, room, employee_id; -- Returns (1, 1, 1, CURRENT_DATE + 1, 1), (3, 1, 1, CURRENT_DATE + 1, 1)
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST Update Fever Failure 
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1),
+    (3, 'Senior 3', 'Contact 3', 'senior3@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2), (3);
+INSERT INTO Managers VALUES (1);
+INSERT INTO Seniors VALUES (2), (3);
+COMMIT;
+INSERT INTO HealthDeclarations VALUES 
+    (1, CURRENT_DATE, 37.0),
+    (2, CURRENT_DATE, 37.0),
+    (3, CURRENT_DATE, 37.6);
+BEGIN TRANSACTION;
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 1, NULL);
+INSERT INTO Attends VALUES (2, 1, 1, CURRENT_DATE + 1, 1);
+-- TEST
+UPDATE Attends SET employee_id = 3 WHERE employee_id = 2; -- Exception
+SELECT * FROM Attends ORDER BY date, start_hour, floor, room, employee_id; -- Returns (1, 1, 1, CURRENT_DATE + 1, 1), (2, 1, 1, CURRENT_DATE + 1, 1)
 -- AFTER TEST
 CALL reset();
 -- END TEST
@@ -236,6 +409,149 @@ INSERT INTO Updates VALUES (1, 3, 101, CURRENT_DATE - 1, 10); -- Failure, meetin
 INSERT INTO Updates VALUES (1, 3, 101, CURRENT_DATE, 10); -- Success
 -- Update capacity tomorrow
 INSERT INTO Updates VALUES (1, 3, 101, CURRENT_DATE + 1, 10); -- Success
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+/******************************************************************
+* B-10 If an employee is having a fever, they cannot book a room. *
+******************************************************************/
+
+-- TEST Insert Success
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
+COMMIT;
+INSERT INTO HealthDeclarations VALUES (1, CURRENT_DATE, 37.5);
+BEGIN TRANSACTION;
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
+-- TEST
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 1, NULL); -- Success
+SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns (1, 1, CURRENT_DATE + 1, 1, 1, NULL)
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST Insert No Declaration Success
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
+COMMIT;
+BEGIN TRANSACTION;
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
+-- TEST
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 1, NULL); -- Success
+SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns (1, 1, CURRENT_DATE + 1, 1, 1, NULL)
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST Insert No Declaration Success
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
+COMMIT;
+INSERT INTO HealthDeclarations VALUES (1, CURRENT_DATE, 37.6);
+BEGIN TRANSACTION;
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
+-- TEST
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 1, NULL); -- Exception
+SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns NULL
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST Update Success
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES 
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2);
+INSERT INTO Managers VALUES (1), (2);
+COMMIT;
+INSERT INTO HealthDeclarations VALUES
+    (1, CURRENT_DATE, 37.5),
+    (2, CURRENT_DATE, 37.5);
+BEGIN TRANSACTION;
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 1, NULL);
+-- TEST
+UPDATE Bookings SET creator_id = 2 WHERE creator_id = 1; -- Success
+SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns (1, 1, CURRENT_DATE + 1, 1, 2, NULL)
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST Update No Declaration Success 
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES 
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2);
+INSERT INTO Managers VALUES (1), (2);
+COMMIT;
+INSERT INTO HealthDeclarations VALUES
+    (1, CURRENT_DATE, 37.5);
+BEGIN TRANSACTION;
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 1, NULL);
+-- TEST
+UPDATE Bookings SET creator_id = 2 WHERE creator_id = 1; -- Success
+SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns (1, 1, CURRENT_DATE + 1, 1, 2, NULL)
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST Update Fever Failure
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES 
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2);
+INSERT INTO Managers VALUES (1), (2);
+COMMIT;
+INSERT INTO HealthDeclarations VALUES
+    (1, CURRENT_DATE, 37.5),
+    (2, CURRENT_DATE, 37.6);
+BEGIN TRANSACTION;
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 1, NULL);
+-- TEST
+UPDATE Bookings SET creator_id = 2 WHERE creator_id = 1; -- Exception
+SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns (1, 1, CURRENT_DATE + 1, 1, 1, NULL)
 -- AFTER TEST
 CALL reset();
 -- END TEST

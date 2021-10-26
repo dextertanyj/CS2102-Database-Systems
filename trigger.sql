@@ -167,6 +167,25 @@ FOR EACH ROW EXECUTE FUNCTION existing_superior_covering_check();
 *                                   END E-5                                   *
 ******************************************************************************/
 
+-- A-3 If an employee is having a fever, they cannot join a booked meeting.
+CREATE OR REPLACE FUNCTION check_fever_attends() RETURNS TRIGGER AS $$
+DECLARE
+    temperature NUMERIC(3, 1) := NULL;
+BEGIN
+    SELECT H.temperature FROM HealthDeclarations AS H INTO temperature WHERE date = CURRENT_DATE AND id = NEW.employee_id;
+    IF (temperature IS NOT NULL AND temperature > 37.5) THEN
+		RAISE EXCEPTION 'Unable to join meeting as employee is having a fever';
+	END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS check_fever_attends_trigger ON Attends;
+
+CREATE TRIGGER check_fever_attends_trigger
+BEFORE INSERT OR UPDATE ON Attends
+FOR EACH ROW EXECUTE FUNCTION check_fever_attends();
+
 -- A-4 Once approved, there should be no more changes in the participants and the participants will definitely attend the meeting.
 CREATE OR REPLACE FUNCTION check_attends_change() RETURNS TRIGGER AS $$
 DECLARE
@@ -346,6 +365,25 @@ DROP TRIGGER IF EXISTS check_resigned_updates_trigger ON Updates;
 CREATE TRIGGER check_resigned_updates_trigger
 BEFORE INSERT OR UPDATE ON Updates
 FOR EACH ROW EXECUTE FUNCTION check_resigned_updates();
+
+-- B-10 If an employee is having a fever, they cannot book a room.
+CREATE OR REPLACE FUNCTION check_fever_booking() RETURNS TRIGGER AS $$
+DECLARE
+    temperature NUMERIC(3, 1) := NULL;
+BEGIN
+    SELECT H.temperature FROM HealthDeclarations AS H INTO temperature WHERE date = CURRENT_DATE AND id = NEW.creator_id;
+    IF (temperature IS NOT NULL AND temperature > 37.5) THEN
+		RAISE EXCEPTION 'Unable to book meeting as employee is having a fever';
+	END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS check_fever_booking_trigger ON Bookings;
+
+CREATE TRIGGER check_fever_booking_trigger
+BEFORE INSERT OR UPDATE OF creator_id ON Bookings
+FOR EACH ROW EXECUTE FUNCTION check_fever_booking();
 
 -- B-5 The employee booking the room immediately joins the booked meeting.
 CREATE OR REPLACE FUNCTION insert_meeting_creator()
