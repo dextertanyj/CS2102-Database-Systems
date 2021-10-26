@@ -1131,22 +1131,24 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
-    (1, 'Superior 1', 'Contact 1', 'superior1@company.com', NULL, 1),
-    (2, 'Superior 2', 'Contact 2', 'superior2@company.com', NULL, 1),
+    (1, 'Senior 1', 'Contact 1', 'senior1@company.com', NULL, 1),
+    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1),
     (3, 'Manager 3', 'Contact 3', 'manager3@company.com', NULL, 1);
 INSERT INTO Superiors VALUES (1), (2), (3);
+INSERT INTO Seniors VALUES (1), (2);
 INSERT INTO Managers VALUES (3);
+COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Bookings VALUES
     (1, 1, CURRENT_DATE + 2, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
     (1, 1, CURRENT_DATE, 1, 1, NULL),
-    (1, 1, CURRENT_DATE + 1, 1, 1, 3),
     (1, 1, CURRENT_DATE, 2, 2, NULL),
     (1, 1, CURRENT_DATE, 3, 2, NULL);
 -- TEST
-SELECT * FROM view_booking_report(CURRENT_DATE, 1); -- Expected: (1,1,CURRENT_DATE,1,f), (1,1,CURRENT_DATE + 1,1,t), (1,1,CURRENT_DATE + 1,2,f), (1,1,CURRENT_DATE + 2,1,f)
+SELECT * FROM view_booking_report(CURRENT_DATE, 1); -- Expected: (1,1,CURRENT_DATE,1,f), (1,1,CURRENT_DATE + 1,2,f), (1,1,CURRENT_DATE + 2,1,f)
 -- AFTER TEST
 CALL reset();
 -- TEST END
