@@ -56,7 +56,3 @@ jobs:
           psql -h localhost -U postgres -d project -f trigger.sql
         env:
           PGPASSWORD: postgres
-
-          
-          
-          
