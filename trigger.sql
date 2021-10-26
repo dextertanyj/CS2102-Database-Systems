@@ -250,7 +250,7 @@ BEGIN
             AND B.date = OLD.date 
             AND B.start_hour = OLD.start_hour)
     ) THEN
-        RAISE EXCEPTION 'Unable to update or remove employee attendance'
+        RAISE EXCEPTION 'Unable to update or remove employee attendance';
     END IF;
     OLD = COALESCE(NEW, OLD);
     RETURN OLD;
@@ -305,12 +305,10 @@ RETURNS TRIGGER AS $$
 DECLARE
     current_hours_into_the_day INT := DATE_PART('HOUR', CURRENT_TIMESTAMP);
 BEGIN
-    IF (NEW.date < CURRENT_DATE OR (NEW.date = CURRENT_DATE AND NEW.start_hour <= current_hours_into_the_day)) THEN
-        RAISE NOTICE 'Cannot approve meetings of the past';
-        RETURN NULL;
-    ELSE
-        RETURN NEW;
+    IF (NEW.approver_id IS NOT NULL AND (NEW.date < CURRENT_DATE OR (NEW.date = CURRENT_DATE AND NEW.start_hour <= current_hours_into_the_day))) THEN
+        RAISE EXCEPTION 'Cannot approve meetings of the past';
     END IF;
+    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -319,6 +317,25 @@ DROP TRIGGER IF EXISTS approval_only_for_future_meetings_trigger ON Bookings;
 CREATE TRIGGER approval_only_for_future_meetings_trigger
 BEFORE INSERT OR UPDATE ON Bookings
 FOR EACH ROW EXECUTE FUNCTION approval_only_for_future_meetings_trigger();
+
+-- an employee can only join future meetings
+CREATE OR REPLACE FUNCTION employee_join_only_future_meetings_trigger()
+RETURNS TRIGGER AS $$
+DECLARE
+    current_hours_into_the_day INT := DATE_PART('HOUR', CURRENT_TIMESTAMP);
+BEGIN
+    IF (NEW.date < CURRENT_DATE OR (NEW.date = CURRENT_DATE AND NEW.start_hour <= current_hours_into_the_day)) THEN
+        RAISE EXCEPTION 'Cannot join meetings in the past';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS employee_join_only_future_meetings_trigger ON Attends;
+
+CREATE TRIGGER employee_join_only_future_meetings_trigger
+BEFORE INSERT ON Attends
+FOR EACH ROW EXECUTE FUNCTION employee_join_only_future_meetings_trigger();
 
 -- If a meeting room has its capacity changed, all future meetings that exceed the new capacity will be removed
 CREATE OR REPLACE FUNCTION check_future_meetings_on_capacity_change_trigger()
@@ -329,13 +346,7 @@ BEGIN
     DELETE FROM Bookings 
     WHERE ROW(floor, room, date, start_hour) IN 
     (SELECT a.floor, a.room, a.date, a.start_hour
-        FROM RoomCapacity r
-        JOIN MeetingRooms m
-        ON r.floor = m.floor AND r.room = m.room
-        JOIN Bookings b
-        ON m.floor = b.floor AND m.room = b.room
-        JOIN Attends a
-        ON b.floor = a.floor AND b.room = a.room AND b.date = a.date AND a.start_hour = b.start_hour
+        FROM Attends a
         WHERE a.date > NEW.date OR (a.date = NEW.date AND a.start_hour > current_hours_into_the_day)
         GROUP BY a.floor, a.room, a.date, a.start_hour
         HAVING count(a.employee_id) > NEW.capacity);
@@ -346,27 +357,5 @@ $$ LANGUAGE plpgsql;
 DROP TRIGGER IF EXISTS check_future_meetings_on_capacity_change_trigger ON Updates;
 
 CREATE TRIGGER check_future_meetings_on_capacity_change_trigger
-BEFORE UPDATE ON Updates
+BEFORE INSERT OR UPDATE ON Updates
 FOR EACH ROW EXECUTE FUNCTION check_future_meetings_on_capacity_change_trigger();
-
-
--- an employee can only join future meetings
-CREATE OR REPLACE FUNCTION employee_join_only_future_meetings_trigger()
-RETURNS TRIGGER AS $$
-DECLARE
-    current_hours_into_the_day INT := DATE_PART('HOUR', CURRENT_TIMESTAMP);
-BEGIN
-    IF (NEW.date < CURRENT_DATE OR (NEW.date = CURRENT_DATE AND NEW.start_hour <= current_hours_into_the_day)) THEN
-        RAISE NOTICE 'Cannot join meetings in the past';
-        RETURN NULL;
-    ELSE
-        RETURN NEW;
-    END IF;
-END;
-$$ LANGUAGE plpgsql;
-
-DROP TRIGGER IF EXISTS employee_join_only_future_meetings_trigger ON Attends;
-
-CREATE TRIGGER employee_join_only_future_meetings_trigger
-BEFORE INSERT ON Attends
-FOR EACH ROW EXECUTE FUNCTION employee_join_only_future_meetings_trigger();
