@@ -99,16 +99,16 @@ INSERT INTO Bookings VALUES
     (3, 101, CURRENT_DATE, 10, 2, NULL),
     (3, 101, CURRENT_DATE, 15, 2, NULL);
 INSERT INTO Attends VALUES
+    (1, 3, 101, CURRENT_DATE, 10),
     (1, 3, 101, CURRENT_DATE, 15),
-    (2, 3, 101, CURRENT_DATE, 15);
-INSERT INTO Attends VALUES
-    (2, 3, 101, CURRENT_DATE, 10);
+    (5, 3, 101, CURRENT_DATE, 10);
 UPDATE Bookings SET approver_id = 1 WHERE 
     floor = 3 AND room = 101 AND date = CURRENT_DATE AND start_hour = 15;
 -- TEST
 INSERT INTO Attends VALUES (5, 3, 101, CURRENT_DATE, 15);
-UPDATE Attends SET employee_id = 5 WHERE employee_id = 2;
-DELETE FROM Attends WHERE employee_id = 2;
+UPDATE Attends SET employee_id = 5 WHERE employee_id = 1 AND start_hour = 15;
+DELETE FROM Attends WHERE employee_id = 1 AND start_hour = 15;
+UPDATE Attends SET start_hour = 15 WHERE employee_id = 5;
 -- AFTER TEST
 CALL reset();
 -- END TEST

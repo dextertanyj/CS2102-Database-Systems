@@ -89,23 +89,39 @@ FOR EACH ROW EXECUTE FUNCTION check_booking_approval();
 
 -- trigger 23 no changes to attendance in already approved bookings
 CREATE OR REPLACE FUNCTION check_attends_change() RETURNS TRIGGER AS $$
+DECLARE
+    old_approver_id INT;
+    new_approver_id INT;
 BEGIN
-    IF TG_OP = 'DELETE' OR TG_OP = 'UPDATE' THEN
-        IF (SELECT approver_id FROM Bookings 
-            WHERE floor = OLD.floor
-                AND room = OLD.room
-                AND date = OLD.date
-                AND start_hour = OLD.start_hour) IS NOT NULL THEN
+    SELECT approver_id INTO old_approver_id FROM Bookings 
+    WHERE floor = OLD.floor
+        AND room = OLD.room
+        AND date = OLD.date
+        AND start_hour = OLD.start_hour;
+    SELECT approver_id INTO new_approver_id FROM Bookings
+    WHERE floor = NEW.floor
+        AND room = NEW.room
+        AND date = NEW.date
+        AND start_hour = NEW.start_hour;
+    
+    IF TG_OP = 'DELETE' THEN
+        IF old_approver_id IS NOT NULL THEN
             RAISE EXCEPTION 'Booking (floor: %, room: %, date: %, start_hour: %) has already been approved.', 
                 OLD.floor, OLD.room, OLD.date, OLD.start_hour;
         END IF;
         RETURN OLD;
+    ELSIF TG_OP = 'UPDATE' THEN
+        IF old_approver_id IS NOT NULL THEN
+            RAISE EXCEPTION 'Previous booking (floor: %, room: %, date: %, start_hour: %) has already been approved.', 
+                OLD.floor, OLD.room, OLD.date, OLD.start_hour;
+        END IF;
+        IF new_approver_id IS NOT NULL THEN
+            RAISE EXCEPTION 'Incoming booking (floor: %, room: %, date: %, start_hour: %) has already been approved.', 
+                NEW.floor, NEW.room, NEW.date, NEW.start_hour;
+        END IF;
+        RETURN NEW;
     ELSE
-        IF (SELECT approver_id FROM Bookings
-            WHERE floor = NEW.floor
-                AND room = NEW.room
-                AND date = NEW.date
-                AND start_hour = NEW.start_hour) IS NOT NULL THEN
+        IF new_approver_id IS NOT NULL THEN
             RAISE EXCEPTION 'Booking (floor: %, room: %, date: %, start_hour: %) has already been approved.', 
                 NEW.floor, NEW.room, NEW.date, NEW.start_hour;           
         END IF;
