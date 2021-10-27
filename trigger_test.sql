@@ -31,19 +31,27 @@ INSERT INTO Seniors VALUES (5);
 INSERT INTO Managers VALUES (1);
 COMMIT;
 -- TEST
-INSERT INTO Juniors VALUES (1);
-INSERT INTO Juniors VALUES (5);
-INSERT INTO Seniors VALUES (1);
-INSERT INTO Seniors VALUES (6);
-INSERT INTO Managers VALUES (5);
-INSERT INTO Managers VALUES (6);
+-- insert a manager into Juniors
+INSERT INTO Juniors VALUES (1); -- Failure, employee is already a Superior
+-- insert a senior into Juniors
+INSERT INTO Juniors VALUES (5); -- Failure, employee is already a Superior
+-- insert a manager into Seniors
+INSERT INTO Seniors VALUES (1); -- Failure, employee is already a Manager
+-- insert a junior into Seniors
+INSERT INTO Seniors VALUES (6); -- Failure, employee is not a Superior
+-- insert a senior into Managers
+INSERT INTO Managers VALUES (5); -- Failure, employee is already a Senior
+-- insert a junior into Managers
+INSERT INTO Managers VALUES (6); -- Failure, employee is not a Superior
+-- insert an employee, without insertion into Junior, Senior, Manager
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES (2, 'Err 2', 'contact 2', 'err2@company.com', NULL, 1);
-COMMIT;
+COMMIT; -- Failure, employee must exist either as junior, senior or manager
+-- insert an employee into Superiors only, not into Senior or Manager
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES (3, 'Err Superior 3', 'contact 3', 'err3@company.com', NULL, 1);
 INSERT INTO Superiors VALUES (3);
-COMMIT;
+COMMIT; -- Failure, employee must exists either as junior, senior or manager
 -- AFTER TEST
 CALL reset();
 -- END TEST
@@ -70,8 +78,9 @@ INSERT INTO Bookings VALUES
 UPDATE Bookings SET approver_id = 1 WHERE 
     floor = 3 AND room = 101 AND date = CURRENT_DATE AND start_hour = 15;
 -- TEST
+-- update a booking with an already declared approver_id
 UPDATE Bookings SET approver_id = 2 WHERE 
-    floor = 3 AND room = 101 AND date = CURRENT_DATE AND start_hour = 15;
+    floor = 3 AND room = 101 AND date = CURRENT_DATE AND start_hour = 15; -- Failure, this booking has already been approved 
 -- AFTER TEST
 CALL reset();
 -- END TEST
@@ -105,15 +114,19 @@ INSERT INTO Attends VALUES
 UPDATE Bookings SET approver_id = 1 WHERE 
     floor = 3 AND room = 101 AND date = CURRENT_DATE AND start_hour = 15;
 -- TEST
-INSERT INTO Attends VALUES (5, 3, 101, CURRENT_DATE, 15);
-UPDATE Attends SET employee_id = 5 WHERE employee_id = 1 AND start_hour = 15;
-DELETE FROM Attends WHERE employee_id = 1 AND start_hour = 15;
-UPDATE Attends SET start_hour = 15 WHERE employee_id = 5;
+-- insert an employee into an already approved booking
+INSERT INTO Attends VALUES (5, 3, 101, CURRENT_DATE, 15); -- Failure, booking for this room has been approved
+-- update an employee's attendance in an already approved booking
+UPDATE Attends SET employee_id = 5 WHERE employee_id = 1 AND start_hour = 15; -- Failure, previous booking for this room has been approved
+-- delete an employee's attendance in an already approved booking
+DELETE FROM Attends WHERE employee_id = 1 AND start_hour = 15; -- Failure, booking for this room has been approved
+-- update an employee's attendance in a not-approved booking, into an already-approved booking
+UPDATE Attends SET start_hour = 15 WHERE employee_id = 5; -- Failure, the incoming booking has already been approved
 -- AFTER TEST
 CALL reset();
 -- END TEST
 
--- TEST trigger 24 Only managers in same department have permissions to change booking
+-- TEST trigger 24 Only managers in same department have permissions to change capacity
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
@@ -133,7 +146,9 @@ INSERT INTO Updates VALUES
     (1, 3, 101, CURRENT_DATE, 10);
 COMMIT;
 -- TEST
-INSERT INTO Updates VALUES (3, 3, 101, CURRENT_DATE, 10); -- Failure
+-- allow a manager from another department to update the room's capacity
+INSERT INTO Updates VALUES (3, 3, 101, CURRENT_DATE, 10); -- Failure, manager does not have perms to change capacity
+-- allow a manager from the same department to update the room's capacity
 INSERT INTO Updates VALUES (1, 3, 101, CURRENT_DATE, 10); -- Success
 -- AFTER TEST
 CALL reset();
@@ -191,35 +206,11 @@ COMMIT;
 INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE, 1, 1, 6); -- Failure
 INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE, 1, 3, NULL); -- Failure
 INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE, 1, 3, 6); -- Failure
-SELECT * FROM Bookings;
--- AFTER TEST
-ALTER TABLE Attends ENABLE TRIGGER lock_attends;
-CALL reset();
--- TEST END
-
--- TEST trigger 34 Meeting room booking or approval update_employee_booking_success
--- BEFORE TEST
-CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1');
-BEGIN TRANSACTION;
-INSERT INTO Employees VALUES 
-    (1, 'Senior 1', 'Contact 1', 'senior1@company.com', NULL, 1),
-    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1),
-    (3, 'Resigned Senior 3', 'Contact 3', 'senior3@company.com', CURRENT_DATE, 1),
-    (4, 'Manager 4', 'Contact 4', 'manager4@company.com', NULL, 1),
-    (5, 'Manager 5', 'Contact 5', 'manager5@company.com', NULL, 1),
-    (6, 'Resigned Manager 6', 'Contact 6', 'manager6@company.com', CURRENT_DATE, 1);
-INSERT INTO Superiors VALUES (1), (2), (3), (4), (5), (6);
-INSERT INTO Seniors VALUES (1), (2), (3);
-INSERT INTO Managers VALUES (4), (5), (6);
-COMMIT;
-BEGIN TRANSACTION;
-INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
-INSERT INTO Updates VALUES (4, 1, 1, CURRENT_DATE, 10);
-COMMIT;
--- TEST
 INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE, 1, 1, NULL); -- Success
-SELECT * FROM Bookings;
+UPDATE Bookings SET approver_id = 4 WHERE start_hour = 1; -- Success
+UPDATE Bookings SET creator_id = 3 WHERE creator_id = 1; -- Failure
+UPDATE Bookings SET approver_id = 6 WHERE approver_id = 4; -- Failure
+UPDATE Bookings SET creator_id = 3, approver_id = 6 WHERE creator_id = 1; -- Failure
 UPDATE Bookings SET creator_id = 2 where creator_id = 1; -- Success
 SELECT * FROM Bookings;
 UPDATE Bookings SET approver_id = 5 where approver_id IS NULL; -- Success
@@ -547,10 +538,11 @@ INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (4, 1, 1, CURRENT_DATE, 10);
 COMMIT;
 -- TEST
-INSERT INTO Updates VALUES(1, 1, 1, CURRENT_DATE, 1); -- Success
-SELECT * FROM Updates;
-UPDATE Updates SET manager_id = 3 WHERE manager_id = 1; -- Failure
-SELECT * FROM Updates;
+UPDATE Bookings SET approver_id = 2; -- Failure
+UPDATE Bookings SET approver_id = 1; -- Success
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 2, 1, NULL); -- Success
+UPDATE Bookings SET approver_id = 1 WHERE start_hour = 2; -- Success
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 3, 1, 2); -- Failure
 -- AFTER TEST
 CALL reset();
 -- TEST END
