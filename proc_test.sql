@@ -1125,6 +1125,166 @@ SELECT * FROM non_compliance(CURRENT_DATE - 3, CURRENT_DATE); -- Expected: (2,1)
 CALL reset();
 -- END TEST
 
+-- TEST declare_health_successful
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
+    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE - 1, 1);
+INSERT INTO Superiors VALUES (1), (2), (3);
+INSERT INTO Managers VALUES (1), (2), (3);
+COMMIT;
+INSERT INTO HealthDeclarations VALUES (2, CURRENT_DATE, 37.0);
+-- TEST
+CALL declare_health(1, CURRENT_DATE, 37.5); -- Success
+SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (1, CURRENT_DATE, 37.5), (2, CURRENT_DATE, 37.0)
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST declare_health_repeat_successful
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
+    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE - 1, 1);
+INSERT INTO Superiors VALUES (1), (2), (3);
+INSERT INTO Managers VALUES (1), (2), (3);
+COMMIT;
+INSERT INTO HealthDeclarations VALUES (2, CURRENT_DATE, 37.0);
+-- TEST
+CALL declare_health(2, CURRENT_DATE, 37.5); -- Success
+SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (2, CURRENT_DATE, 37.5)
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST declare_health_retired_failure
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
+    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE - 1, 1);
+INSERT INTO Superiors VALUES (1), (2), (3);
+INSERT INTO Managers VALUES (1), (2), (3);
+COMMIT;
+INSERT INTO HealthDeclarations VALUES (2, CURRENT_DATE, 37.0);
+-- TEST
+CALL declare_health(3, CURRENT_DATE, 37.5); -- Failure
+SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (2, CURRENT_DATE, 37.0)
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST declare_health_non_existent_employee_failure
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
+    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE - 1, 1);
+INSERT INTO Superiors VALUES (1), (2), (3);
+INSERT INTO Managers VALUES (1), (2), (3);
+COMMIT;
+INSERT INTO HealthDeclarations VALUES (2, CURRENT_DATE, 37.0);
+-- TEST
+CALL declare_health(4, CURRENT_DATE, 37.5); -- Failure
+SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (2, CURRENT_DATE, 37.0)
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST declare_health_past_date_failure
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
+    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE - 1, 1);
+INSERT INTO Superiors VALUES (1), (2), (3);
+INSERT INTO Managers VALUES (1), (2), (3);
+COMMIT;
+INSERT INTO HealthDeclarations VALUES (2, CURRENT_DATE, 37.0);
+-- TEST
+CALL declare_health(1, CURRENT_DATE - 1, 37.5); -- Failure
+SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (2, CURRENT_DATE, 37.0)
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST declare_health_future_date_failure
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
+    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE - 1, 1);
+INSERT INTO Superiors VALUES (1), (2), (3);
+INSERT INTO Managers VALUES (1), (2), (3);
+COMMIT;
+INSERT INTO HealthDeclarations VALUES (2, CURRENT_DATE, 37.0);
+-- TEST
+CALL declare_health(1, CURRENT_DATE + 1, 37.5); -- Failure
+SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (2, CURRENT_DATE, 37.0)
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST declare_health_low_temperature_failure
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
+    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE - 1, 1);
+INSERT INTO Superiors VALUES (1), (2), (3);
+INSERT INTO Managers VALUES (1), (2), (3);
+COMMIT;
+INSERT INTO HealthDeclarations VALUES (2, CURRENT_DATE, 37.0);
+-- TEST
+CALL declare_health(1, CURRENT_DATE, 33.0); -- Failure
+SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (2, CURRENT_DATE, 37.0)
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST declare_health_high_temperature_failure
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
+    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE - 1, 1);
+INSERT INTO Superiors VALUES (1), (2), (3);
+INSERT INTO Managers VALUES (1), (2), (3);
+COMMIT;
+INSERT INTO HealthDeclarations VALUES (2, CURRENT_DATE, 37.0);
+-- TEST
+CALL declare_health(1, CURRENT_DATE, 45.0); -- Failure
+SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (2, CURRENT_DATE, 37.0)
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
 --
 DROP PROCEDURE IF EXISTS reset();
 SET client_min_messages TO NOTICE;
