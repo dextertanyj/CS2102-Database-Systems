@@ -331,13 +331,15 @@ BEGIN
         RETURN;
     END IF;
     DELETE FROM Bookings AS B 
-    WHERE ((B.date = CURRENT_DATE AND B.start_time > time) OR (B.date > CURRENT_DATE)) AND B.creator_id = contact_tracing.id;
+    WHERE ((B.date = CURRENT_DATE AND B.start_hour > time) OR (B.date > CURRENT_DATE)) AND B.creator_id = contact_tracing.id;
+    DELETE FROM Attends AS A
+    WHERE ((A.date = CURRENT_DATE AND A.start_hour > time) OR (A.date > CURRENT_DATE)) AND A.employee_id = contact_tracing.id;
     OPEN cursor FOR
         WITH CTE AS (
             SELECT A.*
             FROM Attends AS A NATURAL JOIN Bookings AS B
             WHERE B.approver_id IS NOT NULL
-                AND A.date BETWEEN contact_tracing.date - 3 AND contact_tracing.date
+                AND ((A.date BETWEEN CURRENT_DATE - 3 AND CURRENT_DATE - 1) OR (A.date = CURRENT_DATE AND A.start_hour <= time))
         ) SELECT DISTINCT A.employee_id
         FROM CTE AS A JOIN CTE AS B
             ON A.floor = B.floor
@@ -350,9 +352,9 @@ BEGIN
         FETCH NEXT FROM cursor INTO employee_id;
         EXIT WHEN NOT FOUND;
         DELETE FROM Bookings AS B 
-        WHERE B.creator_id = contact_tracing.employee_id AND ((A.date BETWEEN CURRENT_DATE + 1 AND CURRENT_DATE + 7) OR (A.date = CURRENT_DATE AND A.start_time > time));
+        WHERE B.creator_id = contact_tracing.employee_id AND ((A.date BETWEEN CURRENT_DATE + 1 AND CURRENT_DATE + 7) OR (A.date = CURRENT_DATE AND A.start_hour > time));
         DELETE FROM Attends AS A 
-        WHERE A.employee_id = contact_tracing.employee_id AND ((A.date BETWEEN CURRENT_DATE + 1 AND CURRENT_DATE + 7) OR (A.date = CURRENT_DATE AND A.start_time > time));
+        WHERE A.employee_id = contact_tracing.employee_id AND ((A.date BETWEEN CURRENT_DATE + 1 AND CURRENT_DATE + 7) OR (A.date = CURRENT_DATE AND A.start_hour > time));
         RETURN NEXT;
     END LOOP;
     CLOSE cursor;

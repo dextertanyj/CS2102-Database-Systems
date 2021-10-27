@@ -1285,6 +1285,188 @@ SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (2, CURRENT_DATE,
 CALL reset();
 -- END TEST
 
+-- TEST contact_tracing_no_fever
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2);
+INSERT INTO Managers VALUES (1), (2);
+COMMIT;
+INSERT INTO MeetingRooms VALUES
+    (1, 1, 'Room 1-1', 1);
+INSERT INTO Updates VALUES
+    (1, 1, 1, CURRENT_DATE - 5, 10);
+ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+INSERT INTO Bookings VALUES
+    (1, 1, CURRENT_DATE - 2, 0, 1, NULL),
+    (1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 1, 1, NULL),
+    (1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1, 1, NULL),
+    (1, 1, CURRENT_DATE + 1, 0, 1, NULL);
+ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+INSERT INTO Attends VALUES
+    (2, 1, 1, CURRENT_DATE - 2, 0),
+    (2, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 1),
+    (2, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1),
+    (2, 1, 1, CURRENT_DATE + 1, 0);
+ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+UPDATE Bookings SET approver_id = 2 WHERE date = CURRENT_DATE - 2 OR date = CURRENT_DATE + 1;
+ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+INSERT INTO HealthDeclarations VALUES (1, CURRENT_DATE, 37.0);
+-- TEST
+SELECT * FROM contact_tracing(1);
+SELECT * FROM Bookings ORDER BY date, start_hour, floor, room;
+SELECT * FROM Attends ORDER BY date, start_hour, floor, room, employee_id;
+-- TEST
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST contact_tracing_no_declaration
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2);
+INSERT INTO Managers VALUES (1), (2);
+COMMIT;
+INSERT INTO MeetingRooms VALUES
+    (1, 1, 'Room 1-1', 1);
+INSERT INTO Updates VALUES
+    (1, 1, 1, CURRENT_DATE - 5, 10);
+ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+INSERT INTO Bookings VALUES
+    (1, 1, CURRENT_DATE - 2, 1, 1, NULL),
+    (1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 1, 1, NULL),
+    (1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1, 1, NULL),
+    (1, 1, CURRENT_DATE + 1, 1, 1, NULL);
+ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+INSERT INTO Attends VALUES
+    (2, 1, 1, CURRENT_DATE - 2, 1),
+    (2, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 1),
+    (2, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1),
+    (2, 1, 1, CURRENT_DATE + 1, 1);
+ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+UPDATE Bookings SET approver_id = 2 WHERE date = CURRENT_DATE - 2 OR date = CURRENT_DATE + 1;
+ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+-- TEST
+SELECT * FROM contact_tracing(1);
+SELECT * FROM Bookings ORDER BY date, start_hour, floor, room;
+SELECT * FROM Attends ORDER BY date, start_hour, floor, room, employee_id;
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST contact_tracing_fever_has_future_booking_no_close_contact
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
+    (3, 'Manager 3', 'Contact 3', 'manager3@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2), (3);
+INSERT INTO Managers VALUES (1), (2), (3);
+COMMIT;
+INSERT INTO MeetingRooms VALUES
+    (1, 1, 'Room 1-1', 1),
+    (1, 2, 'Room 1-2', 1),
+    (2, 1, 'Room 2-1', 1);
+INSERT INTO Updates VALUES
+    (1, 1, 1, CURRENT_DATE - 5, 10);
+ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+INSERT INTO Bookings VALUES
+    (1, 1, CURRENT_DATE - 4, 1, 1, NULL),
+    (1, 1, CURRENT_DATE - 2, 1, 1, NULL),
+    (1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 1, 1, NULL),
+    (1, 2, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 1, 2, NULL),
+    (2, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 1, 3, NULL),
+    (1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1, 1, NULL),
+    (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
+    (1, 1, CURRENT_DATE + 1, 2, 2, NULL),
+    (1, 1, CURRENT_DATE + 1, 3, 3, NULL),
+    (1, 1, CURRENT_DATE + 8, 1, 1, NULL);
+ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+INSERT INTO Attends VALUES
+    (2, 1, 1, CURRENT_DATE - 4, 1),
+    (3, 1, 1, CURRENT_DATE - 4, 1),
+    (2, 1, 1, CURRENT_DATE - 2, 1),
+    (3, 1, 1, CURRENT_DATE - 2, 1),
+    (2, 1, 1, CURRENT_DATE + 1, 1),
+    (3, 1, 1, CURRENT_DATE + 1, 1),
+    (2, 1, 1, CURRENT_DATE + 8, 1);
+ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+UPDATE Bookings SET approver_id = 2 WHERE date = CURRENT_DATE - 4 OR date = CURRENT_DATE OR date = CURRENT_DATE + 1;
+ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+INSERT INTO HealthDeclarations VALUES (1, CURRENT_DATE, 37.6);
+-- TEST
+SELECT * FROM contact_tracing(1);
+SELECT * FROM Bookings ORDER BY date, start_hour, floor, room;
+SELECT * FROM Attends ORDER BY date, start_hour, floor, room, employee_id;
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST contact_tracing_fever_has_future_attendance_no_close_contact
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
+    (3, 'Manager 3', 'Contact 3', 'manager3@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2), (3);
+INSERT INTO Managers VALUES (1), (2), (3);
+COMMIT;
+INSERT INTO MeetingRooms VALUES
+    (1, 1, 'Room 1-1', 1),
+    (1, 2, 'Room 1-2', 1),
+    (2, 1, 'Room 2-1', 1);
+INSERT INTO Updates VALUES
+    (1, 1, 1, CURRENT_DATE - 5, 10);
+ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+INSERT INTO Bookings VALUES
+    (1, 1, CURRENT_DATE - 4, 1, 1, NULL),
+    (1, 1, CURRENT_DATE - 2, 1, 1, NULL),
+    (1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 1, 1, NULL),
+    (1, 2, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 1, 2, NULL),
+    (2, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 1, 3, NULL),
+    (1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1, 2, NULL),
+    (1, 1, CURRENT_DATE + 1, 2, 2, NULL),
+    (1, 1, CURRENT_DATE + 1, 3, 3, NULL),
+    (1, 1, CURRENT_DATE + 8, 2, 2, NULL);
+ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+INSERT INTO Attends VALUES
+    (2, 1, 1, CURRENT_DATE - 4, 1),
+    (3, 1, 1, CURRENT_DATE - 4, 1),
+    (2, 1, 1, CURRENT_DATE - 2, 1),
+    (3, 1, 1, CURRENT_DATE - 2, 1),
+    (1, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1),
+    (1, 1, 1, CURRENT_DATE + 8, 2);
+ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+UPDATE Bookings SET approver_id = 2 WHERE date = CURRENT_DATE - 4 OR date = CURRENT_DATE OR date = CURRENT_DATE + 1;
+ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+INSERT INTO HealthDeclarations VALUES (1, CURRENT_DATE, 37.6);
+-- TEST
+SELECT * FROM contact_tracing(1);
+SELECT * FROM Bookings ORDER BY date, start_hour, floor, room;
+SELECT * FROM Attends ORDER BY date, start_hour, floor, room, employee_id;
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST contact_tracing_fever_has_close_contact_has_future_attendance
+
+-- TEST contact_tracing_fever_has_close_contact_has_future_booking
+
 --
 DROP PROCEDURE IF EXISTS reset();
 SET client_min_messages TO NOTICE;
