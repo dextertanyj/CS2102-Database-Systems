@@ -305,10 +305,10 @@ BEGIN
     IF (NEW.date <> CURRENT_DATE) THEN
         RAISE EXCEPTION 'Health declaration must be for today';
     END IF;
-    RETURN NEW;
     IF (TG_OP = 'UPDATE' AND OLD.date <> CURRENT_DATE) THEN
         RAISE EXCEPTION 'Unable to ammend past health declaration records';
     END IF;
+    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
