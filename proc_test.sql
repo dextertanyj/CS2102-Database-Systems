@@ -1,17 +1,19 @@
 SET client_min_messages TO WARNING;
 CREATE OR REPLACE PROCEDURE reset()
 AS $$
-    TRUNCATE Departments CASCADE;
-    TRUNCATE Employees CASCADE;
-    TRUNCATE Juniors CASCADE;
-    TRUNCATE Superiors CASCADE;
-    TRUNCATE Seniors CASCADE;
-    TRUNCATE Managers CASCADE;
-    TRUNCATE HealthDeclarations CASCADE;
-    TRUNCATE MeetingRooms CASCADE;
-    TRUNCATE Bookings CASCADE;
-    TRUNCATE Attends CASCADE;
-    TRUNCATE Updates CASCADE;
+    TRUNCATE
+    Departments,
+    Employees,
+    Juniors,
+    Superiors,
+    Seniors,
+    Managers,
+    HealthDeclarations,
+    MeetingRooms,
+    Bookings,
+    Attends,
+    Updates 
+CASCADE;
 $$ LANGUAGE sql;
 
 -- TEST add_department_unique_name_unique_id_success
@@ -1099,7 +1101,7 @@ BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
     (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 2),
-    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE - 1, 1),
+    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', NULL, 1),
     (4, 'Senior 4', 'Contact 4', 'senior4@company.com', NULL, 1),
     (5, 'Junior 5', 'Contact 5', 'junior5@company.com', NULL, 1);
 INSERT INTO Juniors VALUES (5);
@@ -1119,11 +1121,45 @@ INSERT INTO HealthDeclarations VALUES
     (3, CURRENT_DATE - 1, 37.0),
     (5, CURRENT_DATE - 2, 37.0),
     (5, CURRENT_DATE - 1, 37.0);
+-- Set Manager 3 to Resigned after declaring temperature (Otherwise temperature declaration is not allowed by trigger)
+UPDATE Employees SET resignation_date = CURRENT_DATE - 1 WHERE id = 3;
 -- TEST
-SELECT * FROM non_compliance(CURRENT_DATE - 3, CURRENT_DATE); -- Expected: (2,1), (3,1), (4,4), (5,2)
+SELECT * FROM non_compliance(CURRENT_DATE - 3, CURRENT_DATE); -- Expected: (4,4), (5,2), (2,1), (3,1)
 -- AFTER TEST
 CALL reset();
--- END TEST
+-- TEST END
+
+-- TEST view_booking_report
+-- BEFORE TEST
+CALL reset();
+ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+ALTER TABLE Attends DISABLE TRIGGER lock_attends;
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES 
+    (1, 'Senior 1', 'Contact 1', 'senior1@company.com', NULL, 1),
+    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1),
+    (3, 'Manager 3', 'Contact 3', 'manager3@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2), (3);
+INSERT INTO Seniors VALUES (1), (2);
+INSERT INTO Managers VALUES (3);
+COMMIT;
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
+INSERT INTO Bookings VALUES
+    (1, 1, CURRENT_DATE - 1, 1, 1, NULL),
+    (1, 1, CURRENT_DATE, 1, 1, NULL),
+    (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
+    (1, 1, CURRENT_DATE + 2, 1, 1, NULL),
+    (1, 1, CURRENT_DATE + 3, 1, 1, 3),
+    (1, 1, CURRENT_DATE, 2, 2, NULL),
+    (1, 1, CURRENT_DATE, 3, 2, NULL);
+-- TEST
+SELECT * FROM view_booking_report(CURRENT_DATE, 1); -- Expected: (1,1,CURRENT_DATE,1,f), (1,1,CURRENT_DATE + 1,2,f), (1,1,CURRENT_DATE + 2,1,f)
+-- AFTER TEST
+ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+ALTER TABLE Attends ENABLE TRIGGER lock_attends;
+CALL reset();
+-- TEST END
 
 --
 DROP PROCEDURE IF EXISTS reset();
