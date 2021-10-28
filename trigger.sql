@@ -359,3 +359,33 @@ DROP TRIGGER IF EXISTS check_future_meetings_on_capacity_change_trigger ON Updat
 CREATE TRIGGER check_future_meetings_on_capacity_change_trigger
 BEFORE INSERT OR UPDATE ON Updates
 FOR EACH ROW EXECUTE FUNCTION check_future_meetings_on_capacity_change_trigger();
+
+CREATE OR REPLACE FUNCTION check_meeting_capacity_trigger()
+RETURNS TRIGGER AS $$
+DECLARE 
+    room_capacity INT := (SELECT capacity 
+                            FROM RoomCapacity
+                            WHERE floor = NEW.floor
+                            AND room = NEW.room);
+                            
+    current_room_count INT := (SELECT COUNT(*)
+                                FROM Attends 
+                                WHERE floor = NEW.floor
+                                AND room = NEW.room
+                                AND date = NEW.date
+                                AND start_hour = NEW.start_hour);
+BEGIN
+    IF TG_OP = 'INSERT' AND current_room_count >= room_capacity THEN
+        RAISE EXCEPTION 'Cannot attend booking due to meeting room capacity limit reached';
+    ELSIF TG_OP = 'UPDATE' AND current_room_count >= room_capacity AND (NEW.floor <> OLD.floor OR NEW.room <> OLD.room OR NEW.date <> OLD.date OR NEW.start_hour <> OLD.start_hour) THEN
+        RAISE EXCEPTION 'Cannot attend booking due to meeting room capacity limit reached';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS check_meeting_capacity_trigger ON Attends;
+
+CREATE TRIGGER check_meeting_capacity_trigger
+BEFORE INSERT OR UPDATE ON Attends
+FOR EACH ROW EXECUTE FUNCTION check_meeting_capacity_trigger();
