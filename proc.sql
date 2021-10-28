@@ -135,10 +135,10 @@ BEGIN
     IF (start_hour >= end_hour) THEN
         RAISE EXCEPTION 'Booking time period is invalid';
     END IF;
-    WITH RelevantBookings AS (
+    RETURN QUERY WITH RelevantBookings AS (
         SELECT *
         FROM Bookings AS B
-        WHERE B.start_hour BETWEEN serach_room.start_hour AND (search_room.end_hour - 1)
+        WHERE B.start_hour BETWEEN search_room.start_hour AND (search_room.end_hour - 1)
         AND B.date = search_room.date
     ) SELECT M.floor AS floor, M.room AS room, M.department_id AS department_id, R.capacity AS capacity
     FROM MeetingRooms AS M JOIN (SELECT * FROM RoomCapacities(search_room.date)) AS R ON M.floor = R.floor AND M.room = R.room LEFT JOIN RelevantBookings AS B ON M.floor = B.floor AND M.room = B.room
