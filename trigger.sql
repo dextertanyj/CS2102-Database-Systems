@@ -325,6 +325,7 @@ FOR EACH ROW EXECUTE FUNCTION check_resignation_updates();
 CREATE OR REPLACE FUNCTION insert_meeting_creator()
 RETURNS TRIGGER AS $$
 BEGIN
+    DELETE FROM Attends WHERE employee_id = OLD.creator_id AND floor = OLD.floor AND room = OLD.room AND date = OLD.date AND start_hour = OLD.start_hour;
     IF (NOT EXISTS 
         (SELECT * 
         FROM Attends AS A 

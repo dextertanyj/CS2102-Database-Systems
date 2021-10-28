@@ -633,7 +633,7 @@ INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 3, 1, 2); -- Failure
 CALL reset();
 -- TEST END
 
--- TEST insert_meeting_creator_trigger_insert_case
+-- TEST insert_meeting_creator_trigger_insert_success
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -667,33 +667,33 @@ COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
 -- TEST
 INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 1, NULL);
-UPDATE Bookings SET creator_id = 2;
-SELECT * FROM Attends ORDER BY date, start_hour, floor, room, employee_id; -- Expects (1, 1, CURRENT_DATE + 1, 1), (1, 1, CURRENT_DATE + 1, 2)
+SELECT * FROM Attends; -- Expects (1, 1, CURRENT_DATE + 1, 1)
 -- AFTER TEST
 CALL reset();
 -- END TEST
 
--- TEST prevent_creator_removal_trigger_update_other_success
+-- TEST insert_meeting_creator_trigger_update_success
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES
-(1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-(2, 'Junior 2', 'Contact 2', 'junior2@company.com', NULL, 1);
-INSERT INTO Superiors VALUES (1);
-INSERT INTO Managers VALUES (1);
-INSERT INTO Juniors VALUES (2);
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
+    (3, 'Manager 3', 'Contact 3', 'manager3@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2), (3);
+INSERT INTO Managers VALUES (1), (2), (3);
 COMMIT;
-BEGIN TRANSACTION;
-INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
-INSERT INTO Updates VALUES (4, 1, 1, CURRENT_DATE, 10);
-COMMIT;
-INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 1, NULL), (1, 1, CURRENT_DATE + 1, 2, 1, NULL);
-INSERT INTO Attends VALUES (2, 1, 1, CURRENT_DATE + 1, 1);
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
+INSERT INTO Bookings VALUES
+    (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
+    (1, 1, CURRENT_DATE + 1, 2, 1, NULL);
+INSERT INTO Attends VALUES
+    (3, 1, 1, CURRENT_DATE + 1, 2);
 -- TEST
-UPDATE Attends SET start_hour = 2 WHERE employee_id = 2; -- Success
-SELECT * FROM Attends ORDER BY date, start_hour, floor, room, employee_id; -- Expects (1, 1, 1, CURRENT_DATE + 1, 1), (1, 1, 1, CURRENT_DATE + 1, 2), (2, 1, 1, CURRENT_DATE + 1, 2)
+UPDATE Bookings SET creator_id = 2 WHERE start_hour = 1;
+UPDATE Bookings SET creator_id = 3 WHERE start_hour = 2;
+SELECT * FROM Attends ORDER BY date, start_hour, floor, room, employee_id; -- Expects (2, 1, 1, CURRENT_DATE + 1, 1), (3, 1, 1, CURRENT_DATE + 1, 2)
 -- AFTER TEST
 CALL reset();
 -- END TEST
