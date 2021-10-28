@@ -28,18 +28,19 @@
 | B-6 | Bookings | The employee booking the room cannot leave the meeting. | Trigger ([Prevent Creator Removal](#prevent-creator-removal)) |
 | B-7 | Bookings | Only a manager can approve a booked meeting. | Schema (Foriegn Key) |
 | B-8 | Bookings | A manager can only approve a booked meeting if the meeting room used is in the same department as the manager. | Trigger (Not yet implemented.) |
-| B-9 | Bookings | A booked meeting is approved at most once. | Schema (Foreign Key) & Trigger ([Check Booking Approval](#check-booking-approval)) |
-| B-10 | Bookings | If an employee is having a fever, they cannot book a room. | Trigger (Not yet implemented.) |
-| B-11 | Bookings | If an employee is having a fever, they cannot book any meeting room until they are no longer having a fever. | Trigger (Not yet implemented.) |
-| B-12 | Bookings | When an employee resigns, they are no longer allowed to book any meetings. | Trigger ([Check Resignation Booking Create Approve](#check-resignation-booking-create-approve)) |
-| B-13 | Bookings | When an employee resigns, they are no longer allowed to approve any meetings. | Trigger ([Check Resignation Booking Create Approve](#check-resignation-booking-create-approve)) |
+| B-9 | Bookings | A manager can only approve a booked meeting if it is in the future. | Trigger ([Approval Only for Future Meetings Trigger](#approval-only-for-future-meetings-trigger)) |
+| B-10 | Bookings | A booked meeting is approved at most once. | Schema (Foreign Key) & Trigger ([Check Booking Approval](#check-booking-approval)) |
+| B-11 | Bookings | If an employee is having a fever, they cannot book a room. | Trigger ([Check Health Declaration Booking](#check-health-declaration-booking)) |
+| B-12 | Bookings | If an employee is having a fever, they cannot book any meeting room until they are no longer having a fever. | Trigger [See B-11] |
+| B-13 | Bookings | When an employee resigns, they are no longer allowed to book any meetings. | Trigger ([Check Resignation Booking Create Approve](#check-resignation-booking-create-approve)) |
+| B-14 | Bookings | When an employee resigns, they are no longer allowed to approve any meetings. | Trigger ([Check Resignation Booking Create Approve](#check-resignation-booking-create-approve)) |
 | A-1 | Attends | Any employee can join a booked meeting. | Schema (Foreign Key) |
-| A-2 | Attends | An employee can only join future meetings. | Trigger (Not yet implemented.) |
-| A-3 | Attends | If an employee is having a fever, they cannot join a booked meeting. | Trigger (Not yet implemented.) |
+| A-2 | Attends | An employee can only join future meetings. | Trigger ([Employee Join Only Future Meetings Trigger](#employee-join-only-future-meetings-trigger)) |
+| A-3 | Attends | If an employee is having a fever, they cannot join a booked meeting. | Trigger ([Check Health Declaration Attends](#check-health-declaration-attends)) |
 | A-4 | Attends | Once approved, there should be no more changes in the participants and the participants will definitely attend the meeting. | Trigger ([Check Attends Change](#check-attends-change)) |
 | A-5 | Attends | When an employee resigns, they are no longer allowed to join any booked meetings. | Trigger ([Check Resignation Attends](#check-resignation-attends)) |
 | C-1 | Capacities | A manager from the same department as the meeting room may change the meeting room capacity. | Trigger ([Check Update Capacity Permissions](#check-update-capacity-permissions)) |
-| C-2 | Capacities | If a meeting room has its capacity changed, all future meetings that exceed the new capacity will be removed. | Trigger (Not yet implemented.) |
+| C-2 | Capacities | If a meeting room has its capacity changed, all future meetings that exceed the new capacity will be removed. | Trigger ([Check Future Meetings On Capacity Change Trigger](#check-future-meetings-on-capacity-change-trigger)) |
 | C-3 | Capacities | When an employee resigns, they are no longer allowed to change any meeting room capacities. | Trigger ([Check Resignation Updates](#check-resignation-updates)) |
 | H-1 | Health Declarations | Every employee must do a daily health declaration. | Not Enforceable |
 | H-2 | Health Declarations | A health declaration records the following information: Temperature, Date. | Schema (Field) |
@@ -99,6 +100,16 @@ Actions:
 1. Raises exception if employee ID does not exist in either `Juniors`, `Seniors`, or `Managers` table.
 1. Otherwise, continue.
 
+#### **resigned_employee_cleanup**
+Activated on:
+1. After `INSERT` or `UPDATE FOR resignation_date` on `Employees` table.
+
+Actions:
+1. If new resignation date is non-null then:
+    1. Delete all entries from `Bookings` table where creator is new employee and booking date is after the new resignation date.
+    2. Delete all entries from `Attends` table where employee is new employee and the attendance date is after the new resignation date.
+1. Continue.
+
 ---
 
 ### Meeting Rooms
@@ -114,7 +125,7 @@ Activated on:
 1. Before `UPDATE` on `Bookings` table.
 
 Actions:
-1. Raises exception if existing entry has non-null approver ID.
+1. Raises exception if old approver ID is non-null.
 1. Otherwise, continue.
 
 #### **Check Resignation Booking Create Approve**
@@ -150,6 +161,22 @@ Actions:
 1. Raises exception if new booking time is before `NOW()`.
 1. Otherwise, continue.
 
+#### **Check Health Declaration Booking**
+Activated on:
+1. Before `INSERT` or `UPDATE` on `Bookings` table.
+
+Actions:
+1. Raises exception if new creator has declared their temperature for CURRENT_DATE and the declared temperature is above 37.5.
+1. Otherwise, continue.
+
+#### **Approval Only for Future Meetings Trigger**
+Activated on:
+1. Before `INSERT` or `UPDATE` on `Bookings` table.
+
+Actions:
+1. Raises exception if new approver ID is non-null, and the new booking time is in the past.
+1. Otherwise, continue.
+
 ---
 
 ### Attends
@@ -178,6 +205,22 @@ Actions:
 1. Raises exception if new employee has a non-null resignation date.
 1. Otherwise, continue.
 
+#### **Check Health Declaration Attends**
+Activated on:
+1. Before `INSERT` or `UPDATE` on `Attends` table.
+
+Actions:
+1. Raises exception if new employee has declared their temperature for CURRENT_DATE and the declared temperature is above 37.5.
+1. Otherwise, continue.
+
+#### **Employee Join Only Future Meetings Trigger**
+Activated on:
+1. Before `INSERT` or `UPDATE` on `Attends` table.
+
+Actions:
+1. Raises exception if new booking time is in the past.
+1. Otherwise, continue.
+
 ---
 
 ### Updates
@@ -197,6 +240,14 @@ Activated on:
 Actions:
 1. Raises exception if new manager has a non-null resignation date.
 1. Otherwise, continue.
+
+#### **Check Future Meetings On Capacity Change Trigger**
+Activated on:
+1. After `INSERT` or `UPDATE` on `Updates` table.
+
+Actions:
+1. Deletes all entries from `Bookings` table where the meeting room used is the new meeting room and the number of referencing entries in the `Attends` table exceeds new capacity.
+1. Continue.
 
 ---
 
