@@ -156,6 +156,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS check_resignation_booking_create_approve_trigger ON Bookings;
+
 CREATE TRIGGER check_resignation_booking_create_approve_trigger
 BEFORE INSERT OR UPDATE ON Bookings
 FOR EACH ROW EXECUTE FUNCTION check_resignation_booking_create_approve();
@@ -174,6 +175,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS check_resignation_health_declaration_trigger ON HealthDeclarations;
+
 CREATE TRIGGER check_resignation_health_declaration_trigger
 BEFORE INSERT OR UPDATE ON HealthDeclarations
 FOR EACH ROW EXECUTE FUNCTION check_resignation_health_declaration();
@@ -192,6 +194,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS check_resignation_attend_trigger ON Attends;
+
 CREATE TRIGGER check_resignation_attend_trigger
 BEFORE INSERT OR UPDATE ON Attends
 FOR EACH ROW EXECUTE FUNCTION check_resignation_attend();
@@ -210,6 +213,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS check_resignation_updates_trigger ON Updates;
+
 CREATE TRIGGER check_resignation_updates_trigger
 BEFORE INSERT OR UPDATE ON Updates
 FOR EACH ROW EXECUTE FUNCTION check_resignation_updates();
