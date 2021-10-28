@@ -123,22 +123,19 @@ $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE VIEW RoomCapacity AS 
 SELECT floor, room, date, capacity
-FROM Updates NATURAL JOIN (SELECT floor, room, MAX(date) AS date FROM Updates GROUP BY (floor, room)) AS LatestUpdate;
+FROM Updates NATURAL JOIN (SELECT floor, room, MAX(date) AS date FROM Updates WHERE date <= CURRENT_DATE GROUP BY (floor, room)) AS LatestUpdate;
 
 CREATE OR REPLACE FUNCTION search_room
 (IN required_capacity INT, IN date DATE, IN start_hour INT, IN end_hour INT, OUT floor INT, OUT room INT, OUT department_id INT, OUT capacity INT)
 RETURNS SETOF RECORD AS $$
 BEGIN
-    IF (SELECT timestamp_converter(search_room.date, start_hour) < NOW()) THEN
-        RAISE EXCEPTION 'Unable to search for past time period';
-    END IF;
     WITH RelevantBookings AS (
         SELECT *
         FROM Bookings AS B
         WHERE B.start_hour BETWEEN serach_room.start_hour AND (search_room.end_hour - 1)
         AND B.date = search_room.date
     ) SELECT M.floor AS floor, M.room AS room, M.department_id AS department_id, R.capacity AS capacity
-    FROM MeetingRooms AS M JOIN RoomCapacity AS R ON M.floor = R.floor AND M.room = R.room LEFT JOIN RelevantBookings AS B ON M.floor = B.floor AND M.room = B.room
+    FROM MeetingRooms AS M JOIN (SELECT * FROM RoomCapacities(search_room.date)) AS R ON M.floor = R.floor AND M.room = R.room LEFT JOIN RelevantBookings AS B ON M.floor = B.floor AND M.room = B.room
     WHERE R.capacity >= search_room.required_capacity AND B.creator_id IS NULL
     ORDER BY R.capacity ASC;
 END;
