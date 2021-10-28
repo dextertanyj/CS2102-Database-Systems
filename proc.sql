@@ -129,6 +129,9 @@ CREATE OR REPLACE FUNCTION search_room
 (IN required_capacity INT, IN date DATE, IN start_hour INT, IN end_hour INT, OUT floor INT, OUT room INT, OUT department_id INT, OUT capacity INT)
 RETURNS SETOF RECORD AS $$
 BEGIN
+    IF (start_hour >= end_hour) THEN
+        RAISE EXCEPTION 'Booking time period is invalid'
+    END IF;
     WITH RelevantBookings AS (
         SELECT *
         FROM Bookings AS B
@@ -145,6 +148,9 @@ CREATE OR REPLACE PROCEDURE book_room
 (floor INT, room INT, date DATE, start_hour INT, end_hour INT, employee_id INT)
 AS $$
 BEGIN
+    IF (start_hour >= end_hour) THEN
+        RAISE EXCEPTION 'Booking time period is invalid'
+    END IF;
     WHILE start_hour < end_hour LOOP
         INSERT INTO Bookings VALUES (book_room.floor, book_room.room, book_room.date, book_room.start_hour, book_room.employee_id);
         start_hour := start_hour + 1;
@@ -156,6 +162,9 @@ CREATE OR REPLACE PROCEDURE unbook_room
 (floor INT, room INT, date DATE, start_hour INT, end_hour INT, employee_id INT)
 AS $$
 BEGIN
+    IF (start_hour >= end_hour) THEN
+        RAISE EXCEPTION 'Booking time period is invalid'
+    END IF;
     WHILE start_hour < end_hour LOOP
         IF (NOT EXISTS 
             (SELECT COUNT(*) FROM Bookings AS B 
