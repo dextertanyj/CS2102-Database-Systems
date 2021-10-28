@@ -330,6 +330,7 @@ BEGIN
     IF ((SELECT H.temperature FROM HealthDeclarations AS H WHERE H.id = contact_tracing.id AND H.date = CURRENT_DATE) <= 37.5) THEN
         RETURN;
     END IF;
+    ALTER TABLE Attends DISABLE TRIGGER lock_attends;
     DELETE FROM Bookings AS B 
     WHERE ((B.date = CURRENT_DATE AND B.start_hour > time) OR (B.date > CURRENT_DATE)) AND B.creator_id = contact_tracing.id;
     DELETE FROM Attends AS A
@@ -358,5 +359,6 @@ BEGIN
         RETURN NEXT;
     END LOOP;
     CLOSE cursor;
+    ALTER TABLE Attends ENABLE TRIGGER lock_attends;
 END;
 $$ LANGUAGE plpgsql;
