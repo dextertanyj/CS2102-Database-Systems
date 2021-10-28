@@ -352,7 +352,7 @@ BEGIN
         FETCH NEXT FROM cursor INTO employee_id;
         EXIT WHEN NOT FOUND;
         DELETE FROM Bookings AS B 
-        WHERE B.creator_id = contact_tracing.employee_id AND ((A.date BETWEEN CURRENT_DATE + 1 AND CURRENT_DATE + 7) OR (A.date = CURRENT_DATE AND A.start_hour > time));
+        WHERE B.creator_id = contact_tracing.employee_id AND ((B.date BETWEEN CURRENT_DATE + 1 AND CURRENT_DATE + 7) OR (B.date = CURRENT_DATE AND B.start_hour > time));
         DELETE FROM Attends AS A 
         WHERE A.employee_id = contact_tracing.employee_id AND ((A.date BETWEEN CURRENT_DATE + 1 AND CURRENT_DATE + 7) OR (A.date = CURRENT_DATE AND A.start_hour > time));
         RETURN NEXT;
