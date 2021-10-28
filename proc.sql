@@ -117,6 +117,9 @@ BEGIN
     IF (NOT EXISTS(SELECT * FROM Employees AS E WHERE E.id = remove_employee.id)) THEN
         RAISE EXCEPTION 'Employee % not found', remove_employee.id;
     END IF;
+    IF ((SELECT resignation_date FROM Employees AS E WHERE E.id = remove_employee.id) IS NOT NULL) THEN
+        RAISE EXCEPTION 'Employee % has already resigned', remove_employee.id;
+    END IF;
     UPDATE Employees AS E SET resignation_date = date WHERE E.id = remove_employee.id;
 END;
 $$ LANGUAGE plpgsql;
@@ -130,7 +133,7 @@ CREATE OR REPLACE FUNCTION search_room
 RETURNS SETOF RECORD AS $$
 BEGIN
     IF (start_hour >= end_hour) THEN
-        RAISE EXCEPTION 'Booking time period is invalid'
+        RAISE EXCEPTION 'Booking time period is invalid';
     END IF;
     WITH RelevantBookings AS (
         SELECT *
@@ -149,7 +152,7 @@ CREATE OR REPLACE PROCEDURE book_room
 AS $$
 BEGIN
     IF (start_hour >= end_hour) THEN
-        RAISE EXCEPTION 'Booking time period is invalid'
+        RAISE EXCEPTION 'Booking time period is invalid';
     END IF;
     WHILE start_hour < end_hour LOOP
         INSERT INTO Bookings VALUES (book_room.floor, book_room.room, book_room.date, book_room.start_hour, book_room.employee_id);
@@ -163,7 +166,7 @@ CREATE OR REPLACE PROCEDURE unbook_room
 AS $$
 BEGIN
     IF (start_hour >= end_hour) THEN
-        RAISE EXCEPTION 'Booking time period is invalid'
+        RAISE EXCEPTION 'Booking time period is invalid';
     END IF;
     WHILE start_hour < end_hour LOOP
         IF (NOT EXISTS 
