@@ -290,8 +290,8 @@ FOR EACH ROW EXECUTE FUNCTION meeting_approver_department_check();
 CREATE OR REPLACE FUNCTION booking_date_check()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF (NEW.date < CURRENT_DATE) THEN
-        RAISE EXCEPTION 'Selected meeting date is in the past';
+    IF ((NEW.date < CURRENT_DATE) OR (NEW.date = CURRENT_DATE AND NEW.start_hour <= extract(HOUR FROM CURRENT_TIME))) THEN
+        RAISE EXCEPTION 'Booking date and time must be in the future';
     END IF;
     RETURN NEW;
 END;
