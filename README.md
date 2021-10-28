@@ -16,10 +16,12 @@
 | E-6 | Employees | When an employee resigns, all past records are kept. | Schema (Field) [See E-1] |
 | E-7 | Employees | When an employee resigns, the employee is removed from all future meetings, approved or otherwise. | Trigger (Not yet implemented.) |
 | E-8 | Employees | When an employee resigns, the employee has all their future booked meetings canclled, approved or otherwise. | Trigger (Not yet implemented.) |
-| E-9 | Employees | Each employee can attend only one booked meeting at a given date and time. | Schema (Unique) |
+| E-9 | Employees | When an employee resigns, all future approvals granted by the employee are revoked. | Trigger (Not yet implemented.) |
+| E-10 | Employees | Each employee can attend only one booked meeting at a given date and time. | Schema (Unique) |
 | MR-1 | Meeting Rooms | Each meeting room has a unique Floor-Room pair. | Schema (Primary Key) |
 | MR-2 | Meeting Rooms | Each meeting room records the following information: Room name. | Schema (Field) |
 | MR-3 | Meeting Rooms | Each meeting room must be located in exactly one department. | Schema (NOT NULL & Foreign Key) |
+| MR-4 | Meeting Rooms | Each meeting room must have at least one relevant capacities entry. | Trigger (Not yet implemented.) |
 | B-1 | Bookings | A junior employee cannot book any meeting rooms. | Schema (Foreign Key) [See B-2] |
 | B-2 | Bookings | A senior or a manager can book meeting rooms. | Schema (NOT NULL & Foreign Key) |
 | B-3 | Bookings | A meeting room can only be booked by one group for a given date and time. | Schema (Primary Key) |
@@ -34,6 +36,7 @@
 | B-12 | Bookings | If an employee is having a fever, they cannot book any meeting room until they are no longer having a fever. | Trigger [See B-11] |
 | B-13 | Bookings | When an employee resigns, they are no longer allowed to book any meetings. | Trigger ([Check Resignation Booking Create Approve](#check-resignation-booking-create-approve)) |
 | B-14 | Bookings | When an employee resigns, they are no longer allowed to approve any meetings. | Trigger ([Check Resignation Booking Create Approve](#check-resignation-booking-create-approve)) |
+| B-15 | Bookings | A approved booked meeting can no longer have any of its details changed, except for the revocation of its approver. | Trigger (Not yet implemented.) |
 | A-1 | Attends | Any employee can join a booked meeting. | Schema (Foreign Key) |
 | A-2 | Attends | An employee can only join future meetings. | Trigger ([Employee Join Only Future Meetings Trigger](#employee-join-only-future-meetings-trigger)) |
 | A-3 | Attends | If an employee is having a fever, they cannot join a booked meeting. | Trigger ([Check Health Declaration Attends](#check-health-declaration-attends)) |
