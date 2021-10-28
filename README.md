@@ -45,12 +45,15 @@
 | C-1 | Capacities | A manager from the same department as the meeting room may change the meeting room capacity. | Trigger ([Check Update Capacity Permissions](#check-update-capacity-permissions)) |
 | C-2 | Capacities | If a meeting room has its capacity changed, all future meetings that exceed the new capacity will be removed. | Trigger ([Check Future Meetings On Capacity Change Trigger](#check-future-meetings-on-capacity-change-trigger)) |
 | C-3 | Capacities | When an employee resigns, they are no longer allowed to change any meeting room capacities. | Trigger ([Check Resignation Updates](#check-resignation-updates)) |
+| C-4 | Capacities | A meeting room can only have its capacity updated for a date not in the past. | Trigger (Not implemented yet.) |
 | H-1 | Health Declarations | Every employee must do a daily health declaration. | Not Enforceable |
 | H-2 | Health Declarations | A health declaration records the following information: Temperature, Date. | Schema (Field) |
 | H-3 | Health Declarations | A health declaration for a given employee can be uniquely identified by the date. | Schema (Primary Key) |
 | H-4 | Health Declarations | If the declared temperature is higher than 37.5 degrees celsius, the employee is having a fever. | No Action Required |
-| H-5 | Health Declaration | The declared temperature can only be between 34 and 43 degress celsius. | Schema (Check) |
-| H-6 | Health Declaration | When an employee resigns, they are no longer allowed to make any health declarations. | Trigger ([Check Resignation Health Declarations](#check-resignation-health-declarations)) |
+| H-5 | Health Declarations | The declared temperature can only be between 34 and 43 degress celsius. | Schema (Check) |
+| H-6 | Health Declarations | When an employee resigns, they are no longer allowed to make any health declarations. | Trigger ([Check Resignation Health Declarations](#check-resignation-health-declarations)) |
+| H-7 | Health Declarations | A health declaration cannot be made for any date other than the current date. | Trigger ([Health Declaration Date Check](#health-declaration-date-check)) |
+| H-8 | Health Declarations | Past health declarations cannot be modified. | Trigger ([Health Declaration Date Check](#health-declaration-date-check)) |
 | CT-1 | Contact Tracing | Close contacts are defined as employees who attended the same booked and approved meeting as an employee with a fever in any of the three days preceeding the fever. | Function |
 | CT-2 | Contact Tracing | If an employee is having a fever, all future bookings are cancelled, approved or otherwise. | Function |
 | CT-3 | Contact Tracing | If an employee is having a fever, they are removed from all future booked meetings. | Function |
@@ -192,7 +195,7 @@ Actions:
 1. Raises exception if old employee is the creator of the associated booking.
 1. Otherwise, continue.
 
-#### Check Attends Change
+#### **Check Attends Change**
 Activated on:
 1. Before `INSERT` or `UPDATE` or `DELETE` on `Attends` table.
 
@@ -262,4 +265,13 @@ Activated on:
 
 Actions:
 1. Raises exception if new employee has a non-null resignation date.
+1. Otherwise, continue.
+
+#### **Health Declaration Date Check**
+Activated on:
+1. Before `INSERT` or `UPDATE` on `HealthDeclarations` table.
+
+Actions:
+1. Raises exception if new date is not CURRENT_DATE.
+1. Raises exception if old date is not CURRENT_DATE.
 1. Otherwise, continue.
