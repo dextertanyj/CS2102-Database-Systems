@@ -309,7 +309,7 @@ UPDATE Bookings SET date = CURRENT_DATE + 2 WHERE date = CURRENT_DATE + 1;
 CALL reset();
 -- END TEST
 
--- TEST approval_for_future_meetings_only_allow_future_meeting_bookings
+-- TEST Trigger B-9: approval_for_future_meetings_only_allow_future_meeting_bookings
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
