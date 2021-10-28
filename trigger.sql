@@ -311,8 +311,6 @@ BEGIN
     END IF;
     IF (TG_OP = 'UPDATE' AND OLD.date <> CURRENT_DATE) THEN
         RAISE EXCEPTION 'Unable to ammend past health declaration records';
-    END IF;
-    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -321,6 +319,23 @@ DROP TRIGGER IF EXISTS health_declaration_date_check_trigger ON HealthDeclaratio
 CREATE TRIGGER health_declaration_date_check_trigger
 BEFORE INSERT OR UPDATE ON HealthDeclarations
 FOR EACH ROW EXECUTE FUNCTION health_declaration_date_check();
+
+CREATE OR REPLACE FUNCTION check_meeting_room_updates()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF(NOT EXISTS(SELECT * FROM Updates AS U WHERE U.floor = NEW.floor AND U.room = NEW.room)) THEN
+        RAISE EXCEPTION 'Meeting room must have an assigned capacity';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS check_meeting_room_updates_trigger ON MeetingRooms;
+
+CREATE CONSTRAINT TRIGGER check_meeting_room_updates_trigger 
+AFTER INSERT OR UPDATE ON MeetingRooms
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW EXECUTE FUNCTION check_meeting_room_updates();
 
 CREATE OR REPLACE FUNCTION lock_details_approved_bookings()
 RETURNS TRIGGER AS $$
