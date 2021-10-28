@@ -1,3 +1,15 @@
+CREATE OR REPLACE FUNCTION RoomCapacities
+(IN query_date DATE, OUT floor INT, OUT room INT, OUT date DATE, OUT capacity INT)
+RETURNS SETOF RECORD AS $$
+    SELECT floor, room, date, capacity
+    FROM Updates NATURAL JOIN (
+        SELECT floor, room, MAX(date) AS date
+        FROM Updates
+        WHERE date <= RoomCapacities.query_date
+        GROUP BY (floor, room)
+    ) AS LatestRelevantUpdate;
+$$ LANGUAGE sql;
+
 CREATE OR REPLACE FUNCTION removed_department_guard
 (IN department_id INT, OUT resigned BOOLEAN)
 RETURNS BOOLEAN AS $$
