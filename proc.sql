@@ -19,7 +19,7 @@ AS $$
 $$ LANGUAGE sql;
 
 CREATE OR REPLACE PROCEDURE remove_department
-(id INT, date DATE)
+(id INT)
 AS $$
 DECLARE
 BEGIN
@@ -29,7 +29,7 @@ BEGIN
     IF ((SELECT removal_date FROM Departments AS D WHERE D.id = remove_department.id) IS NOT NULL) THEN
         RAISE EXCEPTION 'Department % has been removed', remove_department.id;
     END IF;
-    UPDATE Departments SET removal_date = date WHERE Departments.id = remove_department.id;
+    UPDATE Departments SET removal_date = CURRENT_DATE WHERE Departments.id = remove_department.id;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -114,7 +114,7 @@ CREATE OR REPLACE PROCEDURE remove_employee
 (id INT, date Date)
 AS $$
 BEGIN
-    IF (NOT EXISTS(SELECT COUNT(*) FROM Employees AS E WHERE E.id = remove_employee.id)) THEN
+    IF (NOT EXISTS(SELECT * FROM Employees AS E WHERE E.id = remove_employee.id)) THEN
         RAISE EXCEPTION 'Employee % not found', remove_employee.id;
     END IF;
     UPDATE Employees AS E SET resignation_date = date WHERE E.id = remove_employee.id;
@@ -167,14 +167,14 @@ BEGIN
     END IF;
     WHILE start_hour < end_hour LOOP
         IF (NOT EXISTS 
-            (SELECT COUNT(*) FROM Bookings AS B 
+            (SELECT * FROM Bookings AS B 
             WHERE B.floor = unbook_room.floor 
                 AND B.room = unbook_room.room 
                 AND B.start_hour = unbook_room.start_hour)
         ) THEN
             RAISE EXCEPTION 'No existing booking found for floor:% room:% date:% start hour:%', unbook_room.floor, unbook_room.room, unbook_room.date, unbook_room.start_hour;
         END IF;
-        IF ((SELECT COUNT(*) FROM Bookings AS B 
+        IF ((SELECT * FROM Bookings AS B 
             WHERE B.floor = unbook_room.floor 
                 AND B.room = unbook_room.room 
                 AND B.start_hour = unbook_room.start_hour) 
