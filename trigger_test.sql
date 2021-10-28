@@ -317,6 +317,7 @@ CALL reset();
 -- TEST trigger 34 Attends meeting insert_employee_attendance_success
 -- BEFORE TEST
 CALL reset();
+ALTER TABLE Attends DISABLE TRIGGER lock_attends;
 INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
@@ -335,12 +336,14 @@ INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE, 1, 4, NULL);
 INSERT INTO Attends VALUES(1, 1, 1, CURRENT_DATE, 1); -- Success
 SELECT * FROM Attends;
 -- AFTER TEST
+ALTER TABLE Attends ENABLE TRIGGER lock_attends;
 CALL reset();
 -- TEST END
 
 -- TEST trigger 34 Attends meeting insert_resigned_employee_attendance_failure
 -- BEFORE TEST
 CALL reset();
+ALTER TABLE Attends DISABLE TRIGGER lock_attends;
 INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
@@ -359,12 +362,14 @@ INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE, 1, 4, NULL);
 INSERT INTO Attends VALUES(3, 1, 1, CURRENT_DATE, 1); -- Failure
 SELECT * FROM Attends;
 -- AFTER TEST
+ALTER TABLE Attends ENABLE TRIGGER lock_attends;
 CALL reset();
 -- TEST END
 
 -- TEST trigger 34 Attends meeting update_employee_attendance_success
 -- BEFORE TEST
 CALL reset();
+ALTER TABLE Attends DISABLE TRIGGER lock_attends;
 INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
@@ -385,12 +390,14 @@ SELECT * FROM Attends;
 UPDATE Attends SET employee_id = 2 WHERE employee_id = 1; -- Success
 SELECT * FROM Attends;
 -- AFTER TEST
+ALTER TABLE Attends ENABLE TRIGGER lock_attends;
 CALL reset();
 -- TEST END
 
 -- TEST trigger 34 Attends meeting update_resigned_employee_attendance_failure
 -- BEFORE TEST
 CALL reset();
+ALTER TABLE Attends DISABLE TRIGGER lock_attends;
 INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
@@ -411,6 +418,7 @@ SELECT * FROM Attends;
 UPDATE Attends SET employee_id = 3 WHERE employee_id = 1; -- Failure
 SELECT * FROM Attends;
 -- AFTER TEST
+ALTER TABLE Attends ENABLE TRIGGER lock_attends;
 CALL reset();
 -- TEST END
 
