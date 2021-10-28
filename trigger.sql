@@ -628,6 +628,7 @@ BEGIN
     IF (NEW.resignation_date IS NOT NULL) THEN
         DELETE FROM Bookings AS B WHERE B.date > NEW.resignation_date AND B.creator_id = NEW.id;
         DELETE FROM Attends AS A WHERE A.date > NEW.resignation_date AND A.employee_id = NEW.id;
+        UPDATE Bookings AS B SET approver_id = NULL WHERE B.date > NEW.resignation_date AND B.approver_id = NEW.id;
     END IF;
     RETURN NEW;
 END;
@@ -637,5 +638,4 @@ DROP TRIGGER IF EXISTS resigned_employee_cleanup_trigger ON Employees;
 
 CREATE TRIGGER resigned_employee_cleanup_trigger
 AFTER INSERT OR UPDATE OF resignation_date ON Employees
-FOR EACH ROW EXECUTE FUNCTION resigned_employee_cleanup()
-
+FOR EACH ROW EXECUTE FUNCTION resigned_employee_cleanup();

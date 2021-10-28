@@ -1686,7 +1686,8 @@ INSERT INTO Bookings VALUES
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 2, NULL),
     (1, 1, CURRENT_DATE + 1, 3, 1, NULL),
-    (1, 1, CURRENT_DATE + 1, 4, 2, NULL);
+    (1, 1, CURRENT_DATE + 1, 4, 2, NULL),
+    (1, 1, CURRENT_DATE + 1, 6, 2, NULL);
 ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
 INSERT INTO Attends VALUES
     (1, 1, 1, CURRENT_DATE - 1, 2),
@@ -1695,11 +1696,12 @@ INSERT INTO Attends VALUES
     (1, 1, 1, CURRENT_DATE + 1, 4);
 ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
 UPDATE Bookings SET approver_id = 2 WHERE start_hour = 3 OR start_hour = 4;
+UPDATE Bookings SET approver_id = 1 WHERE start_hour = 6;
 ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
 -- TEST
 UPDATE Employees SET resignation_date = CURRENT_DATE - 2 WHERE id = 1;
-SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns (1, 1, CURRENT_DATE - 3, 1, 1, NULL), (1, 1, CURRENT_DATE - 2, 1, 1, NULL), (1, 1, CURRENT_DATE - 1, 2, 2, NULL), (1, 1, CURRENT_DATE - 1, 4, 2, 2), (1, 1, CURRENT_DATE + 1, 2, 2, NULL), (1, 1, CURRENT_DATE + 1, 4, 2, 2)
-SELECT * FROM Attends ORDER BY date, start_hour, floor, room, employee_id; -- Returns (1, 1, 1, CURRENT_DATE - 3, 1), (1, 1, 1, CURRENT_DATE - 2, 1), (2, 1, 1, CURRENT_DATE - 1, 2), (2, 1, 1, CURRENT_DATE - 1, 4), (2, 1, 1, CURRENT_DATE + 1, 2), (2, 1, 1, CURRENT_DATE + 1, 4)
+SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns (1, 1, CURRENT_DATE - 3, 1, 1, NULL), (1, 1, CURRENT_DATE - 2, 1, 1, NULL), (1, 1, CURRENT_DATE - 1, 2, 2, NULL), (1, 1, CURRENT_DATE - 1, 4, 2, 2), (1, 1, CURRENT_DATE + 1, 2, 2, NULL), (1, 1, CURRENT_DATE + 1, 4, 2, 2), (1, 1, CURRENT_DATE + 1, 6, 2, NULL)
+SELECT * FROM Attends ORDER BY date, start_hour, floor, room, employee_id; -- Returns (1, 1, 1, CURRENT_DATE - 3, 1), (1, 1, 1, CURRENT_DATE - 2, 1), (2, 1, 1, CURRENT_DATE - 1, 2), (2, 1, 1, CURRENT_DATE - 1, 4), (2, 1, 1, CURRENT_DATE + 1, 2), (2, 1, 1, CURRENT_DATE + 1, 4), (2, 1, 1, CURRENT_DATE + 1, 6)
 -- AFTER TEST
 CALL reset();
 -- END TEST
