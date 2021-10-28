@@ -428,6 +428,33 @@ SELECT COUNT(*) from Attends; -- Expected: 0
 CALL reset();
 -- END TEST
 
+-- TEST check_meeting_capacity_trigger
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1),
+    (3, 'Junior 3', 'Junior 3', 'junior3@company.com', NULL, 1),
+    (4, 'Junior 4', 'Junior 4', 'junior4@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2);
+INSERT INTO Managers VALUES (1);
+INSERT INTO Seniors VALUES (2);
+INSERT INTO Juniors VALUES (3), (4);
+COMMIT;
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
+-- TEST
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 3);
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 2, NULL);
+INSERT INTO Attends VALUES (1, 1, 1, CURRENT_DATE + 1, 1);
+INSERT INTO Attends VALUES (3, 1, 1, CURRENT_DATE + 1, 1);
+INSERT INTO Attends VALUES (4, 1, 1, CURRENT_DATE + 1, 1); -- RAISE EXCEPTION: Cannot attend booking due to meeting room capacity limit reached
+SELECT COUNT(*) from Attends; -- Expected: 3
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
 --
 DROP PROCEDURE IF EXISTS reset();
 SET client_min_messages TO NOTICE;
