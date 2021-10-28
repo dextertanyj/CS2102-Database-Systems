@@ -38,6 +38,9 @@ INSERT INTO Attends VALUES
 (1, 3, 101, TO_DATE('04/10/2021', 'DD/MM/YYYY'), 10),
 (2, 3, 101, TO_DATE('04/10/2021', 'DD/MM/YYYY'), 10);
 
+INSERT INTO Attends VALUES
+(1, 4, 101, TO_DATE('04/10/2021', 'DD/MM/YYYY'), 10); -- should throw a unique constraint error
+
 INSERT INTO Updates VALUES
 (2, 4, 101, TO_DATE('04/10/2021', 'DD/MM/YYYY'), 6),
 (2, 4, 101, TO_DATE('04/11/2021', 'DD/MM/YYYY'), 101);
