@@ -156,7 +156,6 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS check_resignation_booking_create_approve_trigger ON Bookings;
-
 CREATE TRIGGER check_resignation_booking_create_approve_trigger
 BEFORE INSERT OR UPDATE ON Bookings
 FOR EACH ROW EXECUTE FUNCTION check_resignation_booking_create_approve();
@@ -175,7 +174,6 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS check_resignation_health_declaration_trigger ON HealthDeclarations;
-
 CREATE TRIGGER check_resignation_health_declaration_trigger
 BEFORE INSERT OR UPDATE ON HealthDeclarations
 FOR EACH ROW EXECUTE FUNCTION check_resignation_health_declaration();
@@ -194,7 +192,6 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS check_resignation_attend_trigger ON Attends;
-
 CREATE TRIGGER check_resignation_attend_trigger
 BEFORE INSERT OR UPDATE ON Attends
 FOR EACH ROW EXECUTE FUNCTION check_resignation_attend();
@@ -213,7 +210,6 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS check_resignation_updates_trigger ON Updates;
-
 CREATE TRIGGER check_resignation_updates_trigger
 BEFORE INSERT OR UPDATE ON Updates
 FOR EACH ROW EXECUTE FUNCTION check_resignation_updates();
@@ -267,6 +263,7 @@ CREATE TRIGGER prevent_creator_removal_trigger
 BEFORE DELETE OR UPDATE ON Attends
 FOR EACH ROW EXECUTE FUNCTION prevent_creator_removal();
 
+-- Trigger B-8: A manager can only approve a booked meeting if the meeting room used is in the same department as the manager.
 CREATE OR REPLACE FUNCTION meeting_approver_department_check()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -287,6 +284,7 @@ CREATE TRIGGER meeting_approver_department_check_trigger
 BEFORE INSERT OR UPDATE OF approver_id ON Bookings
 FOR EACH ROW EXECUTE FUNCTION meeting_approver_department_check();
 
+-- Trigger B-4: A booking can only be made for future meetings.
 CREATE OR REPLACE FUNCTION booking_date_check()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -303,7 +301,7 @@ CREATE TRIGGER booking_date_check_trigger
 BEFORE INSERT OR UPDATE ON Bookings
 FOR EACH ROW EXECUTE FUNCTION booking_date_check();
 
--- An approval can only be made for future meetings
+-- Trigger B-9: An approval can only be made for future meetings.
 CREATE OR REPLACE FUNCTION approval_only_for_future_meetings_trigger()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -322,7 +320,7 @@ CREATE TRIGGER approval_only_for_future_meetings_trigger
 BEFORE INSERT OR UPDATE ON Bookings
 FOR EACH ROW EXECUTE FUNCTION approval_only_for_future_meetings_trigger();
 
--- an employee can only join future meetings
+-- Trigger A-2: an employee can only join future meetings.
 CREATE OR REPLACE FUNCTION employee_join_only_future_meetings_trigger()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -341,7 +339,7 @@ CREATE TRIGGER employee_join_only_future_meetings_trigger
 BEFORE INSERT ON Attends
 FOR EACH ROW EXECUTE FUNCTION employee_join_only_future_meetings_trigger();
 
--- If a meeting room has its capacity changed, all future meetings that exceed the new capacity will be removed
+-- Trigger C-2: If a meeting room has its capacity changed, all future meetings that exceed the new capacity will be removed.
 CREATE OR REPLACE FUNCTION check_future_meetings_on_capacity_change_trigger()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -364,13 +362,15 @@ CREATE TRIGGER check_future_meetings_on_capacity_change_trigger
 BEFORE INSERT OR UPDATE ON Updates
 FOR EACH ROW EXECUTE FUNCTION check_future_meetings_on_capacity_change_trigger();
 
+-- Trigger A-6: The number of people attending a meeting should not exceed the latest past capacity declared.
 CREATE OR REPLACE FUNCTION check_meeting_capacity_trigger()
 RETURNS TRIGGER AS $$
 DECLARE 
     room_capacity INT := (SELECT capacity 
-                            FROM RoomCapacity
+                            FROM RoomCapacities(NEW.date)
                             WHERE floor = NEW.floor
                             AND room = NEW.room);
+                            -- if this is null just throw exception
                             
     current_room_count INT := (SELECT COUNT(*)
                                 FROM Attends 
