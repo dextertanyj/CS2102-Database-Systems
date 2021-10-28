@@ -1663,6 +1663,47 @@ SELECT * FROM MeetingRooms; -- Returns (1, 1, 'Room 1-1', 1);
 CALL reset();
 -- END TEST
 
+-- TEST resigned_employee_cleanup_trigger
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2);
+INSERT INTO Managers VALUES (1), (2);
+COMMIT;
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
+ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+INSERT INTO Bookings VALUES 
+    (1, 1, CURRENT_DATE - 3, 1, 1, NULL),
+    (1, 1, CURRENT_DATE - 2, 1, 1, NULL),
+    (1, 1, CURRENT_DATE - 1, 1, 1, NULL),
+    (1, 1, CURRENT_DATE - 1, 3, 1, NULL),
+    (1, 1, CURRENT_DATE - 1, 2, 2, NULL),
+    (1, 1, CURRENT_DATE - 1, 4, 2, NULL),
+    (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
+    (1, 1, CURRENT_DATE + 1, 2, 2, NULL),
+    (1, 1, CURRENT_DATE + 1, 3, 1, NULL),
+    (1, 1, CURRENT_DATE + 1, 4, 2, NULL);
+ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+INSERT INTO Attends VALUES
+    (1, 1, 1, CURRENT_DATE - 1, 2),
+    (1, 1, 1, CURRENT_DATE - 1, 4),
+    (1, 1, 1, CURRENT_DATE + 1, 2),
+    (1, 1, 1, CURRENT_DATE + 1, 4);
+ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+UPDATE Bookings SET approver_id = 2 WHERE start_hour = 3 OR start_hour = 4;
+ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+-- TEST
+UPDATE Employees SET resignation_date = CURRENT_DATE - 2 WHERE id = 1;
+SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns (1, 1, CURRENT_DATE - 3, 1, 1, NULL), (1, 1, CURRENT_DATE - 2, 1, 1, NULL), (1, 1, CURRENT_DATE - 1, 2, 2, NULL), (1, 1, CURRENT_DATE - 1, 4, 2, 2), (1, 1, CURRENT_DATE + 1, 2, 2, NULL), (1, 1, CURRENT_DATE + 1, 4, 2, 2)
+SELECT * FROM Attends ORDER BY date, start_hour, floor, room, employee_id; -- Returns (1, 1, 1, CURRENT_DATE - 3, 1), (1, 1, 1, CURRENT_DATE - 2, 1), (2, 1, 1, CURRENT_DATE - 1, 2), (2, 1, 1, CURRENT_DATE - 1, 4), (2, 1, 1, CURRENT_DATE + 1, 2), (2, 1, 1, CURRENT_DATE + 1, 4)
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
 --
 DROP PROCEDURE IF EXISTS reset();
 SET client_min_messages TO NOTICE;

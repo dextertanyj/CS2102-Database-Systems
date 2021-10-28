@@ -636,6 +636,6 @@ $$ LANGUAGE plpgsql;
 DROP TRIGGER IF EXISTS resigned_employee_cleanup_trigger ON Employees;
 
 CREATE TRIGGER resigned_employee_cleanup_trigger
-AFTER INSERT OR UPDATE FOR resignation_date ON Employees
+AFTER INSERT OR UPDATE OF resignation_date ON Employees
 FOR EACH ROW EXECUTE FUNCTION resigned_employee_cleanup()
 
