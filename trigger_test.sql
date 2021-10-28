@@ -145,6 +145,7 @@ COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 -- TEST
 INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE, 1, 1, NULL); -- Success
+SELECT * FROM Bookings;
 -- AFTER TEST
 CALL reset();
 -- TEST END
@@ -152,6 +153,7 @@ CALL reset();
 -- TEST trigger 34 Meeting room booking or approval insert_resigned_employee_booking_failure
 -- BEFORE TEST
 CALL reset();
+ALTER TABLE Attends DISABLE TRIGGER lock_attends;
 INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
@@ -170,7 +172,9 @@ INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE, 1, 1, 6); -- Failure
 INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE, 1, 3, NULL); -- Failure
 INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE, 1, 3, 6); -- Failure
+SELECT * FROM Bookings;
 -- AFTER TEST
+ALTER TABLE Attends ENABLE TRIGGER lock_attends;
 CALL reset();
 -- TEST END
 
@@ -193,8 +197,11 @@ COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 -- TEST
 INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE, 1, 1, NULL); -- Success
+SELECT * FROM Bookings;
 UPDATE Bookings SET creator_id = 2 where creator_id = 1; -- Success
+SELECT * FROM Bookings;
 UPDATE Bookings SET approver_id = 5 where approver_id IS NULL; -- Success
+SELECT * FROM Bookings;
 -- AFTER TEST
 CALL reset();
 -- TEST END
@@ -218,8 +225,11 @@ COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 -- TEST
 INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE, 1, 1, NULL); -- Success
+SELECT * FROM Bookings;
 UPDATE Bookings SET creator_id = 3 WHERE creator_id = 1; -- Failure
+SELECT * FROM Bookings;
 UPDATE Bookings SET approver_id = 6 WHERE approver_id IS NULL; -- Failure
+SELECT * FROM Bookings;
 -- AFTER TEST
 CALL reset();
 -- TEST END
@@ -238,6 +248,7 @@ INSERT INTO Seniors VALUES (1), (2), (3);
 COMMIT;
 -- TEST
 INSERT INTO HealthDeclarations VALUES(1, CURRENT_DATE, 37.0); -- Success
+SELECT * FROM HealthDeclarations;
 -- AFTER TEST
 CALL reset();
 -- TEST END
@@ -256,6 +267,7 @@ INSERT INTO Seniors VALUES (1), (2), (3);
 COMMIT;
 -- TEST
 INSERT INTO HealthDeclarations VALUES(3, CURRENT_DATE, 37.0); -- Failure
+SELECT * FROM HealthDeclarations;
 -- AFTER TEST
 CALL reset();
 -- TEST END
@@ -274,7 +286,9 @@ INSERT INTO Seniors VALUES (1), (2), (3);
 COMMIT;
 -- TEST
 INSERT INTO HealthDeclarations VALUES(1, CURRENT_DATE, 37.0); -- Success
+SELECT * FROM HealthDeclarations;
 Update HealthDeclarations SET id = 2 WHERE id = 1; -- Success
+SELECT * FROM HealthDeclarations;
 -- AFTER TEST
 CALL reset();
 -- TEST END
@@ -293,7 +307,9 @@ INSERT INTO Seniors VALUES (1), (2), (3);
 COMMIT;
 -- TEST
 INSERT INTO HealthDeclarations VALUES(1, CURRENT_DATE, 37.0); -- Success
+SELECT * FROM HealthDeclarations;
 Update HealthDeclarations SET id = 3 WHERE id = 1; -- Failure
+SELECT * FROM HealthDeclarations;
 -- AFTER TEST
 CALL reset();
 -- TEST END
@@ -317,6 +333,7 @@ INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE, 1, 4, NULL);
 -- TEST
 INSERT INTO Attends VALUES(1, 1, 1, CURRENT_DATE, 1); -- Success
+SELECT * FROM Attends;
 -- AFTER TEST
 CALL reset();
 -- TEST END
@@ -340,6 +357,7 @@ INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE, 1, 4, NULL);
 -- TEST
 INSERT INTO Attends VALUES(3, 1, 1, CURRENT_DATE, 1); -- Failure
+SELECT * FROM Attends;
 -- AFTER TEST
 CALL reset();
 -- TEST END
@@ -363,7 +381,9 @@ INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE, 1, 4, NULL);
 -- TEST
 INSERT INTO Attends VALUES(1, 1, 1, CURRENT_DATE, 1); -- Success
+SELECT * FROM Attends;
 UPDATE Attends SET employee_id = 2 WHERE employee_id = 1; -- Success
+SELECT * FROM Attends;
 -- AFTER TEST
 CALL reset();
 -- TEST END
@@ -387,7 +407,9 @@ INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE, 1, 4, NULL);
 -- TEST
 INSERT INTO Attends VALUES(1, 1, 1, CURRENT_DATE, 1); -- Success
+SELECT * FROM Attends;
 UPDATE Attends SET employee_id = 3 WHERE employee_id = 1; -- Failure
+SELECT * FROM Attends;
 -- AFTER TEST
 CALL reset();
 -- TEST END
@@ -407,6 +429,7 @@ COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 -- TEST
 INSERT INTO Updates VALUES(1, 1, 1, CURRENT_DATE, 1); -- Success
+SELECT * FROM Updates;
 -- AFTER TEST
 CALL reset();
 -- TEST END
@@ -426,6 +449,7 @@ COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 -- TEST
 INSERT INTO Updates VALUES(3, 1, 1, CURRENT_DATE, 1); -- Failure
+SELECT * FROM Updates;
 -- AFTER TEST
 CALL reset();
 -- TEST END
@@ -445,7 +469,9 @@ COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 -- TEST
 INSERT INTO Updates VALUES(1, 1, 1, CURRENT_DATE, 1); -- Success
+SELECT * FROM Updates;
 UPDATE Updates SET manager_id = 2 WHERE manager_id = 1; -- Success
+SELECT * FROM Updates;
 -- AFTER TEST
 CALL reset();
 -- TEST END
@@ -465,7 +491,9 @@ COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 -- TEST
 INSERT INTO Updates VALUES(1, 1, 1, CURRENT_DATE, 1); -- Success
+SELECT * FROM Updates;
 UPDATE Updates SET manager_id = 3 WHERE manager_id = 1; -- Failure
+SELECT * FROM Updates;
 -- AFTER TEST
 CALL reset();
 -- TEST END

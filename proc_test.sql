@@ -1132,6 +1132,8 @@ CALL reset();
 -- TEST view_booking_report
 -- BEFORE TEST
 CALL reset();
+ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+ALTER TABLE Attends DISABLE TRIGGER lock_attends;
 INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
@@ -1144,14 +1146,18 @@ INSERT INTO Managers VALUES (3);
 COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Bookings VALUES
-    (1, 1, CURRENT_DATE + 2, 1, 1, NULL),
-    (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
+    (1, 1, CURRENT_DATE - 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE, 1, 1, NULL),
+    (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
+    (1, 1, CURRENT_DATE + 2, 1, 1, NULL),
+    (1, 1, CURRENT_DATE + 3, 1, 1, 3),
     (1, 1, CURRENT_DATE, 2, 2, NULL),
     (1, 1, CURRENT_DATE, 3, 2, NULL);
 -- TEST
 SELECT * FROM view_booking_report(CURRENT_DATE, 1); -- Expected: (1,1,CURRENT_DATE,1,f), (1,1,CURRENT_DATE + 1,2,f), (1,1,CURRENT_DATE + 2,1,f)
 -- AFTER TEST
+ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+ALTER TABLE Attends ENABLE TRIGGER lock_attends;
 CALL reset();
 -- TEST END
 
