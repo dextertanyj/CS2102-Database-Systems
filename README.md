@@ -27,7 +27,6 @@
 | B-3 | Bookings | A meeting room can only be booked by one group for a given date and time. | Schema (Primary Key) |
 | B-4 | Bookings | A booking can only be made for future meetings. | Trigger ([Booking Date Check](#booking-date-check)) |
 | B-5 | Bookings | The employee booking the room immediately joins the booked meeting. | Trigger ([Insert Meeting Creator](#insert-meeting-creator)) |
-| B-6 | Bookings | The employee booking the room cannot leave the meeting. | Trigger ([Prevent Creator Removal](#prevent-creator-removal)) |
 | B-7 | Bookings | Only a manager can approve a booked meeting. | Schema (Foriegn Key) |
 | B-8 | Bookings | A manager can only approve a booked meeting if the meeting room used is in the same department as the manager. | Trigger (Not yet implemented.) |
 | B-9 | Bookings | A manager can only approve a booked meeting if it is in the future. | Trigger ([Approval Only for Future Meetings Trigger](#approval-only-for-future-meetings-trigger)) |
@@ -42,6 +41,8 @@
 | A-3 | Attends | If an employee is having a fever, they cannot join a booked meeting. | Trigger ([Check Health Declaration Attends](#check-health-declaration-attends)) |
 | A-4 | Attends | Once approved, there should be no more changes in the participants and the participants will definitely attend the meeting. | Trigger ([Check Attends Change](#check-attends-change)) |
 | A-5 | Attends | When an employee resigns, they are no longer allowed to join any booked meetings. | Trigger ([Check Resignation Attends](#check-resignation-attends)) |
+| A-6 | Attends | The number of people attending a meeting should not exceed the latest past capacity declared. | Trigger ([Check Meeting Capacity](#check-meeting-capacity)) |
+| A-7 | Attends | The employee booking the room cannot leave the meeting. | Trigger ([Prevent Creator Removal](#prevent-creator-removal)) |
 | C-1 | Capacities | A manager from the same department as the meeting room may change the meeting room capacity. | Trigger ([Check Update Capacity Permissions](#check-update-capacity-permissions)) |
 | C-2 | Capacities | If a meeting room has its capacity changed, all future meetings that exceed the new capacity will be removed. | Trigger ([Check Future Meetings On Capacity Change Trigger](#check-future-meetings-on-capacity-change-trigger)) |
 | C-3 | Capacities | When an employee resigns, they are no longer allowed to change any meeting room capacities. | Trigger ([Check Resignation Updates](#check-resignation-updates)) |
@@ -202,7 +203,6 @@ Activated on:
 Actions:
 1. {WIP}
 
-
 #### **Check Resignation Attends**
 Activated on:
 1. Before `INSERT` or `UPDATE` on `Attends` table.
@@ -225,6 +225,14 @@ Activated on:
 
 Actions:
 1. Raises exception if new booking time is in the past.
+1. Otherwise, continue.
+
+#### **Check Meeting Capacity Trigger**
+Activated on:
+1. Before `INSERT` or `UPDATE` on `Attends` table.
+
+Actions:
+1. Raises exception if number of people attending a meeting exceeds the latest relevant capacity of the meeting room declared.
 1. Otherwise, continue.
 
 ---
