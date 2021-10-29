@@ -288,8 +288,8 @@ FOR EACH ROW EXECUTE FUNCTION meeting_approver_department_check();
 CREATE OR REPLACE FUNCTION booking_date_check()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF (NEW.date < CURRENT_DATE) THEN
-        RAISE EXCEPTION 'Selected meeting date is in the past';
+    IF ((NEW.date < CURRENT_DATE) OR (NEW.date = CURRENT_DATE AND NEW.start_hour <= extract(HOUR FROM CURRENT_TIME))) THEN
+        RAISE EXCEPTION 'Booking date and time must be in the future';
     END IF;
     RETURN NEW;
 END;
@@ -328,7 +328,7 @@ DECLARE
 BEGIN
     IF (NEW.date < CURRENT_DATE OR (NEW.date = CURRENT_DATE AND NEW.start_hour <= current_hours_into_the_day)) THEN
         RAISE EXCEPTION 'Cannot join meetings in the past';
-    END IF;
+END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -338,6 +338,43 @@ DROP TRIGGER IF EXISTS employee_join_only_future_meetings_trigger ON Attends;
 CREATE TRIGGER employee_join_only_future_meetings_trigger
 BEFORE INSERT OR UPDATE ON Attends
 FOR EACH ROW EXECUTE FUNCTION employee_join_only_future_meetings_trigger();
+
+
+CREATE OR REPLACE FUNCTION health_declaration_date_check()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF (NEW.date <> CURRENT_DATE) THEN
+        RAISE EXCEPTION 'Health declaration must be for today';
+    END IF;
+    IF (TG_OP = 'UPDATE' AND OLD.date <> CURRENT_DATE) THEN
+        RAISE EXCEPTION 'Unable to ammend past health declaration records';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS health_declaration_date_check_trigger ON HealthDeclarations;
+
+CREATE TRIGGER health_declaration_date_check_trigger
+BEFORE INSERT OR UPDATE ON HealthDeclarations
+FOR EACH ROW EXECUTE FUNCTION health_declaration_date_check();
+
+CREATE OR REPLACE FUNCTION check_meeting_room_updates()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF(NOT EXISTS(SELECT * FROM Updates AS U WHERE U.floor = NEW.floor AND U.room = NEW.room)) THEN
+        RAISE EXCEPTION 'Meeting room must have an assigned capacity';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS check_meeting_room_updates_trigger ON MeetingRooms;
+
+CREATE CONSTRAINT TRIGGER check_meeting_room_updates_trigger 
+AFTER INSERT OR UPDATE ON MeetingRooms
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW EXECUTE FUNCTION check_meeting_room_updates();
 
 -- Trigger C-2: If a meeting room has its capacity changed, all future meetings that exceed the new capacity will be removed.
 CREATE OR REPLACE FUNCTION check_future_meetings_on_capacity_change_trigger()
@@ -392,3 +429,25 @@ DROP TRIGGER IF EXISTS check_meeting_capacity_trigger ON Attends;
 CREATE TRIGGER check_meeting_capacity_trigger
 BEFORE INSERT OR UPDATE ON Attends
 FOR EACH ROW EXECUTE FUNCTION check_meeting_capacity_trigger();
+
+CREATE OR REPLACE FUNCTION lock_details_approved_bookings()
+RETURNS TRIGGER AS $$
+DECLARE
+    resignation_date DATE := NULL;
+BEGIN
+    IF (OLD.approver_id IS NULL) THEN
+        RETURN COALESCE(NEW, OLD);
+    END IF;
+    SELECT E.resignation_date INTO resignation_date FROM Employees AS E WHERE E.id = OLD.approver_id;
+    IF (resignation_date < OLD.date AND OLD.approver_id IS DISTINCT FROM NEW.approver_id) THEN
+        RETURN NEW;
+    END IF;
+    RAISE EXCEPTION 'Unable to modify approved booking';
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS lock_details_approved_bookings_trigger ON Bookings;
+
+CREATE TRIGGER lock_details_approved_bookings_trigger
+BEFORE UPDATE ON Bookings
+FOR EACH ROW EXECUTE FUNCTION lock_details_approved_bookings();
