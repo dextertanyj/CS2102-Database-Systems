@@ -1401,10 +1401,10 @@ INSERT INTO Updates VALUES
     (1, 1, 1, CURRENT_DATE - 5, 10);
 ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
 INSERT INTO Bookings VALUES
-    (1, 1, CURRENT_DATE - 2, 0, 1, NULL),
+    (1, 1, CURRENT_DATE - 2, 1, 1, NULL),
     (1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 1, 1, NULL),
     (1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1, 1, NULL),
-    (1, 1, CURRENT_DATE + 1, 0, 1, NULL);
+    (1, 1, CURRENT_DATE + 1, 1, 1, NULL);
 ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
 INSERT INTO Attends VALUES
     (2, 1, 1, CURRENT_DATE - 2, 0),
@@ -1416,9 +1416,31 @@ UPDATE Bookings SET approver_id = 2 WHERE date = CURRENT_DATE - 2 OR date = CURR
 ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
 INSERT INTO HealthDeclarations VALUES (1, CURRENT_DATE, 37.0);
 -- TEST
-SELECT * FROM contact_tracing(1);
+SELECT * FROM contact_tracing(1); -- Returns NULL
 SELECT * FROM Bookings ORDER BY date, start_hour, floor, room;
+/*
+Returns:
+ floor | room |       date       |    start_hour    | creator_id | approver_id 
+-------+------+------------------+------------------+------------+-------------
+     1 |    1 | CURRENT_DATE - 2 |                1 |          1 |           2
+     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1 |          1 |            
+     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1 |          1 |            
+     1 |    1 | CURRENT_DATE + 1 |                1 |          1 |           2
+*/
 SELECT * FROM Attends ORDER BY date, start_hour, floor, room, employee_id;
+/*
+Returns:
+ employee_id | floor | room |       date       |    start_hour    
+-------------+-------+------+------------------+------------------
+           1 |     1 |    1 | CURRENT_DATE - 2 |                1 
+           2 |     1 |    1 | CURRENT_DATE - 2 |                1
+           1 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1 
+           2 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1 
+           1 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR + 1 
+           2 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR + 1 
+           1 |     1 |    1 | CURRENT_DATE + 1 |                1
+           2 |     1 |    1 | CURRENT_DATE + 1 |                1
+*/
 -- TEST
 -- AFTER TEST
 CALL reset();
@@ -1455,9 +1477,31 @@ ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
 UPDATE Bookings SET approver_id = 2 WHERE date = CURRENT_DATE - 2 OR date = CURRENT_DATE + 1;
 ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
 -- TEST
-SELECT * FROM contact_tracing(1);
+SELECT * FROM contact_tracing(1); -- Throws error
 SELECT * FROM Bookings ORDER BY date, start_hour, floor, room;
+/*
+Returns:
+ floor | room |       date       |    start_hour    | creator_id | approver_id 
+-------+------+------------------+------------------+------------+-------------
+     1 |    1 | CURRENT_DATE - 2 |                1 |          1 |           2
+     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1 |          1 |            
+     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1 |          1 |            
+     1 |    1 | CURRENT_DATE + 1 |                1 |          1 |           2
+*/
 SELECT * FROM Attends ORDER BY date, start_hour, floor, room, employee_id;
+/*
+Returns:
+ employee_id | floor | room |       date       |    start_hour    
+-------------+-------+------+------------------+------------------
+           1 |     1 |    1 | CURRENT_DATE - 2 |                1
+           2 |     1 |    1 | CURRENT_DATE - 2 |                1
+           1 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1 
+           2 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1 
+           1 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR + 1 
+           2 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR + 1 
+           1 |     1 |    1 | CURRENT_DATE + 1 |                1
+           2 |     1 |    1 | CURRENT_DATE + 1 |                1
+*/
 -- AFTER TEST
 CALL reset();
 -- END TEST
@@ -1482,16 +1526,16 @@ INSERT INTO Updates VALUES
     (1, 1, 1, CURRENT_DATE - 5, 10);
 ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
 INSERT INTO Bookings VALUES
-    (1, 1, CURRENT_DATE - 4, 1, 1, NULL),
-    (1, 1, CURRENT_DATE - 2, 1, 1, NULL),
+    (1, 1, CURRENT_DATE - 4, 1, 1, NULL), -- Attended by ALL
+    (1, 1, CURRENT_DATE - 2, 1, 1, NULL), -- Not Approved, Attended by ALL
     (1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 1, 1, NULL),
     (1, 2, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 1, 2, NULL),
     (2, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 1, 3, NULL),
-    (1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1, 1, NULL),
-    (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
+    (1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1, 1, NULL), -- Deleted
+    (1, 1, CURRENT_DATE + 1, 1, 1, NULL), -- Attended by ALL, Deleted
     (1, 1, CURRENT_DATE + 1, 2, 2, NULL),
     (1, 1, CURRENT_DATE + 1, 3, 3, NULL),
-    (1, 1, CURRENT_DATE + 8, 1, 1, NULL);
+    (1, 1, CURRENT_DATE + 8, 1, 1, NULL); -- Attended by 2
 ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
 INSERT INTO Attends VALUES
     (2, 1, 1, CURRENT_DATE - 4, 1),
@@ -1506,9 +1550,37 @@ UPDATE Bookings SET approver_id = 2 WHERE date = CURRENT_DATE - 4 OR date = CURR
 ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
 INSERT INTO HealthDeclarations VALUES (1, CURRENT_DATE, 37.6);
 -- TEST
-SELECT * FROM contact_tracing(1);
+SELECT * FROM contact_tracing(1); -- Returns NULL
 SELECT * FROM Bookings ORDER BY date, start_hour, floor, room;
+/*
+Returns:
+ floor | room |       date       |    start_hour    | creator_id | approver_id 
+-------+------+------------------+------------------+------------+-------------
+     1 |    1 | CURRENT_DATE - 4 |                1 |          1 |           2
+     1 |    1 | CURRENT_DATE - 2 |                1 |          1 |            
+     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1 |          1 |           2
+     1 |    2 | CURRENT_DATE     | CURRENT_HOUR - 1 |          2 |           2
+     2 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1 |          3 |           2
+     1 |    1 | CURRENT_DATE + 1 |                2 |          2 |           2
+     1 |    1 | CURRENT_DATE + 1 |                3 |          3 |           2
+*/
 SELECT * FROM Attends ORDER BY date, start_hour, floor, room, employee_id;
+/*
+Returns:
+ employee_id | floor | room |       date       |    start_hour    
+-------------+-------+------+------------------+------------------
+           1 |     1 |    1 | CURRENT_DATE - 4 |                1
+           2 |     1 |    1 | CURRENT_DATE - 4 |                1
+           3 |     1 |    1 | CURRENT_DATE - 4 |                1
+           1 |     1 |    1 | CURRENT_DATE - 2 |                1
+           2 |     1 |    1 | CURRENT_DATE - 2 |                1
+           3 |     1 |    1 | CURRENT_DATE - 2 |                1
+           1 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1
+           2 |     1 |    2 | CURRENT_DATE     | CURRENT_HOUR - 1
+           3 |     2 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1
+           2 |     1 |    1 | CURRENT_DATE + 1 |                2
+           3 |     1 |    1 | CURRENT_DATE + 1 |                3
+*/
 -- AFTER TEST
 CALL reset();
 -- END TEST
@@ -1533,13 +1605,13 @@ INSERT INTO Updates VALUES
     (1, 1, 1, CURRENT_DATE - 5, 10);
 ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
 INSERT INTO Bookings VALUES
-    (1, 1, CURRENT_DATE - 4, 1, 1, NULL),
-    (1, 1, CURRENT_DATE - 2, 1, 1, NULL),
+    (1, 1, CURRENT_DATE - 4, 1, 1, NULL), -- Attended by ALL
+    (1, 1, CURRENT_DATE - 2, 1, 1, NULL), -- Not Approved, Attended by ALL
     (1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 1, 1, NULL),
     (1, 2, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 1, 2, NULL),
     (2, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 1, 3, NULL),
-    (1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1, 2, NULL),
-    (1, 1, CURRENT_DATE + 1, 2, 2, NULL),
+    (1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1, 2, NULL), -- Attended By 1
+    (1, 1, CURRENT_DATE + 1, 2, 2, NULL), -- Attended by 1
     (1, 1, CURRENT_DATE + 1, 3, 3, NULL),
     (1, 1, CURRENT_DATE + 8, 2, 2, NULL);
 ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
@@ -1548,16 +1620,49 @@ INSERT INTO Attends VALUES
     (3, 1, 1, CURRENT_DATE - 4, 1),
     (2, 1, 1, CURRENT_DATE - 2, 1),
     (3, 1, 1, CURRENT_DATE - 2, 1),
-    (1, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1),
+    (1, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1), -- Removed
+    (1, 1, 1, CURRENT_DATE + 1, 2), -- Removed
     (1, 1, 1, CURRENT_DATE + 8, 2);
 ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
 UPDATE Bookings SET approver_id = 2 WHERE date = CURRENT_DATE - 4 OR date = CURRENT_DATE OR date = CURRENT_DATE + 1;
 ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
 INSERT INTO HealthDeclarations VALUES (1, CURRENT_DATE, 37.6);
 -- TEST
-SELECT * FROM contact_tracing(1);
+SELECT * FROM contact_tracing(1); -- Returns NULL
 SELECT * FROM Bookings ORDER BY date, start_hour, floor, room;
+/*
+Returns:
+ floor | room |       date       |    start_hour    | creator_id | approver_id 
+-------+------+------------------+------------------+------------+-------------
+     1 |    1 | CURRENT_DATE - 4 |                1 |          1 |           2
+     1 |    1 | CURRENT_DATE - 2 |                1 |          1 |            
+     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1 |          1 |           2
+     1 |    2 | CURRENT_DATE     | CURRENT_HOUR - 1 |          2 |           2
+     2 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1 |          3 |           2
+     1 |    1 | CURRENT_DATE     | CURRENT_HOUR + 1 |          2 |           2
+     1 |    1 | CURRENT_DATE + 1 |                2 |          2 |           2
+     1 |    1 | CURRENT_DATE + 1 |                3 |          3 |           2
+     1 |    1 | CURRENT_DATE + 8 |                2 |          2 |            
+*/
 SELECT * FROM Attends ORDER BY date, start_hour, floor, room, employee_id;
+/*
+Returns:
+ employee_id | floor | room |       date       |    start_hour    
+-------------+-------+------+------------------+------------------
+           1 |     1 |    1 | CURRENT_DATE - 4 |                1
+           2 |     1 |    1 | CURRENT_DATE - 4 |                1
+           3 |     1 |    1 | CURRENT_DATE - 4 |                1
+           1 |     1 |    1 | CURRENT_DATE - 2 |                1
+           2 |     1 |    1 | CURRENT_DATE - 2 |                1
+           3 |     1 |    1 | CURRENT_DATE - 2 |                1
+           1 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1
+           2 |     1 |    2 | CURRENT_DATE     | CURRENT_HOUR - 1
+           3 |     2 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1
+           2 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR + 1
+           2 |     1 |    1 | CURRENT_DATE + 1 |                2
+           3 |     1 |    1 | CURRENT_DATE + 1 |                3
+           2 |     1 |    1 | CURRENT_DATE + 8 |                2
+*/
 -- AFTER TEST
 CALL reset();
 -- END TEST
@@ -1602,17 +1707,17 @@ INSERT INTO Attends VALUES
     (1, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 2),
     (5, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 2),
     (4, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 1),
-    (1, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1),
-    (2, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1),
-    (3, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1),
-    (4, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1),
-    (5, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1),
-    (1, 1, 1, CURRENT_DATE + 7, 6),
-    (2, 1, 1, CURRENT_DATE + 7, 6),
-    (3, 1, 1, CURRENT_DATE + 7, 6),
-    (4, 1, 1, CURRENT_DATE + 7, 6),
-    (5, 1, 1, CURRENT_DATE + 7, 6),
-    (1, 1, 1, CURRENT_DATE + 8, 2),
+    (1, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1), -- Removed
+    (2, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1), -- Removed
+    (3, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1), -- Removed
+    (4, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1), -- Removed
+    (5, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1), -- Removed
+    (1, 1, 1, CURRENT_DATE + 7, 6), -- Removed
+    (2, 1, 1, CURRENT_DATE + 7, 6), -- Removed
+    (3, 1, 1, CURRENT_DATE + 7, 6), -- Removed
+    (4, 1, 1, CURRENT_DATE + 7, 6), -- Removed
+    (5, 1, 1, CURRENT_DATE + 7, 6), -- Removed
+    (1, 1, 1, CURRENT_DATE + 8, 2), -- Removed
     (3, 1, 1, CURRENT_DATE + 8, 2),
     (4, 1, 1, CURRENT_DATE + 8, 2),
     (5, 1, 1, CURRENT_DATE + 8, 2),
@@ -1622,9 +1727,46 @@ UPDATE Bookings SET approver_id = 2;
 ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
 INSERT INTO HealthDeclarations VALUES (1, CURRENT_DATE, 37.6);
 -- TEST
-SELECT * FROM contact_tracing(1);
+SELECT * FROM contact_tracing(1); -- Returns (2), (3), (4), (5)
 SELECT * FROM Bookings ORDER BY date, start_hour, floor, room;
+/*
+Returns:
+ floor | room |       date       |    start_hour    | creator_id | approver_id 
+-------+------+------------------+------------------+------------+-------------
+     1 |    1 | CURRENT_DATE - 4 |                1 |          1 |           2
+     1 |    1 | CURRENT_DATE - 2 |                1 |          1 |           2
+     1 |    1 | CURRENT_DATE - 2 |                2 |          2 |           2
+     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 2 |          4 |           2
+     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1 |          1 |           2
+     1 |    1 | CURRENT_DATE     | CURRENT_HOUR + 1 |          6 |           2
+     1 |    1 | CURRENT_DATE + 7 |                6 |          6 |           2
+     1 |    1 | CURRENT_DATE + 8 |                2 |          2 |           2
+*/
 SELECT * FROM Attends ORDER BY date, start_hour, floor, room, employee_id;
+/*
+Returns:
+ employee_id | floor | room |       date       |    start_hour    
+-------------+-------+------+------------------+------------------
+           1 |     1 |    1 | CURRENT_DATE - 4 |                1
+           6 |     1 |    1 | CURRENT_DATE - 4 |                1
+           1 |     1 |    1 | CURRENT_DATE - 2 |                1
+           2 |     1 |    1 | CURRENT_DATE - 2 |                1
+           1 |     1 |    1 | CURRENT_DATE - 2 |                2
+           2 |     1 |    1 | CURRENT_DATE - 2 |                2
+           3 |     1 |    1 | CURRENT_DATE - 2 |                2
+           1 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 2
+           4 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 2
+           5 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 2
+           1 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1
+           4 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1
+           6 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR + 1
+           6 |     1 |    1 | CURRENT_DATE + 7 |                6
+           2 |     1 |    1 | CURRENT_DATE + 8 |                2
+           3 |     1 |    1 | CURRENT_DATE + 8 |                2
+           4 |     1 |    1 | CURRENT_DATE + 8 |                2
+           5 |     1 |    1 | CURRENT_DATE + 8 |                2
+           6 |     1 |    1 | CURRENT_DATE + 8 |                2
+*/
 -- AFTER TEST
 CALL reset();
 -- END TEST
@@ -1655,10 +1797,10 @@ INSERT INTO Bookings VALUES
     (1, 1, CURRENT_DATE - 2, 2, 2, NULL), -- Attended by 1 and 3
     (1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 2, 4, NULL), -- Attended by 1 and 5
     (1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 1, 1, NULL), -- Attended by 4
-    (1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1, 2, NULL),
-    (1, 1, CURRENT_DATE + 7, 3, 3, NULL),
-    (1, 1, CURRENT_DATE + 7, 4, 4, NULL),
-    (1, 1, CURRENT_DATE + 7, 5, 5, NULL),
+    (1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1, 2, NULL), -- Removed
+    (1, 1, CURRENT_DATE + 7, 3, 3, NULL), -- Removed
+    (1, 1, CURRENT_DATE + 7, 4, 4, NULL), -- Removed
+    (1, 1, CURRENT_DATE + 7, 5, 5, NULL), -- Removed
     (1, 1, CURRENT_DATE + 8, 2, 2, NULL);
 ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
 INSERT INTO Attends VALUES
@@ -1673,9 +1815,35 @@ UPDATE Bookings SET approver_id = 2;
 ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
 INSERT INTO HealthDeclarations VALUES (1, CURRENT_DATE, 37.6);
 -- TEST
-SELECT * FROM contact_tracing(1);
+SELECT * FROM contact_tracing(1); -- Returns (2), (3), (4), (5)
 SELECT * FROM Bookings ORDER BY date, start_hour, floor, room;
+/*
+Returns:
+ floor | room |       date       |    start_hour    | creator_id | approver_id 
+-------+------+------------------+------------------+------------+-------------
+     1 |    1 | CURRENT_DATE - 2 |                1 |          1 |           2
+     1 |    1 | CURRENT_DATE - 2 |                2 |          2 |           2
+     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 2 |          4 |           2
+     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1 |          1 |           2
+     1 |    1 | CURRENT_DATE + 8 |                2 |          2 |           2
+*/
 SELECT * FROM Attends ORDER BY date, start_hour, floor, room, employee_id;
+/*
+Returns:
+ employee_id | floor | room |       date       |    start_hour    
+-------------+-------+------+------------------+------------------
+           1 |     1 |    1 | CURRENT_DATE - 2 |                1
+           2 |     1 |    1 | CURRENT_DATE - 2 |                1
+           1 |     1 |    1 | CURRENT_DATE - 2 |                2
+           2 |     1 |    1 | CURRENT_DATE - 2 |                2
+           3 |     1 |    1 | CURRENT_DATE - 2 |                2
+           1 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 2
+           4 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 2
+           5 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 2
+           1 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1
+           4 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1
+           2 |     1 |    1 | CURRENT_DATE + 8 |                2
+*/
 -- AFTER TEST
 CALL reset();
 -- END TEST
