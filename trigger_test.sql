@@ -957,136 +957,135 @@ SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns (1, 1,
 CALL reset();
 -- END TEST
 
--- TEST health_declaration_date_check_trigger_insert_success
+/************************************************************************************
+* H-7 A health declaration cannot be made for any date other than the current date. *
+************************************************************************************/
+
+-- TEST Insert Success
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1);
-INSERT INTO Superiors VALUES (1), (2);
-INSERT INTO Managers VALUES (1), (2);
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
 COMMIT;
 -- TEST
 INSERT INTO HealthDeclarations VALUES (1, CURRENT_DATE, 37.0); -- Success
-SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (1, CURRENT_DATE, 37.0), (2, CURRENT_DATE, 37.0)
+SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (1, CURRENT_DATE, 37.0)
 -- AFTER TEST
 CALL reset();
 -- END TEST
 
--- TEST health_declaration_date_check_trigger_update_success
+-- TEST Update Success
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1);
-INSERT INTO Superiors VALUES (1), (2);
-INSERT INTO Managers VALUES (1), (2);
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
 COMMIT;
-INSERT INTO HealthDeclarations VALUES (2, CURRENT_DATE, 37.0);
+INSERT INTO HealthDeclarations VALUES (1, CURRENT_DATE, 37.0);
 -- TEST
-UPDATE HealthDeclarations SET temperature = 37.5 WHERE id = 2; -- Success
-SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (2, CURRENT_DATE, 37.5)
+UPDATE HealthDeclarations SET temperature = 37.5 WHERE id = 1; -- Success
+SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (1, CURRENT_DATE, 37.5)
 -- AFTER TEST
 CALL reset();
 -- END TEST
 
--- TEST health_declaration_date_check_trigger_insert_future_failure
+-- TEST Insert Future Failure
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1);
-INSERT INTO Superiors VALUES (1), (2);
-INSERT INTO Managers VALUES (1), (2);
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
 COMMIT;
-INSERT INTO HealthDeclarations VALUES (2, CURRENT_DATE, 37.0);
 -- TEST
-INSERT INTO HealthDeclarations VALUES (1, CURRENT_DATE + 1, 37.0); -- Failure
-SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (2, CURRENT_DATE, 37.0)
+INSERT INTO HealthDeclarations VALUES (1, CURRENT_DATE + 1, 37.0); -- Exception
+SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns NULL
 -- AFTER TEST
 CALL reset();
 -- END TEST
 
--- TEST health_declaration_date_check_trigger_update_future_failure
+-- TEST Update Future Failure
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1);
-INSERT INTO Superiors VALUES (1), (2);
-INSERT INTO Managers VALUES (1), (2);
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
 COMMIT;
-INSERT INTO HealthDeclarations VALUES (2, CURRENT_DATE, 37.0);
+INSERT INTO HealthDeclarations VALUES (1, CURRENT_DATE, 37.0);
 -- TEST
-UPDATE HealthDeclarations SET date = CURRENT_DATE + 1 WHERE id = 2; -- Failure
-SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (2, CURRENT_DATE, 37.0)
+UPDATE HealthDeclarations SET date = CURRENT_DATE + 1 WHERE id = 1; -- Exception
+SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (1, CURRENT_DATE, 37.0)
 -- AFTER TEST
 CALL reset();
 -- END TEST
 
--- TEST health_declaration_date_check_trigger_insert_past_failure
+-- TEST Insert Past Failure
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1);
-INSERT INTO Superiors VALUES (1), (2);
-INSERT INTO Managers VALUES (1), (2);
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
 COMMIT;
-INSERT INTO HealthDeclarations VALUES (2, CURRENT_DATE, 37.0);
 -- TEST
-INSERT INTO HealthDeclarations VALUES (1, CURRENT_DATE - 1, 37.0); -- Failure
-SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (2, CURRENT_DATE, 37.0)
+INSERT INTO HealthDeclarations VALUES (1, CURRENT_DATE - 1, 37.0); -- Exception
+SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns NULL
 -- AFTER TEST
 CALL reset();
 -- END TEST
 
--- TEST health_declaration_date_check_trigger_update_past_failure
+-- TEST Update Past Failure
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1);
-INSERT INTO Superiors VALUES (1), (2);
-INSERT INTO Managers VALUES (1), (2);
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
 COMMIT;
-INSERT INTO HealthDeclarations VALUES (2, CURRENT_DATE, 37.0);
+INSERT INTO HealthDeclarations VALUES (1, CURRENT_DATE, 37.0);
 -- TEST
-UPDATE HealthDeclarations SET date = CURRENT_DATE - 1 WHERE id = 2; -- Failure
-SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (2, CURRENT_DATE, 37.0)
+UPDATE HealthDeclarations SET date = CURRENT_DATE - 1 WHERE id = 1; -- Exception
+SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (1, CURRENT_DATE, 37.0)
 -- AFTER TEST
 CALL reset();
 -- END TEST
 
--- TEST health_declaration_date_check_trigger_update_existing_past_failure
+/***************************************************
+* H-8 Past health declarations cannot be modified. *
+***************************************************/
+
+-- TEST Update Failure
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1);
-INSERT INTO Superiors VALUES (1), (2);
-INSERT INTO Managers VALUES (1), (2);
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
 COMMIT;
 ALTER TABLE HealthDeclarations DISABLE TRIGGER health_declaration_date_check_trigger;
-INSERT INTO HealthDeclarations VALUES (2, CURRENT_DATE - 1, 37.0);
+INSERT INTO HealthDeclarations VALUES (1, CURRENT_DATE - 1, 37.0);
 ALTER TABLE HealthDeclarations ENABLE TRIGGER health_declaration_date_check_trigger;
 -- TEST
-UPDATE HealthDeclarations SET temperature = 37.5, date = CURRENT_DATE WHERE date = CURRENT_DATE - 1; -- Failure
-SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (2, CURRENT_DATE - 1, 37.0)
+UPDATE HealthDeclarations SET temperature = 37.5, date = CURRENT_DATE WHERE date = CURRENT_DATE - 1; -- Exception
+SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (1, CURRENT_DATE - 1, 37.0)
 -- AFTER TEST
 CALL reset();
 -- END TEST
