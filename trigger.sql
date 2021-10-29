@@ -331,13 +331,13 @@ BEGIN
         RETURN COALESCE(NEW, OLD);
     END IF;
     IF (TG_OP = 'DELETE') THEN
-        SELECT resignation_date INTO resignation_date FROM Employees AS E WHERE E.id = OLD.creator_id;
+        SELECT E.resignation_date INTO resignation_date FROM Employees AS E WHERE E.id = OLD.creator_id;
         IF (resignation_date < OLD.date) THEN
             RETURN OLD;
         END IF;
     END IF;
     IF (TG_OP = 'UPDATE') THEN
-        SELECT resignation_date INTO resignation_date FROM Employees AS E WHERE E.id = OLD.approver_id;
+        SELECT E.resignation_date INTO resignation_date FROM Employees AS E WHERE E.id = OLD.approver_id;
         IF (resignation_date < OLD.date AND OLD.approver_id IS DISTINCT FROM NEW.approver_id) THEN
             RETURN NEW;
         END IF;
