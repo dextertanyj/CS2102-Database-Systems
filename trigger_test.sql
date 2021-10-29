@@ -633,7 +633,11 @@ INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 3, 1, 2); -- Failure
 CALL reset();
 -- TEST END
 
--- TEST insert_meeting_creator_trigger_insert_success
+/**************************************************************************
+* B-5 The employee booking the room immediately joins the booked meeting. *
+**************************************************************************/
+
+-- TEST Insert Success
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -644,7 +648,7 @@ INSERT INTO Managers VALUES (1);
 COMMIT;
 BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
-INSERT INTO Updates VALUES (4, 1, 1, CURRENT_DATE, 10);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 COMMIT;
 -- TEST
 INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 1, NULL);
@@ -653,26 +657,7 @@ SELECT * FROM Attends; -- Expects (1, 1, CURRENT_DATE + 1, 1)
 CALL reset();
 -- END TEST
 
--- TEST insert_meeting_creator_trigger_update_case
--- BEFORE TEST
-CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1');
-BEGIN TRANSACTION;
-INSERT INTO Employees VALUES
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1);
-INSERT INTO Superiors VALUES (1), (2);
-INSERT INTO Managers VALUES (1), (2);
-COMMIT;
-INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
--- TEST
-INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 1, NULL);
-SELECT * FROM Attends; -- Expects (1, 1, CURRENT_DATE + 1, 1)
--- AFTER TEST
-CALL reset();
--- END TEST
-
--- TEST insert_meeting_creator_trigger_update_success
+-- TEST Update Success
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -684,7 +669,10 @@ INSERT INTO Employees VALUES
 INSERT INTO Superiors VALUES (1), (2), (3);
 INSERT INTO Managers VALUES (1), (2), (3);
 COMMIT;
-INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
+BEGIN TRANSACTION;
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
 INSERT INTO Bookings VALUES
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL);
@@ -698,7 +686,11 @@ SELECT * FROM Attends ORDER BY date, start_hour, floor, room, employee_id; -- Ex
 CALL reset();
 -- END TEST
 
--- TEST prevent_creator_removal_trigger_delete_other_success
+/**************************************************
+* B-15 A meeting must be attended by its creator. *
+**************************************************/
+
+-- TEST Delete Other Attendee Success
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -710,7 +702,10 @@ INSERT INTO Superiors VALUES (1);
 INSERT INTO Juniors VALUES (2);
 INSERT INTO Managers VALUES (1);
 COMMIT;
-INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
+BEGIN TRANSACTION;
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
 INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 1, NULL);
 INSERT INTO Attends VALUES (2, 1, 1, CURRENT_DATE + 1, 1);
 -- TEST
@@ -720,7 +715,7 @@ SELECT * FROM Attends ORDER BY date, start_hour, floor, room, employee_id; -- Ex
 CALL reset();
 -- END TEST
 
--- TEST prevent_creator_removal_trigger_delete_creator_failure
+-- TEST Delete Creator Failure
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -730,9 +725,11 @@ INSERT INTO Employees VALUES
 INSERT INTO Superiors VALUES (1);
 INSERT INTO Managers VALUES (1);
 COMMIT;
-INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
+BEGIN TRANSACTION;
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
 INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 1, NULL);
-INSERT INTO Attends VALUES (2, 1, 1, CURRENT_DATE + 1, 1);
 -- TEST
 DELETE FROM Attends WHERE employee_id = 1; -- Failure
 SELECT * FROM Attends ORDER BY date, start_hour, floor, room, employee_id; -- Expects (1, 1, 1, CURRENT_DATE + 1, 1)
@@ -740,8 +737,7 @@ SELECT * FROM Attends ORDER BY date, start_hour, floor, room, employee_id; -- Ex
 CALL reset();
 -- END TEST
 
-
--- TEST prevent_creator_removal_trigger_update_creator_failure
+-- TEST Update Creator Attendance Failure
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -753,7 +749,10 @@ INSERT INTO Superiors VALUES (1), (2);
 INSERT INTO Managers VALUES (1);
 INSERT INTO Seniors VALUES (2);
 COMMIT;
-INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
+BEGIN TRANSACTION;
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
 INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 1, NULL), (1, 1, CURRENT_DATE + 1, 2, 2, NULL);
 -- TEST
 UPDATE Attends SET start_hour = 2 WHERE employee_id = 1; -- Failure
@@ -1332,7 +1331,6 @@ SELECT COUNT(*) from Attends; -- Expected: 0
 -- AFTER TEST
 CALL reset();
 -- END TEST
-
 
 -- TEST check_meeting_capacity_trigger_insert
 -- BEFORE TEST
