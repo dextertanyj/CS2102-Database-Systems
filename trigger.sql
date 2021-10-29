@@ -162,24 +162,6 @@ FOR EACH ROW EXECUTE FUNCTION existing_superior_covering_check();
 
 -------------------------- E5 -----------------------------
 
-
--- B10 only 1 approval per booking
-CREATE OR REPLACE FUNCTION check_booking_approval() RETURNS TRIGGER AS $$
-BEGIN
-    IF OLD.approver_id <> NEW.approver_id THEN
-        RAISE EXCEPTION 'Booking (floor: %, room: %, date: %, start_hour: %) has already been approved', 
-            OLD.floor, OLD.room, OLD.date, OLD.start_hour;
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-DROP TRIGGER IF EXISTS booking_approval ON Bookings;
-
-CREATE TRIGGER booking_approval
-BEFORE UPDATE ON Bookings
-FOR EACH ROW EXECUTE FUNCTION check_booking_approval();
-
 -- A4 no changes to attendance in already approved bookings
 CREATE OR REPLACE FUNCTION check_attends_change() RETURNS TRIGGER AS $$
 DECLARE

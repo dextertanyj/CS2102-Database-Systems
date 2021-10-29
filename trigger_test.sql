@@ -127,39 +127,6 @@ END; -- Success
 CALL reset();
 -- END TEST
 
--- TEST B10 1 approval per booking. Allow cancellation of approver
--- BEFORE TEST
-CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1');
-BEGIN TRANSACTION;
-INSERT INTO Employees VALUES 
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1);
-INSERT INTO Superiors VALUES (1), (2);
-INSERT INTO Managers VALUES (1), (2);
-COMMIT;
-BEGIN TRANSACTION;
-INSERT INTO MeetingRooms VALUES
-    (3, 101, '3rd floor, room 101, Dept 1', 1);
-INSERT INTO Updates VALUES
-    (1, 3, 101, CURRENT_DATE, 10);
-COMMIT;
-INSERT INTO Bookings VALUES
-    (3, 101, CURRENT_DATE, 15, 2, NULL);
--- TEST
--- Update an unapproved booking
-UPDATE Bookings SET approver_id = 1 WHERE 
-    floor = 3 AND room = 101 AND date = CURRENT_DATE AND start_hour = 15; -- Success
--- update a booking with an already declared approver_id
-UPDATE Bookings SET approver_id = 2 WHERE 
-    floor = 3 AND room = 101 AND date = CURRENT_DATE AND start_hour = 15; -- Failure, this booking has already been approved
--- Cancel already approved booking
-UPDATE Bookings SET approver_id = NULL WHERE 
-    floor = 3 AND room = 101 AND date = CURRENT_DATE AND start_hour = 15; -- Success
--- AFTER TEST
-CALL reset();
--- END TEST
-
 -- TEST A4 no changes to attendance in already approved bookings
 -- BEFORE TEST
 CALL reset();
