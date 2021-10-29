@@ -302,3 +302,22 @@ DROP TRIGGER IF EXISTS booking_date_check_trigger ON Bookings;
 CREATE TRIGGER booking_date_check_trigger
 BEFORE INSERT OR UPDATE ON Bookings
 FOR EACH ROW EXECUTE FUNCTION booking_date_check();
+
+CREATE OR REPLACE FUNCTION health_declaration_date_check()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF (NEW.date <> CURRENT_DATE) THEN
+        RAISE EXCEPTION 'Health declaration must be for today';
+    END IF;
+    IF (TG_OP = 'UPDATE' AND OLD.date <> CURRENT_DATE) THEN
+        RAISE EXCEPTION 'Unable to ammend past health declaration records';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS health_declaration_date_check_trigger ON HealthDeclarations;
+
+CREATE TRIGGER health_declaration_date_check_trigger
+BEFORE INSERT OR UPDATE ON HealthDeclarations
+FOR EACH ROW EXECUTE FUNCTION health_declaration_date_check();

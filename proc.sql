@@ -316,3 +316,61 @@ BEGIN
     END IF;
 END;
 $$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE PROCEDURE declare_health
+(id INT, date DATE, temperature NUMERIC(3, 1))
+AS $$
+BEGIN
+    IF (EXISTS (SELECT * FROM HealthDeclarations AS H WHERE H.id = declare_health.id AND H.date = declare_health.date)) THEN
+        UPDATE HealthDeclarations AS H SET temperature = declare_health.temperature WHERE H.id = declare_health.id AND H.date = declare_health.date;
+        RETURN;
+    END IF;
+    INSERT INTO HealthDeclarations VALUES (id, date, temperature);
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION contact_tracing
+(IN id INT, OUT employee_id INT)
+RETURNS SETOF INT AS $$
+DECLARE
+    cursor refcursor;
+    time INT := extract(HOUR FROM CURRENT_TIME);
+BEGIN
+    If (NOT EXISTS (SELECT * FROM HealthDeclarations AS H WHERE H.id = contact_tracing.id AND H.date = CURRENT_DATE)) THEN
+        RAISE EXCEPTION 'Employee % has not declared temperature for today', contact_tracing.id;
+    END IF;
+    IF ((SELECT H.temperature FROM HealthDeclarations AS H WHERE H.id = contact_tracing.id AND H.date = CURRENT_DATE) <= 37.5) THEN
+        RETURN;
+    END IF;
+    ALTER TABLE Attends DISABLE TRIGGER lock_attends;
+    DELETE FROM Bookings AS B 
+    WHERE ((B.date = CURRENT_DATE AND B.start_hour > time) OR (B.date > CURRENT_DATE)) AND B.creator_id = contact_tracing.id;
+    DELETE FROM Attends AS A
+    WHERE ((A.date = CURRENT_DATE AND A.start_hour > time) OR (A.date > CURRENT_DATE)) AND A.employee_id = contact_tracing.id;
+    OPEN cursor FOR
+        WITH CTE AS (
+            SELECT A.*
+            FROM Attends AS A NATURAL JOIN Bookings AS B
+            WHERE B.approver_id IS NOT NULL
+                AND ((A.date BETWEEN CURRENT_DATE - 3 AND CURRENT_DATE - 1) OR (A.date = CURRENT_DATE AND A.start_hour <= time))
+        ) SELECT DISTINCT A.employee_id
+        FROM CTE AS A JOIN CTE AS B
+            ON A.floor = B.floor
+                AND A.room = B.room
+                AND A.date = B.date
+                AND A.start_hour = B.start_hour
+                AND A.employee_id IS DISTINCT FROM B.employee_id
+        WHERE B.employee_id = contact_tracing.id;
+    LOOP
+        FETCH NEXT FROM cursor INTO employee_id;
+        EXIT WHEN NOT FOUND;
+        DELETE FROM Bookings AS B 
+        WHERE B.creator_id = contact_tracing.employee_id AND ((B.date BETWEEN CURRENT_DATE + 1 AND CURRENT_DATE + 7) OR (B.date = CURRENT_DATE AND B.start_hour > time));
+        DELETE FROM Attends AS A 
+        WHERE A.employee_id = contact_tracing.employee_id AND ((A.date BETWEEN CURRENT_DATE + 1 AND CURRENT_DATE + 7) OR (A.date = CURRENT_DATE AND A.start_hour > time));
+        RETURN NEXT;
+    END LOOP;
+    CLOSE cursor;
+    ALTER TABLE Attends ENABLE TRIGGER lock_attends;
+END;
+$$ LANGUAGE plpgsql;
