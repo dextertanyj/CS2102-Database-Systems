@@ -1162,7 +1162,11 @@ SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns (1, 1,
 CALL reset();
 -- END TEST
 
--- TEST check_meeting_room_updates_trigger_insert_success
+/***************************************************************************
+* MR-4 Each meeting room must have at least one relevant capacities entry. *
+***************************************************************************/
+
+-- TEST Insert Success
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -1174,16 +1178,16 @@ INSERT INTO Managers VALUES (1);
 COMMIT;
 -- TEST
 BEGIN TRANSACTION;
-INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE + 1, 1);
 COMMIT;
-SELECT * FROM MeetingRooms ORDER BY floor, room; -- Returns (1, 1, 'Room 1', 1)
+SELECT * FROM MeetingRooms ORDER BY floor, room; -- Returns (1, 1, 'Room 1-1', 1)
 SELECT * FROM Updates ORDER BY date, floor, room; -- Returns (1, 1, 1, CURRENT_DATE + 1, 1)
 -- AFTER TEST
 CALL reset();
 -- END TEST
 
--- TEST check_meeting_room_updates_trigger_update_success
+-- TEST Update Success
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -1194,20 +1198,18 @@ INSERT INTO Superiors VALUES (1);
 INSERT INTO Managers VALUES (1);
 COMMIT;
 BEGIN TRANSACTION;
-INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE + 1, 1);
 COMMIT;
 -- TEST
-BEGIN TRANSACTION;
-UPDATE MeetingRooms SET floor = 2, room = 2 WHERE floor = 1 AND room = 1;
-COMMIT;
-SELECT * FROM MeetingRooms ORDER BY floor, room; -- Returns (2, 2, 'Room 1', 1)
+UPDATE MeetingRooms SET floor = 2, room = 2, name = 'Room 2-2' WHERE floor = 1 AND room = 1;
+SELECT * FROM MeetingRooms ORDER BY floor, room; -- Returns (2, 2, 'Room 2-2', 1)
 SELECT * FROM Updates ORDER BY date, floor, room; -- Returns (1, 2, 2, CURRENT_DATE + 1, 1)
 -- AFTER TEST
 CALL reset();
 -- END TEST
 
--- TEST check_meeting_room_updates_trigger_insert_failure
+-- TEST Insert No Capacity Entry Failure
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -1219,8 +1221,8 @@ INSERT INTO Managers VALUES (1);
 COMMIT;
 -- TEST
 BEGIN TRANSACTION;
-INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
-COMMIT;
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1); 
+COMMIT; -- Exception
 SELECT * FROM MeetingRooms ORDER BY floor, room; -- Returns NULL
 SELECT * FROM Updates ORDER BY date, floor, room; -- Returns NULL
 -- AFTER TEST
