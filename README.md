@@ -27,15 +27,15 @@
 | B-3 | Bookings | A meeting room can only be booked by one group for a given date and time. | Schema (Primary Key) |
 | B-4 | Bookings | A booking can only be made for future meetings. | Trigger ([Booking Date Check](#booking-date-check)) |
 | B-5 | Bookings | The employee booking the room immediately joins the booked meeting. | Trigger ([Insert Meeting Creator](#insert-meeting-creator)) |
-| B-7 | Bookings | Only a manager can approve a booked meeting. | Schema (Foriegn Key) |
-| B-8 | Bookings | A manager can only approve a booked meeting if the meeting room used is in the same department as the manager. | Trigger (Not yet implemented.) |
-| B-9 | Bookings | A manager can only approve a booked meeting if it is in the future. | Trigger ([Approval Only for Future Meetings Trigger](#approval-only-for-future-meetings-trigger)) |
-| B-10 | Bookings | A booked meeting is approved at most once. | Schema (Foreign Key) & Trigger ([Check Booking Approval](#check-booking-approval)) |
-| B-11 | Bookings | If an employee is having a fever, they cannot book a room. | Trigger ([Check Health Declaration Booking](#check-health-declaration-booking)) |
-| B-12 | Bookings | If an employee is having a fever, they cannot book any meeting room until they are no longer having a fever. | Trigger [See B-11] |
-| B-13 | Bookings | When an employee resigns, they are no longer allowed to book any meetings. | Trigger ([Check Resignation Booking Create Approve](#check-resignation-booking-create-approve)) |
-| B-14 | Bookings | When an employee resigns, they are no longer allowed to approve any meetings. | Trigger ([Check Resignation Booking Create Approve](#check-resignation-booking-create-approve)) |
-| B-15 | Bookings | A approved booked meeting can no longer have any of its details changed, except for the revocation of its approver. | Trigger (Not yet implemented.) |
+| B-6 | Bookings | Only a manager can approve a booked meeting. | Schema (Foriegn Key) |
+| B-7 | Bookings | A manager can only approve a booked meeting if the meeting room used is in the same department as the manager. | Trigger (Not yet implemented.) |
+| B-8 | Bookings | A manager can only approve a booked meeting if it is in the future. | Trigger ([Approval Only for Future Meetings Trigger](#approval-only-for-future-meetings-trigger)) |
+| B-9 | Bookings | A booked meeting is approved at most once. | Schema (Foreign Key) & Trigger ([Check Booking Approval](#check-booking-approval)) |
+| B-10 | Bookings | If an employee is having a fever, they cannot book a room. | Trigger ([Check Health Declaration Booking](#check-health-declaration-booking)) |
+| B-11 | Bookings | If an employee is having a fever, they cannot book any meeting room until they are no longer having a fever. | Trigger [See B-11] |
+| B-12 | Bookings | When an employee resigns, they are no longer allowed to book any meetings. | Trigger ([Check Resignation Booking Create Approve](#check-resignation-booking-create-approve)) |
+| B-13 | Bookings | When an employee resigns, they are no longer allowed to approve any meetings. | Trigger ([Check Resignation Booking Create Approve](#check-resignation-booking-create-approve)) |
+| B-14 | Bookings | A approved booked meeting can no longer have any of its details changed, except for the revocation of its approver. | Trigger (Not yet implemented.) |
 | A-1 | Attends | Any employee can join a booked meeting. | Schema (Foreign Key) |
 | A-2 | Attends | An employee can only join future meetings. | Trigger ([Employee Join Only Future Meetings Trigger](#employee-join-only-future-meetings-trigger)) |
 | A-3 | Attends | If an employee is having a fever, they cannot join a booked meeting. | Trigger ([Check Health Declaration Attends](#check-health-declaration-attends)) |
