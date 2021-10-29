@@ -156,7 +156,6 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS check_resignation_booking_create_approve_trigger ON Bookings;
-
 CREATE TRIGGER check_resignation_booking_create_approve_trigger
 BEFORE INSERT OR UPDATE ON Bookings
 FOR EACH ROW EXECUTE FUNCTION check_resignation_booking_create_approve();
@@ -175,7 +174,6 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS check_resignation_health_declaration_trigger ON HealthDeclarations;
-
 CREATE TRIGGER check_resignation_health_declaration_trigger
 BEFORE INSERT OR UPDATE ON HealthDeclarations
 FOR EACH ROW EXECUTE FUNCTION check_resignation_health_declaration();
@@ -194,7 +192,6 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS check_resignation_attend_trigger ON Attends;
-
 CREATE TRIGGER check_resignation_attend_trigger
 BEFORE INSERT OR UPDATE ON Attends
 FOR EACH ROW EXECUTE FUNCTION check_resignation_attend();
@@ -213,7 +210,6 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS check_resignation_updates_trigger ON Updates;
-
 CREATE TRIGGER check_resignation_updates_trigger
 BEFORE INSERT OR UPDATE ON Updates
 FOR EACH ROW EXECUTE FUNCTION check_resignation_updates();
@@ -267,6 +263,7 @@ CREATE TRIGGER prevent_creator_removal_trigger
 BEFORE DELETE OR UPDATE ON Attends
 FOR EACH ROW EXECUTE FUNCTION prevent_creator_removal();
 
+-- Trigger B-7: A manager can only approve a booked meeting if the meeting room used is in the same department as the manager.
 CREATE OR REPLACE FUNCTION meeting_approver_department_check()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -287,6 +284,7 @@ CREATE TRIGGER meeting_approver_department_check_trigger
 BEFORE INSERT OR UPDATE OF approver_id ON Bookings
 FOR EACH ROW EXECUTE FUNCTION meeting_approver_department_check();
 
+-- Trigger B-4: A booking can only be made for future meetings.
 CREATE OR REPLACE FUNCTION booking_date_check()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -302,6 +300,45 @@ DROP TRIGGER IF EXISTS booking_date_check_trigger ON Bookings;
 CREATE TRIGGER booking_date_check_trigger
 BEFORE INSERT OR UPDATE ON Bookings
 FOR EACH ROW EXECUTE FUNCTION booking_date_check();
+
+-- Trigger B-8: An approval can only be made for future meetings.
+CREATE OR REPLACE FUNCTION approval_only_for_future_meetings_trigger()
+RETURNS TRIGGER AS $$
+DECLARE
+    current_hours_into_the_day INT := DATE_PART('HOUR', CURRENT_TIMESTAMP);
+BEGIN
+    IF (NEW.approver_id IS NOT NULL AND (NEW.date < CURRENT_DATE OR (NEW.date = CURRENT_DATE AND NEW.start_hour <= current_hours_into_the_day))) THEN
+        RAISE EXCEPTION 'Cannot approve or update meetings of the past';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS approval_only_for_future_meetings_trigger ON Bookings;
+
+CREATE TRIGGER approval_only_for_future_meetings_trigger
+BEFORE INSERT OR UPDATE ON Bookings
+FOR EACH ROW EXECUTE FUNCTION approval_only_for_future_meetings_trigger();
+
+-- Trigger A-2: an employee can only join future meetings.
+CREATE OR REPLACE FUNCTION employee_join_only_future_meetings_trigger()
+RETURNS TRIGGER AS $$
+DECLARE
+    current_hours_into_the_day INT := DATE_PART('HOUR', CURRENT_TIMESTAMP);
+BEGIN
+    IF (NEW.date < CURRENT_DATE OR (NEW.date = CURRENT_DATE AND NEW.start_hour <= current_hours_into_the_day)) THEN
+        RAISE EXCEPTION 'Cannot join meetings in the past';
+END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS employee_join_only_future_meetings_trigger ON Attends;
+
+CREATE TRIGGER employee_join_only_future_meetings_trigger
+BEFORE INSERT OR UPDATE ON Attends
+FOR EACH ROW EXECUTE FUNCTION employee_join_only_future_meetings_trigger();
+
 
 CREATE OR REPLACE FUNCTION health_declaration_date_check()
 RETURNS TRIGGER AS $$
@@ -338,6 +375,60 @@ CREATE CONSTRAINT TRIGGER check_meeting_room_updates_trigger
 AFTER INSERT OR UPDATE ON MeetingRooms
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION check_meeting_room_updates();
+
+-- Trigger C-2: If a meeting room has its capacity changed, all future meetings that exceed the new capacity will be removed.
+CREATE OR REPLACE FUNCTION check_future_meetings_on_capacity_change_trigger()
+RETURNS TRIGGER AS $$
+DECLARE
+    current_hours_into_the_day INT := DATE_PART('HOUR', CURRENT_TIMESTAMP);
+BEGIN
+    DELETE FROM Bookings 
+    WHERE ROW(floor, room, date, start_hour) IN 
+    (SELECT a.floor, a.room, a.date, a.start_hour
+        FROM Attends a
+        WHERE a.date > NEW.date OR (a.date = NEW.date AND a.start_hour > current_hours_into_the_day)
+        GROUP BY a.floor, a.room, a.date, a.start_hour
+        HAVING count(a.employee_id) > NEW.capacity);
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS check_future_meetings_on_capacity_change_trigger ON Updates;
+
+CREATE TRIGGER check_future_meetings_on_capacity_change_trigger
+BEFORE INSERT OR UPDATE ON Updates
+FOR EACH ROW EXECUTE FUNCTION check_future_meetings_on_capacity_change_trigger();
+
+-- Trigger A-6: The number of people attending a meeting should not exceed the latest past capacity declared.
+CREATE OR REPLACE FUNCTION check_meeting_capacity_trigger()
+RETURNS TRIGGER AS $$
+DECLARE 
+    room_capacity INT := (SELECT capacity 
+                            FROM RoomCapacities(NEW.date)
+                            WHERE floor = NEW.floor
+                            AND room = NEW.room);
+                            
+    current_room_count INT := (SELECT COUNT(*)
+                                FROM Attends 
+                                WHERE floor = NEW.floor
+                                AND room = NEW.room
+                                AND date = NEW.date
+                                AND start_hour = NEW.start_hour);
+BEGIN
+    IF TG_OP = 'INSERT' AND current_room_count >= room_capacity THEN
+        RAISE EXCEPTION 'Cannot attend booking due to meeting room capacity limit reached';
+    ELSIF TG_OP = 'UPDATE' AND current_room_count >= room_capacity AND (NEW.floor <> OLD.floor OR NEW.room <> OLD.room OR NEW.date <> OLD.date OR NEW.start_hour <> OLD.start_hour) THEN
+        RAISE EXCEPTION 'Cannot attend booking due to meeting room capacity limit reached';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS check_meeting_capacity_trigger ON Attends;
+
+CREATE TRIGGER check_meeting_capacity_trigger
+BEFORE INSERT OR UPDATE ON Attends
+FOR EACH ROW EXECUTE FUNCTION check_meeting_capacity_trigger();
 
 CREATE OR REPLACE FUNCTION lock_details_approved_bookings()
 RETURNS TRIGGER AS $$
