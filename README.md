@@ -6,8 +6,6 @@
 | D-2 | Departments | Each department has a unique ID. | Schema (Primary Key) |
 | D-3 | Departments | Each department may contain zero or more employees. | Schema (Referenced in Foreign Key) |
 | D-4 | Departments | Each department may have zero or more meeting rooms. | Schema (Referenced in Foreign Key) |
-| D-5 | Departments | When a department has been removed, employees cannot be added to it. | Trigger (Not yet implemented.) |
-| D-6 | Departments | When a department has been removed, meeting rooms cannot be added to it. | Trigger (Not yet implemented.) |
 | E-1 | Employees | Each employee records the following information: Name, Contact Numbers, Resignation Date. | Schema (Field) |
 | E-2 | Employees | Each employee has a unique ID. | Schema (Primary Key) |
 | E-3 | Employees | Each employee has a unique e-mail. | Schema (Unique) |
@@ -16,12 +14,14 @@
 | E-6 | Employees | When an employee resigns, all past records are kept. | Schema (Field) [See E-1] |
 | E-7 | Employees | When an employee resigns, the employee is removed from all future meetings, approved or otherwise. | Trigger (Not yet implemented.) |
 | E-8 | Employees | When an employee resigns, the employee has all their future booked meetings canclled, approved or otherwise. | Trigger (Not yet implemented.) |
-| E-9 | Employees | When an employee resigns, all future approvals granted by the employee are revoked. | Trigger (Not yet implemented.) |
+| E-9 | Employees | When an employee resigns, all future approvals granted by the employee are revoked. | Trigger (Lock Removed Department Employees Trigger[#lock-removed-department-employees-trigger]) |
 | E-10 | Employees | Each employee can attend only one booked meeting at a given date and time. | Schema (Unique) |
+| E-11 | Employees | When a department has been removed, employees cannot be added to it. | Trigger (Not yet implemented.) |
 | MR-1 | Meeting Rooms | Each meeting room has a unique Floor-Room pair. | Schema (Primary Key) |
 | MR-2 | Meeting Rooms | Each meeting room records the following information: Room name. | Schema (Field) |
 | MR-3 | Meeting Rooms | Each meeting room must be located in exactly one department. | Schema (NOT NULL & Foreign Key) |
 | MR-4 | Meeting Rooms | Each meeting room must have at least one relevant capacities entry. | Trigger (Not yet implemented.) |
+| MR-5 | Meeting Rooms | When a department has been removed, meeting rooms cannot be added to it. | Trigger (Lock Removed Department Meeting Rooms Trigger)[#lock-removed-department-meeting-rooms-trigger] |
 | B-1 | Bookings | A junior employee cannot book any meeting rooms. | Schema (Foreign Key) [See B-2] |
 | B-2 | Bookings | A senior or a manager can book meeting rooms. | Schema (NOT NULL & Foreign Key) |
 | B-3 | Bookings | A meeting room can only be booked by one group for a given date and time. | Schema (Primary Key) |
@@ -107,9 +107,9 @@ Actions:
 1. Raises exception if employee ID does not exist in either `Juniors`, `Seniors`, or `Managers` table.
 1. Otherwise, continue.
 
-#### **resigned_employee_cleanup**
+#### **Resigned Employee Cleanup**
 Activated on:
-1. After `INSERT` or `UPDATE FOR resignation_date` on `Employees` table.
+1. After `INSERT` or `UPDATE OF resignation_date` on `Employees` table.
 
 Actions:
 1. If new resignation date is non-null then:
@@ -117,11 +117,27 @@ Actions:
     2. Delete all entries from `Attends` table where employee is new employee and the attendance date is after the new resignation date.
 1. Continue.
 
+#### **Lock Removed Department Employees Trigger**
+Activated on:
+1. After `INSERT` or `UPDATE` on `Employees` table.
+
+Actions:
+1. If there is no change in department ID, continue.
+1. Otherwise, raises exception if the new department has a non-null removal date.
+1. Otherwise, continue.
+
 ---
 
 ### Meeting Rooms
 
-No triggers implemented.
+#### **Lock Removed Department Meeting Rooms Trigger**
+Activated on:
+1. After `INSERT` or `UPDATE` on `Meeting Rooms` table.
+
+Actions:
+1. If there is no change in department ID, continue.
+1. Otherwise, raises exception if the new department has a non-null removal date.
+1. Otherwise, continue.
 
 ---
 
