@@ -12,16 +12,16 @@
 | E-4 | Employees | Each employee belongs to exactly one department. | Schema (NOT NULL & Foreign Key) |
 | E-5 | Employees | Each employee must be one and only one of the three kinds of employees. | Trigger ([Check Junior Insertion](#check-junior-insertion), [Check Senior Insertion](#check-senior-insertion), [Check Manager Insertion](#check-manager-insertion), [Check Covering Employee](#check-covering-employee)) |
 | E-6 | Employees | When an employee resigns, all past records are kept. | Schema (Field) [See E-1] |
-| E-7 | Employees | When an employee resigns, the employee is removed from all future meetings, approved or otherwise. | Trigger (Not yet implemented.) |
-| E-8 | Employees | When an employee resigns, the employee has all their future booked meetings canclled, approved or otherwise. | Trigger (Not yet implemented.) |
-| E-9 | Employees | When an employee resigns, all future approvals granted by the employee are revoked. | Trigger (Lock Removed Department Employees Trigger[#lock-removed-department-employees-trigger]) |
+| E-7 | Employees | When an employee resigns, the employee is removed from all future meetings, approved or otherwise. | Trigger ([Resigned Employee Cleanup](#resigned-employee-cleanup)) |
+| E-8 | Employees | When an employee resigns, the employee has all their future booked meetings canclled, approved or otherwise. | Trigger ([Resigned Employee Cleanup](#resigned-employee-cleanup)) |
+| E-9 | Employees | When an employee resigns, all future approvals granted by the employee are revoked. | Trigger ([Resigned Employee Cleanup](#resigned-employee-cleanup)) |
 | E-10 | Employees | Each employee can attend only one booked meeting at a given date and time. | Schema (Unique) |
-| E-11 | Employees | When a department has been removed, employees cannot be added to it. | Trigger (Not yet implemented.) |
+| E-11 | Employees | When a department has been removed, employees cannot be added to it. | Trigger (Lock Removed Department Employees Trigger[#lock-removed-department-employees-trigger]) |
 | MR-1 | Meeting Rooms | Each meeting room has a unique Floor-Room pair. | Schema (Primary Key) |
 | MR-2 | Meeting Rooms | Each meeting room records the following information: Room name. | Schema (Field) |
 | MR-3 | Meeting Rooms | Each meeting room must be located in exactly one department. | Schema (NOT NULL & Foreign Key) |
-| MR-4 | Meeting Rooms | Each meeting room must have at least one relevant capacities entry. | Trigger (Not yet implemented.) |
-| MR-5 | Meeting Rooms | When a department has been removed, meeting rooms cannot be added to it. | Trigger (Lock Removed Department Meeting Rooms Trigger)[#lock-removed-department-meeting-rooms-trigger] |
+| MR-4 | Meeting Rooms | Each meeting room must have at least one relevant capacities entry. | Trigger ((Check Meeting Room Updates Trigger)[#check-meeting-room-updates-trigger]) |
+| MR-5 | Meeting Rooms | When a department has been removed, meeting rooms cannot be added to it. | Trigger ((Lock Removed Department Meeting Rooms Trigger)[#lock-removed-department-meeting-rooms-trigger]) |
 | B-1 | Bookings | A junior employee cannot book any meeting rooms. | Schema (Foreign Key) [See B-2] |
 | B-2 | Bookings | A senior or a manager can book meeting rooms. | Schema (NOT NULL & Foreign Key) |
 | B-3 | Bookings | A meeting room can only be booked by one group for a given date and time. | Schema (Primary Key) |
@@ -35,7 +35,7 @@
 | B-11 | Bookings | If an employee is having a fever, they cannot book any meeting room until they are no longer having a fever. | Trigger [See B-11] |
 | B-12 | Bookings | When an employee resigns, they are no longer allowed to book any meetings. | Trigger ([Check Resignation Booking Create Approve](#check-resignation-booking-create-approve)) |
 | B-13 | Bookings | When an employee resigns, they are no longer allowed to approve any meetings. | Trigger ([Check Resignation Booking Create Approve](#check-resignation-booking-create-approve)) |
-| B-14 | Bookings | A approved booked meeting can no longer have any of its details changed, except for the revocation of its approver. | Trigger (Not yet implemented.) |
+| B-14 | Bookings | A approved booked meeting can no longer have any of its details changed, except for the revocation of its approver. | Trigger ([Lock Details Approved Bookings](#lock-details-approved-bookings)) |
 | A-1 | Attends | Any employee can join a booked meeting. | Schema (Foreign Key) |
 | A-2 | Attends | An employee can only join future meetings. | Trigger ([Employee Join Only Future Meetings Trigger](#employee-join-only-future-meetings-trigger)) |
 | A-3 | Attends | If an employee is having a fever, they cannot join a booked meeting. | Trigger ([Check Health Declaration Attends](#check-health-declaration-attends)) |
@@ -113,8 +113,9 @@ Activated on:
 
 Actions:
 1. If new resignation date is non-null then:
-    1. Delete all entries from `Bookings` table where creator is new employee and booking date is after the new resignation date.
-    2. Delete all entries from `Attends` table where employee is new employee and the attendance date is after the new resignation date.
+   1. Delete all entries from `Bookings` table where creator is new employee and booking date is after the new resignation date.
+   2. Delete all entries from `Attends` table where employee is new employee and the attendance date is after the new resignation date.
+   3. Update all entries from `Bookings` table where approver is new employee and the booking date is after the new resignation date, setting their approver IDs to null.
 1. Continue.
 
 #### **Lock Removed Department Employees Trigger**
@@ -129,6 +130,15 @@ Actions:
 ---
 
 ### Meeting Rooms
+
+#### **Check Meeting Room Updates Trigger**
+Activated on:
+1. After `INSERT` or `UPDATE` on `MeetingRooms` table.
+1. Initially deferred.
+
+Actions:
+1. Raises exception if there is no entry in `Updates` where floor is new floor and room is new room.
+1. Otherwise, continue.
 
 #### **Lock Removed Department Meeting Rooms Trigger**
 Activated on:
@@ -199,6 +209,15 @@ Activated on:
 Actions:
 1. Raises exception if new approver ID is non-null, and the new booking time is in the past.
 1. Otherwise, continue.
+
+#### **Lock Details Approved Bookings**
+Activated on:
+1. Before `UPDATE` on `Bookings` table.
+
+Actions:
+1. If old approver is null, continue.
+1. Otherwise, if old approver is distinct from new approver, and old approver has a resignation date that is before old date, continue.
+1. Otherwise, raise exception.
 
 ---
 
