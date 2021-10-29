@@ -622,6 +622,9 @@ CREATE TRIGGER lock_removed_department_meeting_rooms_trigger
 BEFORE INSERT OR UPDATE ON MeetingRooms
 FOR EACH ROW EXECUTE FUNCTION lock_removed_department();
 
+-- E-7 When an employee resigns, the employee is removed from all future meetings, approved or otherwise.
+-- E-8 When an employee resigns, the employee has all their future booked meetings canclled, approved or otherwise.
+-- E-9 When an employee resigns, all future approvals granted by the employee are revoked.
 CREATE OR REPLACE FUNCTION resigned_employee_cleanup()
 RETURNS TRIGGER AS $$
 BEGIN
