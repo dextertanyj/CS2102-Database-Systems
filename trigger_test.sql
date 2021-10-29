@@ -16,7 +16,7 @@ AS $$
 CASCADE;
 $$ LANGUAGE sql;
 
--- TEST trigger 12 non overlapping Juniors, Seniors, Managers
+-- TEST trigger E5 non overlapping Juniors, Seniors, Managers
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -43,20 +43,68 @@ INSERT INTO Seniors VALUES (6); -- Failure, employee is not a Superior
 INSERT INTO Managers VALUES (5); -- Failure, employee is already a Senior
 -- insert a junior into Managers
 INSERT INTO Managers VALUES (6); -- Failure, employee is not a Superior
+
 -- insert an employee, without insertion into Junior, Senior, Manager
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES (2, 'Err 2', 'contact 2', 'err2@company.com', NULL, 1);
 COMMIT; -- Failure, employee must exist either as junior, senior or manager
+
 -- insert an employee into Superiors only, not into Senior or Manager
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES (3, 'Err Superior 3', 'contact 3', 'err3@company.com', NULL, 1);
 INSERT INTO Superiors VALUES (3);
-COMMIT; -- Failure, employee must exists either as junior, senior or manager
+COMMIT; -- Failure, employee must exists either as senior or manager once a superior
+
+-- update a Junior into an already taken id
+UPDATE Juniors SET id = 1 WHERE id = 6; -- Failure, employee id=1 is already a Superior
+-- update a Manager into an already taken id
+UPDATE Managers SET id = 6 WHERE id = 1; -- Failure, employee id=6 is already a Junior
+-- update a Senior into an already taken id
+UPDATE Seniors SET id = 1 WHERE id = 5; -- Failure, employee id=1 is already a Manager
+
+-- only delete a junior
+DELETE FROM Juniors WHERE id = 6; -- Failure, Junior is not re-inserted as a Superior
+-- delete a junior then insert into superior
+BEGIN TRANSACTION;
+DELETE FROM Juniors WHERE id = 6;
+INSERT INTO Superiors VALUES (6);
+END; -- Failure, employee must exist either as Manager or Senior once a Superior
+-- delete a junior, insert into superior, insert into manager
+BEGIN TRANSACTION;
+DELETE FROM Juniors WHERE id = 6;
+INSERT INTO Superiors VALUES (6);
+INSERT INTO Managers VALUES (6);
+END; -- Success
+
+-- only delete a superior
+DELETE FROM Superiors WHERE id = 6; -- Failure, Superior is not re-inserted as a Junior
+-- delete a superior then insert into junior
+BEGIN TRANSACTION;
+DELETE FROM Superiors WHERE id = 6;
+INSERT INTO Juniors VALUES (6);
+END; -- Success
+
+-- only delete a senior
+DELETE FROM Seniors WHERE id = 5; -- Failure, Senior is not re-inserted as Junior or Manager
+--delete a senior, then insert into manager
+BEGIN TRANSACTION;
+DELETE FROM Seniors WHERE id = 5;
+INSERT INTO Managers VALUES (5);
+END; -- Success
+
+-- only delete a manager
+DELETE FROM Managers WHERE id = 1; -- Failure, Manager is not re-inserted as Junior or Senior
+-- delete a manager then insert into senior
+BEGIN TRANSACTION;
+DELETE FROM Managers WHERE id = 1;
+INSERT INTO Seniors VALUES (1);
+END; -- Success
+
 -- AFTER TEST
 CALL reset();
 -- END TEST
 
--- TEST trigger 22 1 approval per booking
+-- TEST B10 1 approval per booking. Allow cancellation of approver
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -75,17 +123,21 @@ INSERT INTO Updates VALUES
 COMMIT;
 INSERT INTO Bookings VALUES
     (3, 101, CURRENT_DATE, 15, 2, NULL);
-UPDATE Bookings SET approver_id = 1 WHERE 
-    floor = 3 AND room = 101 AND date = CURRENT_DATE AND start_hour = 15;
 -- TEST
+-- Update an unapproved booking
+UPDATE Bookings SET approver_id = 1 WHERE 
+    floor = 3 AND room = 101 AND date = CURRENT_DATE AND start_hour = 15; -- Success
 -- update a booking with an already declared approver_id
 UPDATE Bookings SET approver_id = 2 WHERE 
-    floor = 3 AND room = 101 AND date = CURRENT_DATE AND start_hour = 15; -- Failure, this booking has already been approved 
+    floor = 3 AND room = 101 AND date = CURRENT_DATE AND start_hour = 15; -- Failure, this booking has already been approved
+-- Cancel already approved booking
+UPDATE Bookings SET approver_id = NULL WHERE 
+    floor = 3 AND room = 101 AND date = CURRENT_DATE AND start_hour = 15; -- Success
 -- AFTER TEST
 CALL reset();
 -- END TEST
 
--- TEST trigger 23 no changes to attendance in already approved bookings
+-- TEST A4 no changes to attendance in already approved bookings
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -93,10 +145,14 @@ BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
     (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
-    (5, 'Senior 5', 'Contact 5', 'senior5@company.com', NULL, 1);
+    (5, 'Senior 5', 'Contact 5', 'senior5@company.com', NULL, 1),
+    (6, 'Resigned today Junior 6', 'Contact 6', 'junior6@company.com', NULL, 1),
+    (7, 'Resigned yesterday Junior 7', 'Contact 7', 'junior7@company.com', NULL, 1),
+    (8, 'Resigned tomorrow Junior 8', 'Contact 8', 'junior8@company.com', NULL, 1);
 INSERT INTO Superiors VALUES (1), (2), (5);
 INSERT INTO Seniors VALUES (5);
 INSERT INTO Managers VALUES (1), (2);
+INSERT INTO Juniors VALUES (6), (7), (8);
 COMMIT;
 BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES
@@ -110,23 +166,41 @@ INSERT INTO Bookings VALUES
 INSERT INTO Attends VALUES
     (1, 3, 101, CURRENT_DATE, 10),
     (1, 3, 101, CURRENT_DATE, 15),
-    (5, 3, 101, CURRENT_DATE, 10);
+    (5, 3, 101, CURRENT_DATE, 10),
+    (6, 3, 101, CURRENT_DATE, 15),
+    (7, 3, 101, CURRENT_DATE, 15),
+    (8, 3, 101, CURRENT_DATE, 15);
 UPDATE Bookings SET approver_id = 1 WHERE 
     floor = 3 AND room = 101 AND date = CURRENT_DATE AND start_hour = 15;
 -- TEST
 -- insert an employee into an already approved booking
 INSERT INTO Attends VALUES (5, 3, 101, CURRENT_DATE, 15); -- Failure, booking for this room has been approved
+
 -- update an employee's attendance in an already approved booking
 UPDATE Attends SET employee_id = 5 WHERE employee_id = 1 AND start_hour = 15; -- Failure, previous booking for this room has been approved
 -- delete an employee's attendance in an already approved booking
 DELETE FROM Attends WHERE employee_id = 1 AND start_hour = 15; -- Failure, booking for this room has been approved
+
 -- update an employee's attendance in a not-approved booking, into an already-approved booking
 UPDATE Attends SET start_hour = 15 WHERE employee_id = 5; -- Failure, the incoming booking has already been approved
+
+-- delete an employee's attendance when he has resigned today
+UPDATE Employees SET resignation_date = CURRENT_DATE WHERE id = 6;
+DELETE FROM Attends WHERE employee_id = 6; -- Success
+
+-- delete an employee's attendance when he has resigned yesterday
+UPDATE Employees SET resignation_date = CURRENT_DATE - 1 WHERE id = 7;
+DELETE FROM Attends WHERE employee_id = 7; -- Success
+
+-- delete an employee's attendance when he resigns tomorrow
+UPDATE Employees SET resignation_date = CURRENT_DATE + 1 WHERE id = 8;
+DELETE FROM Attends WHERE employee_id = 8; -- Failure, employee should still attend the already approved meeting
+
 -- AFTER TEST
 CALL reset();
 -- END TEST
 
--- TEST trigger 24 Only managers in same department have permissions to change capacity
+-- TEST C1 Only managers in same department have permissions to change capacity
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
@@ -154,7 +228,29 @@ INSERT INTO Updates VALUES (1, 3, 101, CURRENT_DATE, 10); -- Success
 CALL reset();
 -- END TEST
 
--- TEST trigger 34 Meeting room booking or approval insert_employee_booking_success
+-- TEST C4 Meeting room can only have Updates not in the past (present and future only)
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES 
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
+COMMIT;
+INSERT INTO MeetingRooms VALUES (3, 101, '3rd floor, room 101, Dept 1', 1);
+-- TEST
+-- Update capacity yesterday 
+INSERT INTO Updates VALUES (1, 3, 101, CURRENT_DATE - 1, 10); -- Failure, meeting room capacity cannot be changed in the past
+-- Update capacity today 
+INSERT INTO Updates VALUES (1, 3, 101, CURRENT_DATE, 10); -- Success
+-- Update capacity tomorrow
+INSERT INTO Updates VALUES (1, 3, 101, CURRENT_DATE + 1, 10); -- Success
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST trigger 34 Meeting room booking or approval
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
