@@ -326,7 +326,9 @@ CREATE OR REPLACE FUNCTION insert_meeting_creator()
 RETURNS TRIGGER AS $$
 BEGIN
     IF (NEW.creator_id IS DISTINCT FROM OLD.creator_id) THEN
-        DELETE FROM Attends WHERE employee_id = OLD.creator_id AND floor = OLD.floor AND room = OLD.room AND date = OLD.date AND start_hour = OLD.start_hour;
+        IF (TG_OP = 'UPDATE') THEN
+            DELETE FROM Attends WHERE employee_id = OLD.creator_id AND floor = OLD.floor AND room = OLD.room AND date = OLD.date AND start_hour = OLD.start_hour;
+        END IF;
         IF (NOT EXISTS 
             (SELECT * 
             FROM Attends AS A 
