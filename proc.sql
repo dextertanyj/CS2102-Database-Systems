@@ -343,7 +343,6 @@ BEGIN
         RETURN;
     END IF;
     ALTER TABLE Attends DISABLE TRIGGER lock_attends;
-    ALTER TABLE Bookings DISABLE TRIGGER lock_approved_bookings_trigger;
     DELETE FROM Bookings AS B 
     WHERE ((B.date = CURRENT_DATE AND B.start_hour > time) OR (B.date > CURRENT_DATE)) AND B.creator_id = contact_tracing.id;
     DELETE FROM Attends AS A
@@ -372,7 +371,6 @@ BEGIN
         RETURN NEXT;
     END LOOP;
     CLOSE cursor;
-    ALTER TABLE Bookings ENABLE TRIGGER lock_approved_bookings_trigger;
     ALTER TABLE Attends ENABLE TRIGGER lock_attends;
 END;
 $$ LANGUAGE plpgsql;

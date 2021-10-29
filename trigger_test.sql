@@ -927,33 +927,6 @@ SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (2, CURRENT_DATE 
 CALL reset();
 -- END TEST
 
--- TEST lock_approved_bookings_trigger_resigned_creator_delete_success
--- BEFORE TEST
-CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1');
-BEGIN TRANSACTION;
-INSERT INTO Employees VALUES
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1);
-INSERT INTO Superiors VALUES (1), (2);
-INSERT INTO Managers VALUES (1), (2);
-COMMIT;
-BEGIN TRANSACTION;
-INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
-INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
-COMMIT;
-INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 1, NULL);
-UPDATE Bookings SET approver_id = 2 WHERE floor = 1 AND room = 1;
--- ALTER TABLE Employees DISABLE TRIGGER resigned_employee_cleanup_trigger;
-UPDATE Employees SET resignation_date = CURRENT_DATE WHERE id = 1;
--- ALTER TABLE Employees ENABLE TRIGGER resigned_employee_cleanup_trigger;
--- TEST
-DELETE FROM Bookings WHERE creator_id = 1;
-SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns NULL
--- AFTER TEST
-CALL reset();
--- END TEST
-
 -- TEST lock_approved_bookings_trigger_resigned_approver_update_success
 -- BEFORE TEST
 CALL reset();
@@ -980,38 +953,6 @@ UPDATE Employees SET resignation_date = CURRENT_DATE WHERE id = 2;
 UPDATE Bookings SET approver_id = NULL WHERE floor = 1 AND room = 1 AND start_hour = 1;
 UPDATE Bookings SET approver_id = 1 WHERE floor = 1 AND room = 1 AND start_hour = 2;
 SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns (1, 1, CURRENT_DATE + 1, 1, 1, NULL), (1, 1, CURRENT_DATE + 1, 2, 1, 1)
--- AFTER TEST
-CALL reset();
--- END TEST
-
--- TEST lock_approved_bookings_trigger_delete_failure
--- BEFORE TEST
-CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1');
-BEGIN TRANSACTION;
-INSERT INTO Employees VALUES
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
-    (3, 'Manager 3', 'Contact 3', 'manager3@company.com', NULL, 1);
-INSERT INTO Superiors VALUES (1), (2), (3);
-INSERT INTO Managers VALUES (1), (2), (3);
-COMMIT;
-BEGIN TRANSACTION;
-INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
-INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
-COMMIT;
-INSERT INTO Bookings VALUES
-    (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
-    (1, 1, CURRENT_DATE + 1, 2, 1, NULL);
-UPDATE Bookings SET approver_id = 2 WHERE floor = 1 AND room = 1 AND start_hour = 1;
-UPDATE Bookings SET approver_id = 3 WHERE floor = 1 AND room = 1 AND start_hour = 2;
--- ALTER TABLE Employees DISABLE TRIGGER resigned_employee_cleanup_trigger;
-UPDATE Employees SET resignation_date = CURRENT_DATE WHERE id = 3;
--- ALTER TABLE Employees ENABLE TRIGGER resigned_employee_cleanup_trigger;
--- TEST
-DELETE FROM Bookings WHERE floor = 1 AND room = 1 AND start_hour = 1;
-DELETE FROM Bookings WHERE floor = 1 AND room = 1 AND start_hour = 2;
-SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns (1, 1, CURRENT_DATE + 1, 1, 1, 2), (1, 1, CURRENT_DATE + 1, 2, 1, 3)
 -- AFTER TEST
 CALL reset();
 -- END TEST
