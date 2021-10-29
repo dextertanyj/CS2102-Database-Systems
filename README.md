@@ -20,8 +20,8 @@
 | MR-1 | Meeting Rooms | Each meeting room has a unique Floor-Room pair. | Schema (Primary Key) |
 | MR-2 | Meeting Rooms | Each meeting room records the following information: Room name. | Schema (Field) |
 | MR-3 | Meeting Rooms | Each meeting room must be located in exactly one department. | Schema (NOT NULL & Foreign Key) |
-| MR-4 | Meeting Rooms | Each meeting room must have at least one relevant capacities entry. | Trigger ((Check Meeting Room Updates Trigger)[#check-meeting-room-updates-trigger]) |
-| MR-5 | Meeting Rooms | When a department has been removed, meeting rooms cannot be added to it. | Trigger ((Lock Removed Department Meeting Rooms Trigger)[#lock-removed-department-meeting-rooms-trigger]) |
+| MR-4 | Meeting Rooms | Each meeting room must have at least one relevant capacities entry. | Trigger ([Check Meeting Room Updates Trigger](#check-meeting-room-updates-trigger)) |
+| MR-5 | Meeting Rooms | When a department has been removed, meeting rooms cannot be added to it. | Trigger ([Lock Removed Department Meeting Rooms Trigger](#lock-removed-department-meeting-rooms-trigger)) |
 | B-1 | Bookings | A junior employee cannot book any meeting rooms. | Schema (Foreign Key) [See B-2] |
 | B-2 | Bookings | A senior or a manager can book meeting rooms. | Schema (NOT NULL & Foreign Key) |
 | B-3 | Bookings | A meeting room can only be booked by one group for a given date and time. | Schema (Primary Key) |
@@ -30,12 +30,13 @@
 | B-6 | Bookings | Only a manager can approve a booked meeting. | Schema (Foriegn Key) |
 | B-7 | Bookings | A manager can only approve a booked meeting if the meeting room used is in the same department as the manager. | Trigger (Not yet implemented.) |
 | B-8 | Bookings | A manager can only approve a booked meeting if it is in the future. | Trigger ([Approval Only for Future Meetings Trigger](#approval-only-for-future-meetings-trigger)) |
-| B-9 | Bookings | A booked meeting is approved at most once. | Schema (Foreign Key) & Trigger ([Check Booking Approval](#check-booking-approval)) |
+| B-9 | Bookings | A booked meeting is approved at most once. | Schema (Foreign Key) & Trigger [See B-14] |
 | B-10 | Bookings | If an employee is having a fever, they cannot book a room. | Trigger ([Check Health Declaration Booking](#check-health-declaration-booking)) |
 | B-11 | Bookings | If an employee is having a fever, they cannot book any meeting room until they are no longer having a fever. | Trigger [See B-11] |
 | B-12 | Bookings | When an employee resigns, they are no longer allowed to book any meetings. | Trigger ([Check Resignation Booking Create Approve](#check-resignation-booking-create-approve)) |
 | B-13 | Bookings | When an employee resigns, they are no longer allowed to approve any meetings. | Trigger ([Check Resignation Booking Create Approve](#check-resignation-booking-create-approve)) |
 | B-14 | Bookings | A approved booked meeting can no longer have any of its details changed, except for the revocation of its approver. | Trigger ([Lock Details Approved Bookings](#lock-details-approved-bookings)) |
+| B-15 | Bookings | A meeting must be attended by its creator. | Trigger ([Prevent Creator Removal Trigger](#prevent-creator-removal-trigger)) |
 | A-1 | Attends | Any employee can join a booked meeting. | Schema (Foreign Key) |
 | A-2 | Attends | An employee can only join future meetings. | Trigger ([Employee Join Only Future Meetings Trigger](#employee-join-only-future-meetings-trigger)) |
 | A-3 | Attends | If an employee is having a fever, they cannot join a booked meeting. | Trigger ([Check Health Declaration Attends](#check-health-declaration-attends)) |
@@ -46,7 +47,7 @@
 | C-1 | Capacities | A manager from the same department as the meeting room may change the meeting room capacity. | Trigger ([Check Update Capacity Permissions](#check-update-capacity-permissions)) |
 | C-2 | Capacities | If a meeting room has its capacity changed, all future meetings that exceed the new capacity will be removed. | Trigger ([Check Future Meetings On Capacity Change Trigger](#check-future-meetings-on-capacity-change-trigger)) |
 | C-3 | Capacities | When an employee resigns, they are no longer allowed to change any meeting room capacities. | Trigger ([Check Resignation Updates](#check-resignation-updates)) |
-| C-4 | Capacities | A meeting room can only have its capacity updated for a date not in the past. | Trigger (Not implemented yet.) |
+| C-4 | Capacities | A meeting room can only have its capacity updated for a date not in the past. | Trigger ([Check Update Capacity Time](#check-update-capacity-time)) |
 | H-1 | Health Declarations | Every employee must do a daily health declaration. | Not Enforceable |
 | H-2 | Health Declarations | A health declaration records the following information: Temperature, Date. | Schema (Field) |
 | H-3 | Health Declarations | A health declaration for a given employee can be uniquely identified by the date. | Schema (Primary Key) |
@@ -152,14 +153,6 @@ Actions:
 ---
 
 ### Bookings
-
-#### **Check Booking Approval**
-Activated on:
-1. Before `UPDATE` on `Bookings` table.
-
-Actions:
-1. Raises exception if old approver ID is non-null.
-1. Otherwise, continue.
 
 #### **Check Resignation Booking Create Approve**
 Activated on:
@@ -273,6 +266,14 @@ Actions:
 ---
 
 ### Updates
+
+#### **Check Update Capacity Time**
+Activated on:
+1. Before `INSERT` or `UPDATE` on `Updates` table.
+
+Actions:
+1. Raises exception if the new date is before current date.
+1. Otherwise, continue.
 
 #### **Check Update Capacity Permissions**
 Activated on:
