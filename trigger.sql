@@ -321,3 +321,25 @@ DROP TRIGGER IF EXISTS health_declaration_date_check_trigger ON HealthDeclaratio
 CREATE TRIGGER health_declaration_date_check_trigger
 BEFORE INSERT OR UPDATE ON HealthDeclarations
 FOR EACH ROW EXECUTE FUNCTION health_declaration_date_check();
+
+CREATE OR REPLACE FUNCTION lock_details_approved_bookings()
+RETURNS TRIGGER AS $$
+DECLARE
+    resignation_date DATE := NULL;
+BEGIN
+    IF (OLD.approver_id IS NULL) THEN
+        RETURN COALESCE(NEW, OLD);
+    END IF;
+    SELECT E.resignation_date INTO resignation_date FROM Employees AS E WHERE E.id = OLD.approver_id;
+    IF (resignation_date < OLD.date AND OLD.approver_id IS DISTINCT FROM NEW.approver_id) THEN
+        RETURN NEW;
+    END IF;
+    RAISE EXCEPTION 'Unable to modify approved booking';
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS lock_details_approved_bookings_trigger ON Bookings;
+
+CREATE TRIGGER lock_details_approved_bookings_trigger
+BEFORE UPDATE ON Bookings
+FOR EACH ROW EXECUTE FUNCTION lock_details_approved_bookings();
