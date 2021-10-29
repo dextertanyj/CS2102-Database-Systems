@@ -1238,20 +1238,23 @@ INSERT INTO Juniors VALUES (3), (4), (5);
 COMMIT;
 BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
-INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 3, 5);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 3, 8);
 COMMIT;
-INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 4);
 INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 2, NULL);
 -- TEST
 INSERT INTO Attends VALUES (1, 1, 1, CURRENT_DATE + 1, 1);
 INSERT INTO Attends VALUES (3, 1, 1, CURRENT_DATE + 1, 1);
 INSERT INTO Attends VALUES (4, 1, 1, CURRENT_DATE + 1, 1);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 2, 4);
+SELECT COUNT(*) from Bookings; -- Expected: 1
+SELECT COUNT(*) from Attends; -- Expected: 4
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 2);
 SELECT COUNT(*) from Bookings; -- Expected: 0
 SELECT COUNT(*) from Attends; -- Expected: 0
 -- AFTER TEST
 CALL reset();
 -- END TEST
+
 
 -- TEST check_meeting_capacity_trigger_insert
 -- BEFORE TEST
@@ -1311,8 +1314,8 @@ INSERT INTO Attends VALUES (3, 1, 1, CURRENT_DATE + 1, 1);
 INSERT INTO Attends VALUES (4, 1, 1, CURRENT_DATE + 1, 1); 
 INSERT INTO Attends VALUES (5, 1, 2, CURRENT_DATE + 1, 1); 
 UPDATE Attends SET room = 1 WHERE ROW(floor, room) = (1, 2); -- RAISE EXCEPTION: Cannot attend booking due to meeting room capacity limit reached
-SELECT * from Attends WHERE room = 1 AND floor = 1; -- Expected: (1, 1, 1, CURRENT_DATE, 1), (3, 1, 1, CURRENT_DATE, 1), (4, 1, 1, CURRENT_DATE, 1)
-SELECT * from Attends WHERE room = 2 AND floor = 1; -- Expected: (2, 1, 2, CURRENT_DATE, 1), (5, 1, 2, CURRENT_DATE, 1)
+SELECT * from Attends WHERE floor = 1 AND room = 1; -- Expected: (1, 1, 1, CURRENT_DATE + 1, 1), (3, 1, 1, CURRENT_DATE + 1, 1), (4, 1, 1, CURRENT_DATE + 1, 1)
+SELECT * from Attends WHERE floor = 1 AND room = 2; -- Expected: (2, 1, 2, CURRENT_DATE + 1, 1), (5, 1, 2, CURRENT_DATE + 1, 1)
 -- AFTER TEST
 CALL reset();
 -- END TEST
