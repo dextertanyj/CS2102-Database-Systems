@@ -1090,7 +1090,11 @@ SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (1, CURRENT_DATE 
 CALL reset();
 -- END TEST
 
--- TEST lock_approved_bookings_trigger_resigned_approver_update_success
+/***************************************************************************************************************************
+* B-14 A approved booked meeting can no longer have any of its details changed, except for the revocation of its approver. *
+***************************************************************************************************************************/
+
+-- TEST Update Success
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -1120,7 +1124,7 @@ SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns (1, 1,
 CALL reset();
 -- END TEST
 
--- TEST lock_approved_bookings_trigger_update_failure
+-- TEST Update Not Resigned Failure
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -1138,9 +1142,9 @@ INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 COMMIT;
 INSERT INTO Bookings VALUES
-    (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
+    (1, 1, CURRENT_DATE + 1, 1, 1, NULL), -- Approver resigned
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
-    (1, 1, CURRENT_DATE + 1, 3, 1, NULL);
+    (1, 1, CURRENT_DATE + 1, 3, 1, NULL); -- Approver resigned
 UPDATE Bookings SET approver_id = 2 WHERE floor = 1 AND room = 1 AND start_hour = 1;
 UPDATE Bookings SET approver_id = 3 WHERE floor = 1 AND room = 1 AND start_hour = 2;
 UPDATE Bookings SET approver_id = 4 WHERE floor = 1 AND room = 1 AND start_hour = 3;
@@ -1149,9 +1153,9 @@ UPDATE Employees SET resignation_date = CURRENT_DATE WHERE id = 1 OR id = 4;
 -- ALTER TABLE Employees ENABLE TRIGGER resigned_employee_cleanup_trigger;
 -- TEST
 ALTER TABLE Bookings DISABLE TRIGGER check_resignation_booking_create_approve_trigger;
-UPDATE Bookings SET approver_id = NULL WHERE floor = 1 AND room = 1 AND start_hour = 1;
-UPDATE Bookings SET approver_id = 2 WHERE floor = 1 AND room = 1 AND start_hour = 2;
-UPDATE Bookings SET creator_id = 2 WHERE floor = 1 AND room = 1 AND start_hour = 3;
+UPDATE Bookings SET approver_id = NULL WHERE floor = 1 AND room = 1 AND start_hour = 1; -- Exception
+UPDATE Bookings SET approver_id = 2 WHERE floor = 1 AND room = 1 AND start_hour = 2; -- Exception
+UPDATE Bookings SET creator_id = 2 WHERE floor = 1 AND room = 1 AND start_hour = 3; -- Exception
 ALTER TABLE Bookings ENABLE TRIGGER check_resignation_booking_create_approve_trigger;
 SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns (1, 1, CURRENT_DATE + 1, 1, 1, 2), (1, 1, CURRENT_DATE + 1, 2, 1, 3), (1, 1, CURRENT_DATE + 1, 3, 1, 4)
 -- AFTER TEST
