@@ -450,8 +450,11 @@ RETURNS TRIGGER AS $$
 DECLARE
     current_hours_into_the_day INT := DATE_PART('HOUR', CURRENT_TIMESTAMP);
 BEGIN
+    IF (NEW.approver_id IS NOT DISTINCT FROM OLD.approver_id) THEN
+        RETURN NEW;
+    END IF;
     IF (NEW.approver_id IS NOT NULL AND (NEW.date < CURRENT_DATE OR (NEW.date = CURRENT_DATE AND NEW.start_hour <= current_hours_into_the_day))) THEN
-        RAISE EXCEPTION 'Cannot approve or update meetings of the past';
+        RAISE EXCEPTION 'Cannot approve meetings of the past';
     END IF;
     RETURN NEW;
 END;
