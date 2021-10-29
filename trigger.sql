@@ -16,7 +16,7 @@ BEFORE INSERT OR UPDATE ON Juniors
 FOR EACH ROW EXECUTE FUNCTION check_junior_overlap();
 
 -- Insert and Update of Seniors -> must exist in Superiors, cannot exist in Managers
-CREATE OR REPLACE FUNCTION check_senior_non_overlap() RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION check_senior_overlap() RETURNS TRIGGER AS $$
 BEGIN
     IF NEW.id IN (SELECT id FROM Managers) THEN
         RAISE EXCEPTION 'Employee % already exists in Managers', NEW.id;
@@ -29,10 +29,10 @@ DROP TRIGGER IF EXISTS non_overlap_senior ON Seniors;
 
 CREATE TRIGGER non_overlap_senior 
 BEFORE INSERT OR UPDATE ON Seniors
-FOR EACH ROW EXECUTE FUNCTION check_senior_non_overlap();
+FOR EACH ROW EXECUTE FUNCTION check_senior_overlap();
 
 -- Insert and Update of Managers -> must exist in Superiors, cannot exist in Seniors
-CREATE OR REPLACE FUNCTION check_manager_non_overlap() RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION check_manager_overlap() RETURNS TRIGGER AS $$
 BEGIN
     IF NEW.id IN (SELECT id FROM Seniors) THEN
         RAISE EXCEPTION 'Employee % already exists in Seniors', NEW.id;
@@ -45,7 +45,7 @@ DROP TRIGGER IF EXISTS non_overlap_manager ON Managers;
 
 CREATE TRIGGER non_overlap_manager
 BEFORE INSERT OR UPDATE ON Managers
-FOR EACH ROW EXECUTE FUNCTION check_manager_non_overlap();
+FOR EACH ROW EXECUTE FUNCTION check_manager_overlap();
 
 -- Insert and Update of Superiors -> cannot exist in Juniors
 CREATE OR REPLACE FUNCTION check_superior_overlap() RETURNS TRIGGER AS $$
@@ -62,7 +62,8 @@ DROP TRIGGER IF EXISTS non_overlap_superior ON Superiors;
 CREATE TRIGGER non_overlap_superior
 BEFORE INSERT OR UPDATE ON Superiors
 FOR EACH ROW EXECUTE FUNCTION check_superior_overlap();
-
+-------------------Covering---------------------
+--------------------INSERT CASES-------------------
 -- Insert into Superior -> insert into either Senior or Manager
 CREATE OR REPLACE FUNCTION check_covering_superior() RETURNS TRIGGER AS $$
 BEGIN
@@ -81,9 +82,6 @@ CREATE CONSTRAINT TRIGGER covering_superior_constraint
 AFTER INSERT ON Superiors 
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION check_covering_superior();
-
--------------------Covering---------------------
---------------------INSERT CASES-------------------
 
 -- Insert into Employee -> insert into either Junior or Superior
 CREATE OR REPLACE FUNCTION check_covering_employee() RETURNS TRIGGER AS $$
