@@ -1,5 +1,8 @@
--------------------------- E5 -----------------------------
--- Insert and Update of Juniors -> cannot exist in Superiors
+/******************************************************************************
+* E-5 Each employee must be one and only one of the three kinds of employees. *
+******************************************************************************/
+-- Non Overlap Constraints
+-- Insert or update of Juniors -> Must not exist in Superiors
 CREATE OR REPLACE FUNCTION check_junior_overlap() RETURNS TRIGGER AS $$
 BEGIN
     IF NEW.id IN (SELECT id FROM Superiors) THEN
@@ -15,7 +18,23 @@ CREATE TRIGGER non_overlap_junior
 BEFORE INSERT OR UPDATE ON Juniors
 FOR EACH ROW EXECUTE FUNCTION check_junior_overlap();
 
--- Insert and Update of Seniors -> must exist in Superiors, cannot exist in Managers
+-- Insert or update of Superiors -> Must not exist in Juniors
+CREATE OR REPLACE FUNCTION check_superior_overlap() RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.id IN (SELECT id FROM Juniors) THEN
+        RAISE EXCEPTION 'Employee % already exists in Juniors', NEW.id;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS non_overlap_superior ON Superiors;
+
+CREATE TRIGGER non_overlap_superior
+BEFORE INSERT OR UPDATE ON Superiors
+FOR EACH ROW EXECUTE FUNCTION check_superior_overlap();
+
+-- Insert or update of Seniors -> Must not exist in Managers
 CREATE OR REPLACE FUNCTION check_senior_overlap() RETURNS TRIGGER AS $$
 BEGIN
     IF NEW.id IN (SELECT id FROM Managers) THEN
@@ -31,7 +50,7 @@ CREATE TRIGGER non_overlap_senior
 BEFORE INSERT OR UPDATE ON Seniors
 FOR EACH ROW EXECUTE FUNCTION check_senior_overlap();
 
--- Insert and Update of Managers -> must exist in Superiors, cannot exist in Seniors
+-- Insert or update of Managers -> Must not exist in Seniors
 CREATE OR REPLACE FUNCTION check_manager_overlap() RETURNS TRIGGER AS $$
 BEGIN
     IF NEW.id IN (SELECT id FROM Seniors) THEN
@@ -47,43 +66,11 @@ CREATE TRIGGER non_overlap_manager
 BEFORE INSERT OR UPDATE ON Managers
 FOR EACH ROW EXECUTE FUNCTION check_manager_overlap();
 
--- Insert and Update of Superiors -> cannot exist in Juniors
-CREATE OR REPLACE FUNCTION check_superior_overlap() RETURNS TRIGGER AS $$
-BEGIN
-    IF NEW.id IN (SELECT id FROM Juniors) THEN
-        RAISE EXCEPTION 'Employee % already exists in Juniors', NEW.id;
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+-- Covering Constraints
 
-DROP TRIGGER IF EXISTS non_overlap_superior ON Superiors;
+-- Insert Cases
 
-CREATE TRIGGER non_overlap_superior
-BEFORE INSERT OR UPDATE ON Superiors
-FOR EACH ROW EXECUTE FUNCTION check_superior_overlap();
--------------------Covering---------------------
---------------------INSERT CASES-------------------
--- Insert into Superior -> insert into either Senior or Manager
-CREATE OR REPLACE FUNCTION check_covering_superior() RETURNS TRIGGER AS $$
-BEGIN
-	IF NEW.id NOT IN (
-        SELECT id FROM Seniors UNION
-        SELECT id FROM Managers) THEN
-		RAISE EXCEPTION 'Superior % must exist either as Senior or Manager', NEW.id;
-	END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-DROP TRIGGER IF EXISTS covering_superior_constraint ON Superiors;
-
-CREATE CONSTRAINT TRIGGER covering_superior_constraint 
-AFTER INSERT ON Superiors 
-DEFERRABLE INITIALLY DEFERRED
-FOR EACH ROW EXECUTE FUNCTION check_covering_superior();
-
--- Insert into Employee -> insert into either Junior or Superior
+-- Insert into Employees -> Must exist in either Juniors or Superiors
 CREATE OR REPLACE FUNCTION check_covering_employee() RETURNS TRIGGER AS $$
 BEGIN
 	IF NEW.id NOT IN (
@@ -102,9 +89,28 @@ AFTER INSERT ON Employees
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION check_covering_employee();
 
-------------------DELETE CASES--------------------------
+-- Insert into Superiors -> Must exist in either Seniors or Managers
+CREATE OR REPLACE FUNCTION check_covering_superior() RETURNS TRIGGER AS $$
+BEGIN
+	IF NEW.id NOT IN (
+        SELECT id FROM Seniors UNION
+        SELECT id FROM Managers) THEN
+		RAISE EXCEPTION 'Superior % must exist either as Senior or Manager', NEW.id;
+	END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
--- After delete junior or superior, ensure exists in either.
+DROP TRIGGER IF EXISTS covering_superior_constraint ON Superiors;
+
+CREATE CONSTRAINT TRIGGER covering_superior_constraint 
+AFTER INSERT ON Superiors 
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW EXECUTE FUNCTION check_covering_superior();
+
+-- Delete Cases
+
+-- Delete from Junior or Superior -> Must exist in either Juniors or Superiors
 CREATE OR REPLACE FUNCTION existing_employee_covering_check() RETURNS TRIGGER AS $$
 BEGIN
     IF OLD.id NOT IN (SELECT id FROM Superiors UNION SELECT id FROM Juniors) THEN
@@ -128,12 +134,11 @@ AFTER UPDATE OR DELETE ON Superiors
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION existing_employee_covering_check();
 
-
--- After delete manager or senior, ensure does not exist in superior OR exists in either.
+-- Delete from Manager or Senior -> Either does not exist in Superior or must exist in either Seniors or Managers
 CREATE OR REPLACE FUNCTION existing_superior_covering_check() RETURNS TRIGGER AS $$
 BEGIN
-    -- If OLD employee is not in superiors, then he must have been deleted by superiors.
-    -- The junior-superiors delete will handle the case for us.
+    -- If OLD employee is not in Superiors, then they must have been deleted from Superiors.
+    -- The delete from Junior or Superior case will handle constraint checking.
     IF (SELECT id FROM Superiors WHERE id = OLD.id) IS NULL THEN
         RETURN COALESCE(NEW, OLD);
     END IF;
@@ -158,9 +163,11 @@ AFTER DELETE ON Managers
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION existing_superior_covering_check();
 
--------------------------- E5 -----------------------------
+/******************************************************************************
+*                                   END E-5                                   *
+******************************************************************************/
 
--- A4 no changes to attendance in already approved bookings
+-- A-4 Once approved, there should be no more changes in the participants and the participants will definitely attend the meeting.
 CREATE OR REPLACE FUNCTION check_attends_change() RETURNS TRIGGER AS $$
 DECLARE
     old_approver_id INT;
@@ -212,7 +219,7 @@ CREATE TRIGGER lock_attends
 BEFORE DELETE OR INSERT OR UPDATE ON Attends
 FOR EACH ROW EXECUTE FUNCTION check_attends_change();
 
--- C1 Only managers in same departments have permission to change capacity
+-- C-1 A manager from the same department as the meeting room may change the meeting room capacity.
 CREATE OR REPLACE FUNCTION check_update_capacity_perms() RETURNS TRIGGER AS $$
 BEGIN
     IF (SELECT department_id FROM Employees WHERE id = NEW.manager_id) <>
@@ -229,7 +236,7 @@ CREATE TRIGGER update_capacity_perms
 BEFORE INSERT ON Updates
 FOR EACH ROW EXECUTE FUNCTION check_update_capacity_perms();
 
--- C4 Meeting room can only have updates on capacity not in the past (in the present and future)
+-- C-4 A meeting room can only have its capacity updated for a date not in the past, i.e. in the present or the future.
 CREATE OR REPLACE FUNCTION check_update_capacity_time() RETURNS TRIGGER AS $$
 BEGIN
     IF NEW.date < CURRENT_DATE THEN
@@ -245,8 +252,8 @@ CREATE TRIGGER update_capacity_not_in_past
 BEFORE INSERT ON Updates
 FOR EACH ROW EXECUTE FUNCTION check_update_capacity_time();
 
- -- trigger 34 resigned employees no longer allowed to book or approve or attend any meeting, and cannot declare temperature 
--- Meeting room booking or approval
+-- B-12 When an employee resigns, they are no longer allowed to book any meetings.
+-- B-13 When an employee resigns, they are no longer allowed to approve any meetings.
 CREATE OR REPLACE FUNCTION check_resignation_booking_create_approve() RETURNS TRIGGER AS $$
 DECLARE
 	creator_resignation_date DATE := NULL;
@@ -268,7 +275,7 @@ CREATE TRIGGER check_resignation_booking_create_approve_trigger
 BEFORE INSERT OR UPDATE ON Bookings
 FOR EACH ROW EXECUTE FUNCTION check_resignation_booking_create_approve();
 
--- Health declaration
+-- H-6 When an employee resigns, they are no longer allowed to make any health declarations.
 CREATE OR REPLACE FUNCTION check_resignation_health_declaration() RETURNS TRIGGER AS $$
 DECLARE
 	employee_resignation_date DATE := NULL;
@@ -286,7 +293,7 @@ CREATE TRIGGER check_resignation_health_declaration_trigger
 BEFORE INSERT OR UPDATE ON HealthDeclarations
 FOR EACH ROW EXECUTE FUNCTION check_resignation_health_declaration();
 
--- Attends meeting
+-- A-5 When an employee resigns, they are no longer allowed to join any booked meetings.
 CREATE OR REPLACE FUNCTION check_resignation_attend() RETURNS TRIGGER AS $$
 DECLARE
 	employee_resignation_date DATE := NULL;
@@ -304,7 +311,7 @@ CREATE TRIGGER check_resignation_attend_trigger
 BEFORE INSERT OR UPDATE ON Attends
 FOR EACH ROW EXECUTE FUNCTION check_resignation_attend();
 
--- Update meeting room capacity
+-- C-3 When an employee resigns, they are no longer allowed to change any meeting room capacities.
 CREATE OR REPLACE FUNCTION check_resignation_updates() RETURNS TRIGGER AS $$
 DECLARE
 	employee_resignation_date DATE := NULL;
@@ -322,6 +329,7 @@ CREATE TRIGGER check_resignation_updates_trigger
 BEFORE INSERT OR UPDATE ON Updates
 FOR EACH ROW EXECUTE FUNCTION check_resignation_updates();
 
+-- B-5 The employee booking the room immediately joins the booked meeting.
 CREATE OR REPLACE FUNCTION insert_meeting_creator()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -351,6 +359,7 @@ CREATE TRIGGER insert_meeting_creator_trigger
 AFTER INSERT OR UPDATE ON Bookings
 FOR EACH ROW EXECUTE FUNCTION insert_meeting_creator();
 
+-- B-15 A meeting must be attended by its creator.
 CREATE OR REPLACE FUNCTION prevent_creator_removal()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -376,7 +385,7 @@ CREATE TRIGGER prevent_creator_removal_trigger
 BEFORE DELETE OR UPDATE ON Attends
 FOR EACH ROW EXECUTE FUNCTION prevent_creator_removal();
 
--- Trigger B-7: A manager can only approve a booked meeting if the meeting room used is in the same department as the manager.
+-- B-7 A manager can only approve a booked meeting if the meeting room used is in the same department as the manager.
 CREATE OR REPLACE FUNCTION meeting_approver_department_check()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -397,7 +406,7 @@ CREATE TRIGGER meeting_approver_department_check_trigger
 BEFORE INSERT OR UPDATE OF approver_id ON Bookings
 FOR EACH ROW EXECUTE FUNCTION meeting_approver_department_check();
 
--- Trigger B-4: A booking can only be made for future meetings.
+-- B-4 A booking can only be made for future meetings.
 CREATE OR REPLACE FUNCTION booking_date_check()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -414,7 +423,7 @@ CREATE TRIGGER booking_date_check_trigger
 BEFORE INSERT OR UPDATE ON Bookings
 FOR EACH ROW EXECUTE FUNCTION booking_date_check();
 
--- Trigger B-8: An approval can only be made for future meetings.
+-- B-8 An approval can only be made for future meetings.
 CREATE OR REPLACE FUNCTION approval_only_for_future_meetings_trigger()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -433,7 +442,7 @@ CREATE TRIGGER approval_only_for_future_meetings_trigger
 BEFORE INSERT OR UPDATE ON Bookings
 FOR EACH ROW EXECUTE FUNCTION approval_only_for_future_meetings_trigger();
 
--- Trigger A-2: an employee can only join future meetings.
+-- A-2 An employee can only join future meetings.
 CREATE OR REPLACE FUNCTION employee_join_only_future_meetings_trigger()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -452,7 +461,8 @@ CREATE TRIGGER employee_join_only_future_meetings_trigger
 BEFORE INSERT OR UPDATE ON Attends
 FOR EACH ROW EXECUTE FUNCTION employee_join_only_future_meetings_trigger();
 
-
+-- H-7 A health declaration cannot be made for any date other than the current date.
+-- H-8 Past health declarations cannot be modified.
 CREATE OR REPLACE FUNCTION health_declaration_date_check()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -472,6 +482,7 @@ CREATE TRIGGER health_declaration_date_check_trigger
 BEFORE INSERT OR UPDATE ON HealthDeclarations
 FOR EACH ROW EXECUTE FUNCTION health_declaration_date_check();
 
+-- MR-4 Each meeting room must have at least one relevant capacities entry.
 CREATE OR REPLACE FUNCTION check_meeting_room_updates()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -489,7 +500,7 @@ AFTER INSERT OR UPDATE ON MeetingRooms
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION check_meeting_room_updates();
 
--- Trigger C-2: If a meeting room has its capacity changed, all future meetings that exceed the new capacity will be removed.
+-- C-2 If a meeting room has its capacity changed, all future meetings that exceed the new capacity will be removed.
 CREATE OR REPLACE FUNCTION check_future_meetings_on_capacity_change_trigger()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -512,7 +523,7 @@ CREATE TRIGGER check_future_meetings_on_capacity_change_trigger
 BEFORE INSERT OR UPDATE ON Updates
 FOR EACH ROW EXECUTE FUNCTION check_future_meetings_on_capacity_change_trigger();
 
--- Trigger A-6: The number of people attending a meeting should not exceed the latest past capacity declared.
+-- A-6 The number of people attending a meeting should not exceed the latest past capacity declared.
 CREATE OR REPLACE FUNCTION check_meeting_capacity_trigger()
 RETURNS TRIGGER AS $$
 DECLARE 
@@ -543,6 +554,7 @@ CREATE TRIGGER check_meeting_capacity_trigger
 BEFORE INSERT OR UPDATE ON Attends
 FOR EACH ROW EXECUTE FUNCTION check_meeting_capacity_trigger();
 
+-- B-14 A approved booked meeting can no longer have any of its details changed, except for the revocation of its approver.
 CREATE OR REPLACE FUNCTION lock_details_approved_bookings()
 RETURNS TRIGGER AS $$
 DECLARE
