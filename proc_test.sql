@@ -86,8 +86,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1), (1, 2, 'Room 1-2', 2);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10), (2, 1, 2, CURRENT_DATE, 10);
+COMMIT;
 -- TEST
 CALL add_room(2, 1, 'Room 2-1', 10, 1, CURRENT_DATE); -- Success
 SELECT COUNT(*) FROM MeetingRooms; -- Returns 3
@@ -112,8 +114,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1), (1, 2, 'Room 1-2', 2);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10), (2, 1, 2, CURRENT_DATE, 10);
+COMMIT;
 -- TEST
 CALL add_room(2, 1, 'Room 1-1', 10, 1, CURRENT_DATE); -- Success
 SELECT COUNT(*) FROM MeetingRooms; -- Returns 3
@@ -138,8 +142,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1), (1, 2, 'Room 1-2', 2);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10), (2, 1, 2, CURRENT_DATE, 10);
+COMMIT;
 -- TEST
 CALL add_room(1, 1, 'Room Unique Name', 10, 1, CURRENT_DATE); -- Failure
 -- AFTER TEST
@@ -162,8 +168,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1), (1, 2, 'Room 1-2', 2);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10), (2, 1, 2, CURRENT_DATE, 10);
+COMMIT;
 -- TEST
 CALL add_room(1, 1, 'Room Unique Name', 10, 1, CURRENT_DATE); -- Failure
 -- AFTER TEST
@@ -186,8 +194,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1), (1, 2, 'Room 1-2', 2);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10), (2, 1, 2, CURRENT_DATE, 10);
+COMMIT;
 -- TEST
 CALL add_room(2, 1, 'Room 2-1', 10, 3, CURRENT_DATE); -- Failure
 -- AFTER TEST
@@ -210,8 +220,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1), (1, 2, 'Room 1-2', 2);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10), (2, 1, 2, CURRENT_DATE, 10);
+COMMIT;
 -- TEST
 CALL add_room(2, 1, 'Room 2-1', 10, 4, CURRENT_DATE); -- Failure
 -- AFTER TEST
@@ -234,8 +246,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1), (1, 2, 'Room 1-2', 2);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10), (2, 1, 2, CURRENT_DATE, 10);
+COMMIT;
 -- TEST
 CALL add_room(2, 1, 'Room 2-1', 10, 5, CURRENT_DATE); -- Failure
 -- AFTER TEST
@@ -259,8 +273,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4), (5);
 INSERT INTO Seniors VALUES (5);
 INSERT INTO Managers VALUES (1), (2), (3), (4);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 10);
+COMMIT;
 -- TEST
 CALL change_capacity(1, 1, 20, 2, CURRENT_DATE); -- Success
 SELECT capacity FROM Updates WHERE floor = 1 AND room = 1 AND date = CURRENT_DATE; -- Returns 20
@@ -285,8 +301,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4), (5);
 INSERT INTO Seniors VALUES (5);
 INSERT INTO Managers VALUES (1), (2), (3), (4);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 10);
+COMMIT;
 -- TEST
 CALL change_capacity(1, 1, 20, 3, CURRENT_DATE); -- Failure
 -- AFTER TEST
@@ -310,8 +328,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4), (5);
 INSERT INTO Seniors VALUES (5);
 INSERT INTO Managers VALUES (1), (2), (3), (4);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 10);
+COMMIT;
 -- TEST
 CALL change_capacity(1, 1, 20, 2, CURRENT_DATE); -- Failure
 -- AFTER TEST
@@ -335,8 +355,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4), (5);
 INSERT INTO Seniors VALUES (5);
 INSERT INTO Managers VALUES (1), (2), (3), (4);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 10);
+COMMIT;
 -- TEST
 CALL change_capacity(1, 1, 20, 5, CURRENT_DATE); -- Success
 -- AFTER TEST
@@ -360,8 +382,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4), (5);
 INSERT INTO Seniors VALUES (5);
 INSERT INTO Managers VALUES (1), (2), (3), (4);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 10);
+COMMIT;
 -- TEST
 CALL change_capacity(1, 1, 20, 6, CURRENT_DATE); -- Success
 -- AFTER TEST
@@ -385,8 +409,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4), (5);
 INSERT INTO Seniors VALUES (5);
 INSERT INTO Managers VALUES (1), (2), (3), (4);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 10);
+COMMIT;
 -- TEST
 CALL change_capacity(2, 1, 20, 1, CURRENT_DATE); -- Failure
 -- AFTER TEST
@@ -558,6 +584,7 @@ INSERT INTO Employees VALUES
 INSERT INTO Superiors VALUES (1);
 INSERT INTO Managers VALUES (1);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES
     (1, 1, 'Room 1', 1),
     (1, 2, 'Room 2', 1),
@@ -566,6 +593,7 @@ INSERT INTO Updates VALUES
     (1, 1, 1, CURRENT_DATE, 10),
     (1, 1, 2, CURRENT_DATE, 5),
     (1, 2, 1, CURRENT_DATE, 10);
+COMMIT;
 INSERT INTO Bookings VALUES 
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
@@ -601,8 +629,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
 INSERT INTO Bookings VALUES 
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
@@ -634,8 +664,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
 INSERT INTO Bookings VALUES 
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
@@ -667,8 +699,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
 INSERT INTO Bookings VALUES 
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
@@ -700,8 +734,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
 INSERT INTO Bookings VALUES 
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
@@ -733,8 +769,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
 INSERT INTO Bookings VALUES 
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
@@ -766,8 +804,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
 INSERT INTO Bookings VALUES 
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
@@ -799,8 +839,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
 INSERT INTO Bookings VALUES 
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
@@ -832,8 +874,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
 INSERT INTO Bookings VALUES 
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
@@ -865,8 +909,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
 INSERT INTO Bookings VALUES 
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
@@ -898,8 +944,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
 INSERT INTO Bookings VALUES 
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
@@ -931,8 +979,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
 INSERT INTO Bookings VALUES 
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
@@ -959,8 +1009,10 @@ INSERT INTO Employees VALUES
 INSERT INTO Superiors VALUES (1), (2);
 INSERT INTO Managers VALUES (1), (2);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
 INSERT INTO Bookings VALUES 
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
@@ -988,8 +1040,10 @@ INSERT INTO Employees VALUES
 INSERT INTO Superiors VALUES (1), (2);
 INSERT INTO Managers VALUES (1), (2);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
 INSERT INTO Bookings VALUES 
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
@@ -1017,8 +1071,10 @@ INSERT INTO Employees VALUES
 INSERT INTO Superiors VALUES (1), (2);
 INSERT INTO Managers VALUES (1), (2);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
 INSERT INTO Bookings VALUES 
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
@@ -1046,8 +1102,10 @@ INSERT INTO Employees VALUES
 INSERT INTO Superiors VALUES (1), (2);
 INSERT INTO Managers VALUES (1), (2);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
 INSERT INTO Bookings VALUES 
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
@@ -1075,8 +1133,10 @@ INSERT INTO Employees VALUES
 INSERT INTO Superiors VALUES (1), (2);
 INSERT INTO Managers VALUES (1), (2);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
 INSERT INTO Bookings VALUES 
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
@@ -1144,7 +1204,10 @@ INSERT INTO Superiors VALUES (1), (2), (3);
 INSERT INTO Seniors VALUES (1), (2);
 INSERT INTO Managers VALUES (3);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
+INSERT INTO Updates VALUES (3, 1, 1, CURRENT_DATE - 2, 10);
+COMMIT;
 INSERT INTO Bookings VALUES
     (1, 1, CURRENT_DATE - 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE, 1, 1, NULL),
