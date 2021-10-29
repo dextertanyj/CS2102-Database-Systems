@@ -1503,7 +1503,7 @@ CALL reset();
 * MR-5 When a department has been removed, meeting rooms cannot be added to it. *
 ********************************************************************************/
 
--- TEST Successful Insert
+-- TEST Insert Success
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1', NULL);
@@ -1523,7 +1523,7 @@ SELECT * FROM MeetingRooms; -- Returns (1, 1, 'Room 1-1', 1);
 CALL reset();
 -- END TEST
 
--- TEST Successful Update
+-- TEST Update Success
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1', NULL), (2, 'Department 2', NULL);
@@ -1558,7 +1558,7 @@ COMMIT;
 UPDATE Departments SET removal_date = CURRENT_DATE WHERE id = 1;
 -- TEST
 BEGIN TRANSACTION;
-INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1); -- Exception
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 COMMIT;
 SELECT * FROM MeetingRooms; -- Returns NULL
@@ -1582,7 +1582,7 @@ INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 COMMIT;
 UPDATE Departments SET removal_date = CURRENT_DATE WHERE id = 2;
 -- TEST
-UPDATE MeetingRooms SET department_id = 2 WHERE floor = 1 AND room = 1;
+UPDATE MeetingRooms SET department_id = 2 WHERE floor = 1 AND room = 1; -- Exception
 SELECT * FROM MeetingRooms; -- Returns (1, 1, 'Room 1-1', 1);
 -- AFTER TEST
 CALL reset();
