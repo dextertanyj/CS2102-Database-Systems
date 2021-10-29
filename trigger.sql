@@ -325,16 +325,21 @@ FOR EACH ROW EXECUTE FUNCTION check_resignation_updates();
 CREATE OR REPLACE FUNCTION insert_meeting_creator()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF (NOT EXISTS 
-        (SELECT * 
-        FROM Attends AS A 
-        WHERE A.employee_id = NEW.creator_id 
-            AND A.room = NEW.room 
-            AND A.floor = NEW.floor 
-            AND A.date = NEW.date 
-            AND A.start_hour = NEW.start_hour)
-    ) THEN
-        INSERT INTO Attends VALUES (NEW.creator_id, NEW.floor, NEW.room, NEW.date, NEW.start_hour);
+    IF (NEW.creator_id IS DISTINCT FROM OLD.creator_id) THEN
+        IF (TG_OP = 'UPDATE') THEN
+            DELETE FROM Attends WHERE employee_id = OLD.creator_id AND floor = OLD.floor AND room = OLD.room AND date = OLD.date AND start_hour = OLD.start_hour;
+        END IF;
+        IF (NOT EXISTS 
+            (SELECT * 
+            FROM Attends AS A 
+            WHERE A.employee_id = NEW.creator_id 
+                AND A.room = NEW.room 
+                AND A.floor = NEW.floor 
+                AND A.date = NEW.date 
+                AND A.start_hour = NEW.start_hour)
+        ) THEN
+            INSERT INTO Attends VALUES (NEW.creator_id, NEW.floor, NEW.room, NEW.date, NEW.start_hour);
+        END IF;
     END IF;
     RETURN NEW;
 END;
