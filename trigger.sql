@@ -263,7 +263,7 @@ CREATE TRIGGER prevent_creator_removal_trigger
 BEFORE DELETE OR UPDATE ON Attends
 FOR EACH ROW EXECUTE FUNCTION prevent_creator_removal();
 
--- Trigger B-8: A manager can only approve a booked meeting if the meeting room used is in the same department as the manager.
+-- Trigger B-7: A manager can only approve a booked meeting if the meeting room used is in the same department as the manager.
 CREATE OR REPLACE FUNCTION meeting_approver_department_check()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -301,7 +301,7 @@ CREATE TRIGGER booking_date_check_trigger
 BEFORE INSERT OR UPDATE ON Bookings
 FOR EACH ROW EXECUTE FUNCTION booking_date_check();
 
--- Trigger B-9: An approval can only be made for future meetings.
+-- Trigger B-8: An approval can only be made for future meetings.
 CREATE OR REPLACE FUNCTION approval_only_for_future_meetings_trigger()
 RETURNS TRIGGER AS $$
 DECLARE

@@ -379,22 +379,31 @@ CALL reset();
 -- TEST employee_join_only_future_meetings_trigger_failure
 -- BEFORE TEST
 CALL reset();
-ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger; -- disable trigger that prevents bookings on past dates
+ALTER TABLE Bookings DISABLE TRIGGER insert_meeting_creator_trigger; -- disable trigger that makes meeting creator auto attend booking
 INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1);
-INSERT INTO Superiors VALUES (1), (2);
+    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1),
+    (3, 'Senior 3', 'Contact 3', 'senior3@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2), (3);
 INSERT INTO Managers VALUES (1);
-INSERT INTO Seniors VALUES (2);
+INSERT INTO Seniors VALUES (2), (3);
 COMMIT;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
+INSERT INTO MeetingRooms VALUES (1, 2, 'Room 2', 1);
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE - 1, 1, 2, NULL);
+INSERT INTO Bookings VALUES (1, 2, CURRENT_DATE + 1, 2, 3, NULL);
 -- TEST
-INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE - 1, 1, 2, NULL); -- EXCEPTION RAISE: Cannot join meetings in the past
-SELECT COUNT(*) from Attends; -- Expected: 0
+INSERT INTO Attends VALUES (1, 1, 1, CURRENT_DATE - 1, 1); -- FAILURE
+
+INSERT INTO Attends VALUES (1, 1, 2, CURRENT_DATE + 1, 2); -- SUCCESS
+UPDATE Attends SET (room, date) = (1, CURRENT_DATE - 1) WHERE floor = 1 AND room = 2 AND date = CURRENT_DATE + 1 AND employee_id = 1; -- FAILURE
+SELECT * from Attends; -- Expected: (1, 1, 2, CURRENT_DATE + 1, 2)
 -- AFTER TEST
 ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+ALTER TABLE Bookings ENABLE TRIGGER insert_meeting_creator_trigger;
 CALL reset();
 -- END TEST
 
