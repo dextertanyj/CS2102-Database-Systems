@@ -559,3 +559,30 @@ DROP TRIGGER IF EXISTS lock_details_approved_bookings_trigger ON Bookings;
 CREATE TRIGGER lock_details_approved_bookings_trigger
 BEFORE UPDATE ON Bookings
 FOR EACH ROW EXECUTE FUNCTION lock_details_approved_bookings();
+
+-- E-11 When a department has been removed, employees cannot be added to it.
+-- MR-5 When a department has been removed, meeting rooms cannot be added to it.
+CREATE OR REPLACE FUNCTION lock_removed_department()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF (NEW.department_id IS NOT DISTINCT FROM OLD.department_id) THEN
+        RETURN NEW;
+    END IF;
+    IF ((SELECT removal_date FROM Departments AS D WHERE D.id = NEW.department_id) IS NOT NULL) THEN
+        RAISE EXCEPTION 'Department % has already been removed', NEW.department_id;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS lock_removed_department_employees_trigger ON Employees;
+
+CREATE TRIGGER lock_removed_department_employees_trigger
+BEFORE INSERT OR UPDATE ON Employees
+FOR EACH ROW EXECUTE FUNCTION lock_removed_department();
+
+DROP TRIGGER IF EXISTS lock_removed_department_meeting_rooms_trigger ON MeetingRooms;
+
+CREATE TRIGGER lock_removed_department_meeting_rooms_trigger
+BEFORE INSERT OR UPDATE ON MeetingRooms
+FOR EACH ROW EXECUTE FUNCTION lock_removed_department();
