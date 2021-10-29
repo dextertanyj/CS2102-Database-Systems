@@ -16,7 +16,7 @@
 | E-8 | Employees | When an employee resigns, the employee has all their future booked meetings canclled, approved or otherwise. | Trigger ([Resigned Employee Cleanup](#resigned-employee-cleanup)) |
 | E-9 | Employees | When an employee resigns, all future approvals granted by the employee are revoked. | Trigger ([Resigned Employee Cleanup](#resigned-employee-cleanup)) |
 | E-10 | Employees | Each employee can attend only one booked meeting at a given date and time. | Schema (Unique) |
-| E-11 | Employees | When a department has been removed, employees cannot be added to it. | Trigger (Lock Removed Department Employees Trigger[#lock-removed-department-employees-trigger]) |
+| E-11 | Employees | When a department has been removed, employees cannot be added to it. | Trigger ([Lock Removed Department Employees Trigger](#lock-removed-department-employees-trigger)) |
 | MR-1 | Meeting Rooms | Each meeting room has a unique Floor-Room pair. | Schema (Primary Key) |
 | MR-2 | Meeting Rooms | Each meeting room records the following information: Room name. | Schema (Field) |
 | MR-3 | Meeting Rooms | Each meeting room must be located in exactly one department. | Schema (NOT NULL & Foreign Key) |
