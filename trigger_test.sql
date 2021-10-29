@@ -927,7 +927,7 @@ SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (2, CURRENT_DATE 
 CALL reset();
 -- END TEST
 
--- TEST prevent_change_approved_meeting_details_trigger_resigned_creator_delete_success
+-- TEST lock_approved_bookings_trigger_resigned_creator_delete_success
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -954,7 +954,7 @@ SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns NULL
 CALL reset();
 -- END TEST
 
--- TEST prevent_change_approved_meeting_details_trigger_resigned_approver_update_success
+-- TEST lock_approved_bookings_trigger_resigned_approver_update_success
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -984,7 +984,7 @@ SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns (1, 1,
 CALL reset();
 -- END TEST
 
--- TEST prevent_change_approved_meeting_details_trigger_delete_failure
+-- TEST lock_approved_bookings_trigger_delete_failure
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -1016,7 +1016,7 @@ SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns (1, 1,
 CALL reset();
 -- END TEST
 
--- TEST prevent_change_approved_meeting_details_trigger_update_failure
+-- TEST lock_approved_bookings_trigger_update_failure
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');

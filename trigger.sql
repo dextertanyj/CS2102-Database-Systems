@@ -322,7 +322,7 @@ CREATE TRIGGER health_declaration_date_check_trigger
 BEFORE INSERT OR UPDATE ON HealthDeclarations
 FOR EACH ROW EXECUTE FUNCTION health_declaration_date_check();
 
-CREATE OR REPLACE FUNCTION prevent_change_approved_meeting_details()
+CREATE OR REPLACE FUNCTION lock_approved_bookings()
 RETURNS TRIGGER AS $$
 DECLARE
     resignation_date DATE := NULL;
@@ -346,8 +346,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS prevent_change_approved_meeting_details_trigger ON Bookings;
+DROP TRIGGER IF EXISTS lock_approved_bookings_trigger ON Bookings;
 
-CREATE TRIGGER prevent_change_approved_meeting_details_trigger
+CREATE TRIGGER lock_approved_bookings_trigger
 BEFORE UPDATE OR DELETE ON Bookings
-FOR EACH ROW EXECUTE FUNCTION prevent_change_approved_meeting_details();
+FOR EACH ROW EXECUTE FUNCTION lock_approved_bookings();
