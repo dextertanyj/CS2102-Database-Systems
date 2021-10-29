@@ -41,7 +41,7 @@
 | A-3 | Attends | If an employee is having a fever, they cannot join a booked meeting. | Trigger ([Check Health Declaration Attends](#check-health-declaration-attends)) |
 | A-4 | Attends | Once approved, there should be no more changes in the participants and the participants will definitely attend the meeting. | Trigger ([Check Attends Change](#check-attends-change)) |
 | A-5 | Attends | When an employee resigns, they are no longer allowed to join any booked meetings. | Trigger ([Check Resignation Attends](#check-resignation-attends)) |
-| A-6 | Attends | The number of people attending a meeting should not exceed the latest past capacity declared. | Trigger ([Check Meeting Capacity](#check-meeting-capacity)) |
+| A-6 | Attends | The number of people attending a meeting should not exceed the latest past capacity declared. | Trigger ([Check Meeting Capacity Trigger](#check-meeting-capacity-trigger)) |
 | A-7 | Attends | The employee booking the room cannot leave the meeting. | Trigger ([Prevent Creator Removal](#prevent-creator-removal)) |
 | C-1 | Capacities | A manager from the same department as the meeting room may change the meeting room capacity. | Trigger ([Check Update Capacity Permissions](#check-update-capacity-permissions)) |
 | C-2 | Capacities | If a meeting room has its capacity changed, all future meetings that exceed the new capacity will be removed. | Trigger ([Check Future Meetings On Capacity Change Trigger](#check-future-meetings-on-capacity-change-trigger)) |
