@@ -944,9 +944,9 @@ INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 COMMIT;
 INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 1, NULL);
 UPDATE Bookings SET approver_id = 2 WHERE floor = 1 AND room = 1;
--- ALTER TABLE Employees DISABLE TRIGGER resigned_employee_cleanup_trigger
+-- ALTER TABLE Employees DISABLE TRIGGER resigned_employee_cleanup_trigger;
 UPDATE Employees SET resignation_date = CURRENT_DATE WHERE id = 1;
--- ALTER TABLE Employees ENABLE TRIGGER resigned_employee_cleanup_trigger
+-- ALTER TABLE Employees ENABLE TRIGGER resigned_employee_cleanup_trigger;
 -- TEST
 DELETE FROM Bookings WHERE creator_id = 1;
 SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns NULL
