@@ -38,11 +38,11 @@ INSERT INTO Juniors VALUES (5); -- Failure, employee is already a Superior
 -- insert a manager into Seniors
 INSERT INTO Seniors VALUES (1); -- Failure, employee is already a Manager
 -- insert a junior into Seniors
-INSERT INTO Seniors VALUES (6); -- Failure, employee is not a Superior
+INSERT INTO Seniors VALUES (6); -- Failure, employee is not a Superior (Schema)
 -- insert a senior into Managers
 INSERT INTO Managers VALUES (5); -- Failure, employee is already a Senior
 -- insert a junior into Managers
-INSERT INTO Managers VALUES (6); -- Failure, employee is not a Superior
+INSERT INTO Managers VALUES (6); -- Failure, employee is not a Superior (Schema)
 
 -- insert an employee, without insertion into Junior, Senior, Manager
 BEGIN TRANSACTION;
@@ -55,20 +55,27 @@ INSERT INTO Employees VALUES (3, 'Err Superior 3', 'contact 3', 'err3@company.co
 INSERT INTO Superiors VALUES (3);
 COMMIT; -- Failure, employee must exists either as senior or manager once a superior
 
+-- update a Superior into an already taken Junior id
+UPDATE Superiors SET id = 6 WHERE id = 1; -- Failure, employee id=6 is already a Junior
 -- update a Junior into an already taken id
 UPDATE Juniors SET id = 1 WHERE id = 6; -- Failure, employee id=1 is already a Superior
 -- update a Manager into an already taken id
-UPDATE Managers SET id = 6 WHERE id = 1; -- Failure, employee id=6 is already a Junior
+UPDATE Managers SET id = 6 WHERE id = 1; -- Failure, employee id=6 is not in Superior (Schema)
 -- update a Senior into an already taken id
 UPDATE Seniors SET id = 1 WHERE id = 5; -- Failure, employee id=1 is already a Manager
 
 -- only delete a junior
-DELETE FROM Juniors WHERE id = 6; -- Failure, Junior is not re-inserted as a Superior
+DELETE FROM Juniors WHERE id = 6; -- Failure, Junior is not re-inserted as a Junior/Superior
 -- delete a junior then insert into superior
 BEGIN TRANSACTION;
 DELETE FROM Juniors WHERE id = 6;
 INSERT INTO Superiors VALUES (6);
 END; -- Failure, employee must exist either as Manager or Senior once a Superior
+-- delete a junior, insert into junior again
+BEGIN TRANSACTION;
+DELETE FROM Juniors WHERE id = 6;
+INSERT INTO Juniors VALUES (6);
+END; -- Success
 -- delete a junior, insert into superior, insert into manager
 BEGIN TRANSACTION;
 DELETE FROM Juniors WHERE id = 6;
@@ -77,7 +84,13 @@ INSERT INTO Managers VALUES (6);
 END; -- Success
 
 -- only delete a superior
-DELETE FROM Superiors WHERE id = 6; -- Failure, Superior is not re-inserted as a Junior
+DELETE FROM Superiors WHERE id = 6; -- Failure, Superior is not re-inserted as a Junior/Superior
+-- delete a Superior, insert into Superior (Manager) again
+BEGIN TRANSACTION;
+DELETE FROM Superiors WHERE id = 6;
+INSERT INTO Superiors VALUES (6);
+INSERT INTO Managers VALUES (6);
+END; -- Success
 -- delete a superior then insert into junior
 BEGIN TRANSACTION;
 DELETE FROM Superiors WHERE id = 6;
@@ -85,7 +98,12 @@ INSERT INTO Juniors VALUES (6);
 END; -- Success
 
 -- only delete a senior
-DELETE FROM Seniors WHERE id = 5; -- Failure, Senior is not re-inserted as Junior or Manager
+DELETE FROM Seniors WHERE id = 5; -- Failure, Senior is not re-inserted as Junior/Superior
+--delete a senior, then insert into Senior again
+BEGIN TRANSACTION;
+DELETE FROM Seniors WHERE id = 5;
+INSERT INTO Seniors VALUES (5);
+END; -- Success
 --delete a senior, then insert into manager
 BEGIN TRANSACTION;
 DELETE FROM Seniors WHERE id = 5;
@@ -93,7 +111,12 @@ INSERT INTO Managers VALUES (5);
 END; -- Success
 
 -- only delete a manager
-DELETE FROM Managers WHERE id = 1; -- Failure, Manager is not re-inserted as Junior or Senior
+DELETE FROM Managers WHERE id = 1; -- Failure, Manager is not re-inserted as Junior/Superior
+-- delete a manager, then insert into Manager again
+BEGIN TRANSACTION;
+DELETE FROM Managers WHERE id = 1;
+INSERT INTO Managers VALUES (1);
+END; -- Success
 -- delete a manager then insert into senior
 BEGIN TRANSACTION;
 DELETE FROM Managers WHERE id = 1;

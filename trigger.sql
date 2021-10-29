@@ -1,6 +1,6 @@
 -------------------------- E5 -----------------------------
 -- Insert and Update of Juniors -> cannot exist in Superiors
-CREATE OR REPLACE FUNCTION check_junior() RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION check_junior_overlap() RETURNS TRIGGER AS $$
 BEGIN
     IF NEW.id IN (SELECT id FROM Superiors) THEN
         RAISE EXCEPTION 'Employee % already exists in Superiors', NEW.id;
@@ -13,33 +13,12 @@ DROP TRIGGER IF EXISTS non_overlap_junior ON Juniors;
 
 CREATE TRIGGER non_overlap_junior
 BEFORE INSERT OR UPDATE ON Juniors
-FOR EACH ROW EXECUTE FUNCTION check_junior();
-
--- After Delete Junior, make sure it exists in Superiors
-CREATE OR REPLACE FUNCTION delete_junior() RETURNS TRIGGER AS $$
-BEGIN
-    IF (SELECT id FROM Superiors WHERE id = OLD.id) IS NULL THEN
-        RAISE EXCEPTION 'Deleted Junior % must be re-inserted as a Superior', OLD.id;
-    END IF;
-    RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
-
-DROP TRIGGER IF EXISTS delete_junior_trigger ON Juniors;
-
-CREATE CONSTRAINT TRIGGER delete_junior_trigger
-AFTER DELETE ON Juniors
-DEFERRABLE INITIALLY DEFERRED
-FOR EACH ROW EXECUTE FUNCTION delete_junior();
-
-
+FOR EACH ROW EXECUTE FUNCTION check_junior_overlap();
 
 -- Insert and Update of Seniors -> must exist in Superiors, cannot exist in Managers
-CREATE OR REPLACE FUNCTION check_senior() RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION check_senior_non_overlap() RETURNS TRIGGER AS $$
 BEGIN
-    IF NEW.id NOT IN (SELECT id FROM Superiors) THEN
-        RAISE EXCEPTION 'Employee % does not exist in Superiors', NEW.id;
-    ELSIF NEW.id IN (SELECT id FROM Managers) THEN
+    IF NEW.id IN (SELECT id FROM Managers) THEN
         RAISE EXCEPTION 'Employee % already exists in Managers', NEW.id;
     END IF;
     RETURN NEW;
@@ -50,34 +29,12 @@ DROP TRIGGER IF EXISTS non_overlap_senior ON Seniors;
 
 CREATE TRIGGER non_overlap_senior 
 BEFORE INSERT OR UPDATE ON Seniors
-FOR EACH ROW EXECUTE FUNCTION check_senior();
-
--- After Delete Senior, make sure it exists in Managers or not in Superiors
-CREATE OR REPLACE FUNCTION delete_senior() RETURNS TRIGGER AS $$
-BEGIN
-    IF (SELECT id FROM Superiors WHERE id = OLD.id) IS NULL THEN
-        RETURN OLD;
-    END IF;
-    IF (SELECT id FROM Managers WHERE id = OLD.id) IS NULL THEN
-        RAISE EXCEPTION 'Deleted Senior % must be re-inserted as a Manager', OLD.id;
-    END IF;
-    RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
-
-DROP TRIGGER IF EXISTS delete_senior_trigger ON Seniors;
-
-CREATE CONSTRAINT TRIGGER delete_senior_trigger
-AFTER DELETE ON Seniors 
-DEFERRABLE INITIALLY DEFERRED
-FOR EACH ROW EXECUTE FUNCTION delete_senior();
+FOR EACH ROW EXECUTE FUNCTION check_senior_non_overlap();
 
 -- Insert and Update of Managers -> must exist in Superiors, cannot exist in Seniors
-CREATE OR REPLACE FUNCTION check_manager() RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION check_manager_non_overlap() RETURNS TRIGGER AS $$
 BEGIN
-    IF NEW.id NOT IN (SELECT id FROM Superiors) THEN
-        RAISE EXCEPTION 'Employee % does not exist in Superiors', NEW.id;
-    ELSIF NEW.id IN (SELECT id FROM Seniors) THEN
+    IF NEW.id IN (SELECT id FROM Seniors) THEN
         RAISE EXCEPTION 'Employee % already exists in Seniors', NEW.id;
     END IF;
     RETURN NEW;
@@ -88,27 +45,23 @@ DROP TRIGGER IF EXISTS non_overlap_manager ON Managers;
 
 CREATE TRIGGER non_overlap_manager
 BEFORE INSERT OR UPDATE ON Managers
-FOR EACH ROW EXECUTE FUNCTION check_manager();
+FOR EACH ROW EXECUTE FUNCTION check_manager_non_overlap();
 
--- After Delete Manager, make sure it exists in Seniors or not in Superiors
-CREATE OR REPLACE FUNCTION delete_manager() RETURNS TRIGGER AS $$
+-- Insert and Update of Superiors -> cannot exist in Juniors
+CREATE OR REPLACE FUNCTION check_superior_overlap() RETURNS TRIGGER AS $$
 BEGIN
-    IF (SELECT id FROM Superiors WHERE id = OLD.id) IS NULL THEN
-        RETURN OLD;
+    IF NEW.id IN (SELECT id FROM Juniors) THEN
+        RAISE EXCEPTION 'Employee % already exists in Juniors', NEW.id;
     END IF;
-    IF (SELECT id FROM Seniors WHERE id = OLD.id) IS NULL THEN
-        RAISE EXCEPTION 'Deleted Manager % must be re-inserted as a Senior', OLD.id;
-    END IF;
-    RETURN OLD;
+    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS delete_manager_trigger ON Managers;
+DROP TRIGGER IF EXISTS non_overlap_superior ON Superiors;
 
-CREATE CONSTRAINT TRIGGER delete_manager_trigger
-AFTER DELETE ON Managers
-DEFERRABLE INITIALLY DEFERRED
-FOR EACH ROW EXECUTE FUNCTION delete_manager();
+CREATE TRIGGER non_overlap_superior
+BEFORE INSERT OR UPDATE ON Superiors
+FOR EACH ROW EXECUTE FUNCTION check_superior_overlap();
 
 -- Insert into Superior -> insert into either Senior or Manager
 CREATE OR REPLACE FUNCTION check_covering_superior() RETURNS TRIGGER AS $$
@@ -129,22 +82,8 @@ AFTER INSERT ON Superiors
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION check_covering_superior();
 
--- After Delete Superior, make sure it exists in Juniors
-CREATE OR REPLACE FUNCTION delete_superior() RETURNS TRIGGER AS $$
-BEGIN
-    IF (SELECT id FROM Juniors WHERE id = OLD.id) IS NULL THEN
-        RAISE EXCEPTION 'Deleted Superior % must be re-inserted as a Junior', OLD.id;
-    END IF;
-    RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
-
-DROP TRIGGER IF EXISTS delete_superior_trigger ON Superiors;
-
-CREATE CONSTRAINT TRIGGER delete_superior_trigger
-AFTER DELETE ON Superiors 
-DEFERRABLE INITIALLY DEFERRED
-FOR EACH ROW EXECUTE FUNCTION delete_superior();
+-------------------Covering---------------------
+--------------------INSERT CASES-------------------
 
 -- Insert into Employee -> insert into either Junior or Superior
 CREATE OR REPLACE FUNCTION check_covering_employee() RETURNS TRIGGER AS $$
@@ -164,6 +103,63 @@ CREATE CONSTRAINT TRIGGER covering_employee_constraint
 AFTER INSERT ON Employees
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION check_covering_employee();
+
+------------------DELETE CASES--------------------------
+
+-- After delete junior or superior, ensure exists in either.
+CREATE OR REPLACE FUNCTION existing_employee_covering_check() RETURNS TRIGGER AS $$
+BEGIN
+    IF OLD.id NOT IN (SELECT id FROM Superiors UNION SELECT id FROM Juniors) THEN
+        RAISE EXCEPTION 'Employee % does not have a rank', OLD.id;
+    END IF;
+    RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS delete_junior_trigger ON Juniors;
+
+CREATE CONSTRAINT TRIGGER delete_junior_trigger
+AFTER UPDATE OR DELETE ON Juniors
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW EXECUTE FUNCTION existing_employee_covering_check();
+
+DROP TRIGGER IF EXISTS delete_superior_trigger ON Superiors;
+
+CREATE CONSTRAINT TRIGGER delete_superior_trigger
+AFTER UPDATE OR DELETE ON Superiors
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW EXECUTE FUNCTION existing_employee_covering_check();
+
+
+-- After delete manager or senior, ensure does not exist in superior OR exists in either.
+CREATE OR REPLACE FUNCTION existing_superior_covering_check() RETURNS TRIGGER AS $$
+BEGIN
+    -- If OLD employee is not in superiors, then he must have been deleted by superiors.
+    -- The junior-superiors delete will handle the case for us.
+    IF (SELECT id FROM Superiors WHERE id = OLD.id) IS NULL THEN
+        RETURN COALESCE(NEW, OLD);
+    END IF;
+    IF OLD.id NOT IN (SELECT id FROM Seniors UNION SELECT id FROM Managers) THEN
+        RAISE EXCEPTION 'Employee % does not have a rank', OLD.id;
+    END IF;
+    RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS delete_senior_trigger ON Seniors;
+
+CREATE CONSTRAINT TRIGGER delete_senior_trigger
+AFTER UPDATE OR DELETE ON Seniors 
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW EXECUTE FUNCTION existing_superior_covering_check();
+
+DROP TRIGGER IF EXISTS delete_manager_trigger ON Managers;
+
+CREATE CONSTRAINT TRIGGER delete_manager_trigger
+AFTER DELETE ON Managers
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW EXECUTE FUNCTION existing_superior_covering_check();
+
 -------------------------- E5 -----------------------------
 
 
