@@ -16,7 +16,7 @@ AS $$
 CASCADE;
 $$ LANGUAGE sql;
 
--- TEST trigger 12 non overlapping Juniors, Seniors, Managers
+-- TEST trigger E5 non overlapping Juniors, Seniors, Managers
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -31,52 +31,103 @@ INSERT INTO Seniors VALUES (5);
 INSERT INTO Managers VALUES (1);
 COMMIT;
 -- TEST
-INSERT INTO Juniors VALUES (1);
-INSERT INTO Juniors VALUES (5);
-INSERT INTO Seniors VALUES (1);
-INSERT INTO Seniors VALUES (6);
-INSERT INTO Managers VALUES (5);
-INSERT INTO Managers VALUES (6);
+-- insert a manager into Juniors
+INSERT INTO Juniors VALUES (1); -- Failure, employee is already a Superior
+-- insert a senior into Juniors
+INSERT INTO Juniors VALUES (5); -- Failure, employee is already a Superior
+-- insert a manager into Seniors
+INSERT INTO Seniors VALUES (1); -- Failure, employee is already a Manager
+-- insert a junior into Seniors
+INSERT INTO Seniors VALUES (6); -- Failure, employee is not a Superior (Schema)
+-- insert a senior into Managers
+INSERT INTO Managers VALUES (5); -- Failure, employee is already a Senior
+-- insert a junior into Managers
+INSERT INTO Managers VALUES (6); -- Failure, employee is not a Superior (Schema)
+
+-- insert an employee, without insertion into Junior, Senior, Manager
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES (2, 'Err 2', 'contact 2', 'err2@company.com', NULL, 1);
-COMMIT;
+COMMIT; -- Failure, employee must exist either as junior, senior or manager
+
+-- insert an employee into Superiors only, not into Senior or Manager
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES (3, 'Err Superior 3', 'contact 3', 'err3@company.com', NULL, 1);
 INSERT INTO Superiors VALUES (3);
-COMMIT;
+COMMIT; -- Failure, employee must exists either as senior or manager once a superior
+
+-- update a Superior into an already taken Junior id
+UPDATE Superiors SET id = 6 WHERE id = 1; -- Failure, employee id=6 is already a Junior
+-- update a Junior into an already taken id
+UPDATE Juniors SET id = 1 WHERE id = 6; -- Failure, employee id=1 is already a Superior
+-- update a Manager into an already taken id
+UPDATE Managers SET id = 6 WHERE id = 1; -- Failure, employee id=6 is not in Superior (Schema)
+-- update a Senior into an already taken id
+UPDATE Seniors SET id = 1 WHERE id = 5; -- Failure, employee id=1 is already a Manager
+
+-- only delete a junior
+DELETE FROM Juniors WHERE id = 6; -- Failure, Junior is not re-inserted as a Junior/Superior
+-- delete a junior then insert into superior
+BEGIN TRANSACTION;
+DELETE FROM Juniors WHERE id = 6;
+INSERT INTO Superiors VALUES (6);
+END; -- Failure, employee must exist either as Manager or Senior once a Superior
+-- delete a junior, insert into junior again
+BEGIN TRANSACTION;
+DELETE FROM Juniors WHERE id = 6;
+INSERT INTO Juniors VALUES (6);
+END; -- Success
+-- delete a junior, insert into superior, insert into manager
+BEGIN TRANSACTION;
+DELETE FROM Juniors WHERE id = 6;
+INSERT INTO Superiors VALUES (6);
+INSERT INTO Managers VALUES (6);
+END; -- Success
+
+-- only delete a superior
+DELETE FROM Superiors WHERE id = 6; -- Failure, Superior is not re-inserted as a Junior/Superior
+-- delete a Superior, insert into Superior (Manager) again
+BEGIN TRANSACTION;
+DELETE FROM Superiors WHERE id = 6;
+INSERT INTO Superiors VALUES (6);
+INSERT INTO Managers VALUES (6);
+END; -- Success
+-- delete a superior then insert into junior
+BEGIN TRANSACTION;
+DELETE FROM Superiors WHERE id = 6;
+INSERT INTO Juniors VALUES (6);
+END; -- Success
+
+-- only delete a senior
+DELETE FROM Seniors WHERE id = 5; -- Failure, Senior is not re-inserted as Junior/Superior
+--delete a senior, then insert into Senior again
+BEGIN TRANSACTION;
+DELETE FROM Seniors WHERE id = 5;
+INSERT INTO Seniors VALUES (5);
+END; -- Success
+--delete a senior, then insert into manager
+BEGIN TRANSACTION;
+DELETE FROM Seniors WHERE id = 5;
+INSERT INTO Managers VALUES (5);
+END; -- Success
+
+-- only delete a manager
+DELETE FROM Managers WHERE id = 1; -- Failure, Manager is not re-inserted as Junior/Superior
+-- delete a manager, then insert into Manager again
+BEGIN TRANSACTION;
+DELETE FROM Managers WHERE id = 1;
+INSERT INTO Managers VALUES (1);
+END; -- Success
+-- delete a manager then insert into senior
+BEGIN TRANSACTION;
+DELETE FROM Managers WHERE id = 1;
+INSERT INTO Seniors VALUES (1);
+END; -- Success
+
 -- AFTER TEST
 CALL reset();
 -- END TEST
 
--- TEST trigger 22 1 approval per booking
--- BEFORE TEST
-CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1');
-BEGIN TRANSACTION;
-INSERT INTO Employees VALUES 
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1);
-INSERT INTO Superiors VALUES (1), (2);
-INSERT INTO Managers VALUES (1), (2);
-COMMIT;
-BEGIN TRANSACTION;
-INSERT INTO MeetingRooms VALUES
-    (3, 101, '3rd floor, room 101, Dept 1', 1);
-INSERT INTO Updates VALUES
-    (1, 3, 101, CURRENT_DATE, 10);
-COMMIT;
-INSERT INTO Bookings VALUES
-    (3, 101, CURRENT_DATE, 15, 2, NULL);
-UPDATE Bookings SET approver_id = 1 WHERE 
-    floor = 3 AND room = 101 AND date = CURRENT_DATE AND start_hour = 15;
--- TEST
-UPDATE Bookings SET approver_id = 2 WHERE 
-    floor = 3 AND room = 101 AND date = CURRENT_DATE AND start_hour = 15;
--- AFTER TEST
-CALL reset();
--- END TEST
-
--- TEST trigger 23 no changes to attendance in already approved bookings
+-- TEST A4 no changes to attendance in already approved bookings
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -84,10 +135,14 @@ BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
     (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
-    (5, 'Senior 5', 'Contact 5', 'senior5@company.com', NULL, 1);
+    (5, 'Senior 5', 'Contact 5', 'senior5@company.com', NULL, 1),
+    (6, 'Resigned today Junior 6', 'Contact 6', 'junior6@company.com', NULL, 1),
+    (7, 'Resigned yesterday Junior 7', 'Contact 7', 'junior7@company.com', NULL, 1),
+    (8, 'Resigned tomorrow Junior 8', 'Contact 8', 'junior8@company.com', NULL, 1);
 INSERT INTO Superiors VALUES (1), (2), (5);
 INSERT INTO Seniors VALUES (5);
 INSERT INTO Managers VALUES (1), (2);
+INSERT INTO Juniors VALUES (6), (7), (8);
 COMMIT;
 BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES
@@ -99,21 +154,43 @@ INSERT INTO Bookings VALUES
     (3, 101, CURRENT_DATE, 10, 2, NULL),
     (3, 101, CURRENT_DATE, 15, 2, NULL);
 INSERT INTO Attends VALUES
+    (1, 3, 101, CURRENT_DATE, 10),
     (1, 3, 101, CURRENT_DATE, 15),
-    (2, 3, 101, CURRENT_DATE, 15);
-INSERT INTO Attends VALUES
-    (2, 3, 101, CURRENT_DATE, 10);
+    (5, 3, 101, CURRENT_DATE, 10),
+    (6, 3, 101, CURRENT_DATE, 15),
+    (7, 3, 101, CURRENT_DATE, 15),
+    (8, 3, 101, CURRENT_DATE, 15);
 UPDATE Bookings SET approver_id = 1 WHERE 
     floor = 3 AND room = 101 AND date = CURRENT_DATE AND start_hour = 15;
 -- TEST
-INSERT INTO Attends VALUES (5, 3, 101, CURRENT_DATE, 15);
-UPDATE Attends SET employee_id = 5 WHERE employee_id = 2;
-DELETE FROM Attends WHERE employee_id = 2;
+-- insert an employee into an already approved booking
+INSERT INTO Attends VALUES (5, 3, 101, CURRENT_DATE, 15); -- Failure, booking for this room has been approved
+
+-- update an employee's attendance in an already approved booking
+UPDATE Attends SET employee_id = 5 WHERE employee_id = 1 AND start_hour = 15; -- Failure, previous booking for this room has been approved
+-- delete an employee's attendance in an already approved booking
+DELETE FROM Attends WHERE employee_id = 1 AND start_hour = 15; -- Failure, booking for this room has been approved
+
+-- update an employee's attendance in a not-approved booking, into an already-approved booking
+UPDATE Attends SET start_hour = 15 WHERE employee_id = 5; -- Failure, the incoming booking has already been approved
+
+-- delete an employee's attendance when he has resigned today
+UPDATE Employees SET resignation_date = CURRENT_DATE WHERE id = 6;
+DELETE FROM Attends WHERE employee_id = 6; -- Success
+
+-- delete an employee's attendance when he has resigned yesterday
+UPDATE Employees SET resignation_date = CURRENT_DATE - 1 WHERE id = 7;
+DELETE FROM Attends WHERE employee_id = 7; -- Success
+
+-- delete an employee's attendance when he resigns tomorrow
+UPDATE Employees SET resignation_date = CURRENT_DATE + 1 WHERE id = 8;
+DELETE FROM Attends WHERE employee_id = 8; -- Failure, employee should still attend the already approved meeting
+
 -- AFTER TEST
 CALL reset();
 -- END TEST
 
--- TEST trigger 24 Only managers in same department have permissions to change booking
+-- TEST C1 Only managers in same department have permissions to change capacity
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
@@ -133,13 +210,37 @@ INSERT INTO Updates VALUES
     (1, 3, 101, CURRENT_DATE, 10);
 COMMIT;
 -- TEST
-INSERT INTO Updates VALUES (3, 3, 101, CURRENT_DATE, 10); -- Failure
+-- allow a manager from another department to update the room's capacity
+INSERT INTO Updates VALUES (3, 3, 101, CURRENT_DATE, 10); -- Failure, manager does not have perms to change capacity
+-- allow a manager from the same department to update the room's capacity
 INSERT INTO Updates VALUES (1, 3, 101, CURRENT_DATE, 10); -- Success
 -- AFTER TEST
 CALL reset();
 -- END TEST
 
--- TEST trigger 34 Meeting room booking or approval insert_employee_booking_success
+-- TEST C4 Meeting room can only have Updates not in the past (present and future only)
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES 
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
+COMMIT;
+INSERT INTO MeetingRooms VALUES (3, 101, '3rd floor, room 101, Dept 1', 1);
+-- TEST
+-- Update capacity yesterday 
+INSERT INTO Updates VALUES (1, 3, 101, CURRENT_DATE - 1, 10); -- Failure, meeting room capacity cannot be changed in the past
+-- Update capacity today 
+INSERT INTO Updates VALUES (1, 3, 101, CURRENT_DATE, 10); -- Success
+-- Update capacity tomorrow
+INSERT INTO Updates VALUES (1, 3, 101, CURRENT_DATE + 1, 10); -- Success
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST trigger 34 Meeting room booking or approval
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -191,35 +292,11 @@ COMMIT;
 INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE, 1, 1, 6); -- Failure
 INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE, 1, 3, NULL); -- Failure
 INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE, 1, 3, 6); -- Failure
-SELECT * FROM Bookings;
--- AFTER TEST
-ALTER TABLE Attends ENABLE TRIGGER lock_attends;
-CALL reset();
--- TEST END
-
--- TEST trigger 34 Meeting room booking or approval update_employee_booking_success
--- BEFORE TEST
-CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1');
-BEGIN TRANSACTION;
-INSERT INTO Employees VALUES 
-    (1, 'Senior 1', 'Contact 1', 'senior1@company.com', NULL, 1),
-    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1),
-    (3, 'Resigned Senior 3', 'Contact 3', 'senior3@company.com', CURRENT_DATE, 1),
-    (4, 'Manager 4', 'Contact 4', 'manager4@company.com', NULL, 1),
-    (5, 'Manager 5', 'Contact 5', 'manager5@company.com', NULL, 1),
-    (6, 'Resigned Manager 6', 'Contact 6', 'manager6@company.com', CURRENT_DATE, 1);
-INSERT INTO Superiors VALUES (1), (2), (3), (4), (5), (6);
-INSERT INTO Seniors VALUES (1), (2), (3);
-INSERT INTO Managers VALUES (4), (5), (6);
-COMMIT;
-BEGIN TRANSACTION;
-INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
-INSERT INTO Updates VALUES (4, 1, 1, CURRENT_DATE, 10);
-COMMIT;
--- TEST
 INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE, 1, 1, NULL); -- Success
-SELECT * FROM Bookings;
+UPDATE Bookings SET approver_id = 4 WHERE start_hour = 1; -- Success
+UPDATE Bookings SET creator_id = 3 WHERE creator_id = 1; -- Failure
+UPDATE Bookings SET approver_id = 6 WHERE approver_id = 4; -- Failure
+UPDATE Bookings SET creator_id = 3, approver_id = 6 WHERE creator_id = 1; -- Failure
 UPDATE Bookings SET creator_id = 2 where creator_id = 1; -- Success
 SELECT * FROM Bookings;
 UPDATE Bookings SET approver_id = 5 where approver_id IS NULL; -- Success
@@ -547,10 +624,11 @@ INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (4, 1, 1, CURRENT_DATE, 10);
 COMMIT;
 -- TEST
-INSERT INTO Updates VALUES(1, 1, 1, CURRENT_DATE, 1); -- Success
-SELECT * FROM Updates;
-UPDATE Updates SET manager_id = 3 WHERE manager_id = 1; -- Failure
-SELECT * FROM Updates;
+UPDATE Bookings SET approver_id = 2; -- Failure
+UPDATE Bookings SET approver_id = 1; -- Success
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 2, 1, NULL); -- Success
+UPDATE Bookings SET approver_id = 1 WHERE start_hour = 2; -- Success
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 3, 1, 2); -- Failure
 -- AFTER TEST
 CALL reset();
 -- TEST END

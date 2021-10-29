@@ -1,5 +1,6 @@
--- trigger 12 non-overlapping junior
-CREATE OR REPLACE FUNCTION check_junior_insertion() RETURNS TRIGGER AS $$
+-------------------------- E5 -----------------------------
+-- Insert and Update of Juniors -> cannot exist in Superiors
+CREATE OR REPLACE FUNCTION check_junior_overlap() RETURNS TRIGGER AS $$
 BEGIN
     IF NEW.id IN (SELECT id FROM Superiors) THEN
         RAISE EXCEPTION 'Employee % already exists in Superiors', NEW.id;
@@ -11,15 +12,13 @@ $$ LANGUAGE plpgsql;
 DROP TRIGGER IF EXISTS non_overlap_junior ON Juniors;
 
 CREATE TRIGGER non_overlap_junior
-BEFORE INSERT ON Juniors
-FOR EACH ROW EXECUTE FUNCTION check_junior_insertion();
+BEFORE INSERT OR UPDATE ON Juniors
+FOR EACH ROW EXECUTE FUNCTION check_junior_overlap();
 
--- trigger 12 non-overlapping senior
-CREATE OR REPLACE FUNCTION check_senior_insertion() RETURNS TRIGGER AS $$
+-- Insert and Update of Seniors -> must exist in Superiors, cannot exist in Managers
+CREATE OR REPLACE FUNCTION check_senior_overlap() RETURNS TRIGGER AS $$
 BEGIN
-    IF NEW.id NOT IN (SELECT id FROM Superiors) THEN
-        RAISE EXCEPTION 'Employee % does not exist in Superiors', NEW.id;
-    ELSIF NEW.id IN (SELECT id FROM Managers) THEN
+    IF NEW.id IN (SELECT id FROM Managers) THEN
         RAISE EXCEPTION 'Employee % already exists in Managers', NEW.id;
     END IF;
     RETURN NEW;
@@ -29,15 +28,13 @@ $$ LANGUAGE plpgsql;
 DROP TRIGGER IF EXISTS non_overlap_senior ON Seniors;
 
 CREATE TRIGGER non_overlap_senior 
-BEFORE INSERT ON Seniors
-FOR EACH ROW EXECUTE FUNCTION check_senior_insertion();
+BEFORE INSERT OR UPDATE ON Seniors
+FOR EACH ROW EXECUTE FUNCTION check_senior_overlap();
 
--- trigger 12 non-overlapping manager
-CREATE OR REPLACE FUNCTION check_manager_insertion() RETURNS TRIGGER AS $$
+-- Insert and Update of Managers -> must exist in Superiors, cannot exist in Seniors
+CREATE OR REPLACE FUNCTION check_manager_overlap() RETURNS TRIGGER AS $$
 BEGIN
-    IF NEW.id NOT IN (SELECT id FROM Superiors) THEN
-        RAISE EXCEPTION 'Employee % does not exist in Superiors', NEW.id;
-    ELSIF NEW.id IN (SELECT id FROM Seniors) THEN
+    IF NEW.id IN (SELECT id FROM Seniors) THEN
         RAISE EXCEPTION 'Employee % already exists in Seniors', NEW.id;
     END IF;
     RETURN NEW;
@@ -47,16 +44,51 @@ $$ LANGUAGE plpgsql;
 DROP TRIGGER IF EXISTS non_overlap_manager ON Managers;
 
 CREATE TRIGGER non_overlap_manager
-BEFORE INSERT ON Managers
-FOR EACH ROW EXECUTE FUNCTION check_manager_insertion();
+BEFORE INSERT OR UPDATE ON Managers
+FOR EACH ROW EXECUTE FUNCTION check_manager_overlap();
 
--- trigger 12 insert into Employee -> insert into either Junior, Senior, Manager
+-- Insert and Update of Superiors -> cannot exist in Juniors
+CREATE OR REPLACE FUNCTION check_superior_overlap() RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.id IN (SELECT id FROM Juniors) THEN
+        RAISE EXCEPTION 'Employee % already exists in Juniors', NEW.id;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS non_overlap_superior ON Superiors;
+
+CREATE TRIGGER non_overlap_superior
+BEFORE INSERT OR UPDATE ON Superiors
+FOR EACH ROW EXECUTE FUNCTION check_superior_overlap();
+-------------------Covering---------------------
+--------------------INSERT CASES-------------------
+-- Insert into Superior -> insert into either Senior or Manager
+CREATE OR REPLACE FUNCTION check_covering_superior() RETURNS TRIGGER AS $$
+BEGIN
+	IF NEW.id NOT IN (
+        SELECT id FROM Seniors UNION
+        SELECT id FROM Managers) THEN
+		RAISE EXCEPTION 'Superior % must exist either as Senior or Manager', NEW.id;
+	END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS covering_superior_constraint ON Superiors;
+
+CREATE CONSTRAINT TRIGGER covering_superior_constraint 
+AFTER INSERT ON Superiors 
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW EXECUTE FUNCTION check_covering_superior();
+
+-- Insert into Employee -> insert into either Junior or Superior
 CREATE OR REPLACE FUNCTION check_covering_employee() RETURNS TRIGGER AS $$
 BEGIN
 	IF NEW.id NOT IN (
         SELECT id FROM Juniors UNION
-        SELECT id FROM Seniors UNION
-        SELECT id FROM Managers) THEN
+        SELECT id FROM Superiors) THEN
 		RAISE EXCEPTION 'Employee % must exist either as Junior, Senior or Manager', NEW.id;
 	END IF;
     RETURN NEW;
@@ -70,42 +102,102 @@ AFTER INSERT ON Employees
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION check_covering_employee();
 
--- trigger 22 only 1 approval per booking
-CREATE OR REPLACE FUNCTION check_booking_approval() RETURNS TRIGGER AS $$
+------------------DELETE CASES--------------------------
+
+-- After delete junior or superior, ensure exists in either.
+CREATE OR REPLACE FUNCTION existing_employee_covering_check() RETURNS TRIGGER AS $$
 BEGIN
-    IF OLD.approver_id IS NOT NULL THEN
-        RAISE EXCEPTION 'Booking (floor: %, room: %, date: %, start_hour: %) has already been approved', 
-            OLD.floor, OLD.room, OLD.date, OLD.start_hour;
+    IF OLD.id NOT IN (SELECT id FROM Superiors UNION SELECT id FROM Juniors) THEN
+        RAISE EXCEPTION 'Employee % does not have a rank', OLD.id;
     END IF;
-    RETURN NEW;
+    RETURN COALESCE(NEW, OLD);
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS booking_approval ON Bookings;
+DROP TRIGGER IF EXISTS delete_junior_trigger ON Juniors;
 
-CREATE TRIGGER booking_approval
-BEFORE UPDATE ON Bookings
-FOR EACH ROW EXECUTE FUNCTION check_booking_approval();
+CREATE CONSTRAINT TRIGGER delete_junior_trigger
+AFTER UPDATE OR DELETE ON Juniors
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW EXECUTE FUNCTION existing_employee_covering_check();
 
--- trigger 23 no changes to attendance in already approved bookings
-CREATE OR REPLACE FUNCTION check_attends_change() RETURNS TRIGGER AS $$
+DROP TRIGGER IF EXISTS delete_superior_trigger ON Superiors;
+
+CREATE CONSTRAINT TRIGGER delete_superior_trigger
+AFTER UPDATE OR DELETE ON Superiors
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW EXECUTE FUNCTION existing_employee_covering_check();
+
+
+-- After delete manager or senior, ensure does not exist in superior OR exists in either.
+CREATE OR REPLACE FUNCTION existing_superior_covering_check() RETURNS TRIGGER AS $$
 BEGIN
-    IF TG_OP = 'DELETE' OR TG_OP = 'UPDATE' THEN
-        IF (SELECT approver_id FROM Bookings 
-            WHERE floor = OLD.floor
-                AND room = OLD.room
-                AND date = OLD.date
-                AND start_hour = OLD.start_hour) IS NOT NULL THEN
+    -- If OLD employee is not in superiors, then he must have been deleted by superiors.
+    -- The junior-superiors delete will handle the case for us.
+    IF (SELECT id FROM Superiors WHERE id = OLD.id) IS NULL THEN
+        RETURN COALESCE(NEW, OLD);
+    END IF;
+    IF OLD.id NOT IN (SELECT id FROM Seniors UNION SELECT id FROM Managers) THEN
+        RAISE EXCEPTION 'Employee % does not have a rank', OLD.id;
+    END IF;
+    RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS delete_senior_trigger ON Seniors;
+
+CREATE CONSTRAINT TRIGGER delete_senior_trigger
+AFTER UPDATE OR DELETE ON Seniors 
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW EXECUTE FUNCTION existing_superior_covering_check();
+
+DROP TRIGGER IF EXISTS delete_manager_trigger ON Managers;
+
+CREATE CONSTRAINT TRIGGER delete_manager_trigger
+AFTER DELETE ON Managers
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW EXECUTE FUNCTION existing_superior_covering_check();
+
+-------------------------- E5 -----------------------------
+
+-- A4 no changes to attendance in already approved bookings
+CREATE OR REPLACE FUNCTION check_attends_change() RETURNS TRIGGER AS $$
+DECLARE
+    old_approver_id INT;
+    new_approver_id INT;
+BEGIN
+    SELECT approver_id INTO old_approver_id FROM Bookings 
+    WHERE floor = OLD.floor
+        AND room = OLD.room
+        AND date = OLD.date
+        AND start_hour = OLD.start_hour;
+    SELECT approver_id INTO new_approver_id FROM Bookings
+    WHERE floor = NEW.floor
+        AND room = NEW.room
+        AND date = NEW.date
+        AND start_hour = NEW.start_hour;
+    
+    IF TG_OP = 'DELETE' THEN
+        IF old_approver_id IS NOT NULL THEN
+            IF OLD.date >= (SELECT resignation_date FROM Employees WHERE id = OLD.employee_id) THEN
+                RETURN OLD;
+            END IF;
             RAISE EXCEPTION 'Booking (floor: %, room: %, date: %, start_hour: %) has already been approved.', 
                 OLD.floor, OLD.room, OLD.date, OLD.start_hour;
         END IF;
         RETURN OLD;
+    ELSIF TG_OP = 'UPDATE' THEN
+        IF old_approver_id IS NOT NULL THEN
+            RAISE EXCEPTION 'Previous booking (floor: %, room: %, date: %, start_hour: %) has already been approved.', 
+                OLD.floor, OLD.room, OLD.date, OLD.start_hour;
+        END IF;
+        IF new_approver_id IS NOT NULL THEN
+            RAISE EXCEPTION 'Incoming booking (floor: %, room: %, date: %, start_hour: %) has already been approved.', 
+                NEW.floor, NEW.room, NEW.date, NEW.start_hour;
+        END IF;
+        RETURN NEW;
     ELSE
-        IF (SELECT approver_id FROM Bookings
-            WHERE floor = NEW.floor
-                AND room = NEW.room
-                AND date = NEW.date
-                AND start_hour = NEW.start_hour) IS NOT NULL THEN
+        IF new_approver_id IS NOT NULL THEN
             RAISE EXCEPTION 'Booking (floor: %, room: %, date: %, start_hour: %) has already been approved.', 
                 NEW.floor, NEW.room, NEW.date, NEW.start_hour;           
         END IF;
@@ -120,7 +212,7 @@ CREATE TRIGGER lock_attends
 BEFORE DELETE OR INSERT OR UPDATE ON Attends
 FOR EACH ROW EXECUTE FUNCTION check_attends_change();
 
--- trigger 24 Only managers in same departments have permission to change capacity
+-- C1 Only managers in same departments have permission to change capacity
 CREATE OR REPLACE FUNCTION check_update_capacity_perms() RETURNS TRIGGER AS $$
 BEGIN
     IF (SELECT department_id FROM Employees WHERE id = NEW.manager_id) <>
@@ -136,6 +228,22 @@ DROP TRIGGER IF EXISTS update_capacity_perms ON Updates;
 CREATE TRIGGER update_capacity_perms
 BEFORE INSERT ON Updates
 FOR EACH ROW EXECUTE FUNCTION check_update_capacity_perms();
+
+-- C4 Meeting room can only have updates on capacity not in the past (in the present and future)
+CREATE OR REPLACE FUNCTION check_update_capacity_time() RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.date < CURRENT_DATE THEN
+        RAISE EXCEPTION 'Meeting room capacity cannot be changed in the past';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS update_capacity_not_in_past ON Updates;
+
+CREATE TRIGGER update_capacity_not_in_past
+BEFORE INSERT ON Updates
+FOR EACH ROW EXECUTE FUNCTION check_update_capacity_time();
 
  -- trigger 34 resigned employees no longer allowed to book or approve or attend any meeting, and cannot declare temperature 
 -- Meeting room booking or approval
