@@ -311,6 +311,8 @@ BEGIN
     END IF;
     IF (TG_OP = 'UPDATE' AND OLD.date <> CURRENT_DATE) THEN
         RAISE EXCEPTION 'Unable to ammend past health declaration records';
+    END IF;
+    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
