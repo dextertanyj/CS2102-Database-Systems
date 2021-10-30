@@ -240,7 +240,11 @@ INSERT INTO Updates VALUES (1, 3, 101, CURRENT_DATE + 1, 10); -- Success
 CALL reset();
 -- END TEST
 
--- TEST trigger 34 Meeting room booking or approval
+/**********************************************************************************
+* B-12 When an employee resigns, they are no longer allowed to book any meetings. *
+***********************************************************************************/
+
+-- TEST Insert Success
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -267,7 +271,34 @@ SELECT * FROM Bookings;
 CALL reset();
 -- TEST END
 
--- TEST trigger 34 Meeting room booking or approval insert_resigned_employee_booking_failure
+-- TEST Update Success
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES 
+    (1, 'Senior 1', 'Contact 1', 'senior1@company.com', NULL, 1),
+    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1),
+    (3, 'Resigned Senior 3', 'Contact 3', 'senior3@company.com', CURRENT_DATE, 1),
+    (4, 'Manager 4', 'Contact 4', 'manager4@company.com', NULL, 1),
+    (5, 'Manager 5', 'Contact 5', 'manager5@company.com', NULL, 1),
+    (6, 'Resigned Manager 6', 'Contact 6', 'manager6@company.com', CURRENT_DATE, 1);
+INSERT INTO Superiors VALUES (1), (2), (3), (4), (5), (6);
+INSERT INTO Seniors VALUES (1), (2), (3);
+INSERT INTO Managers VALUES (4), (5), (6);
+COMMIT;
+BEGIN TRANSACTION;
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
+INSERT INTO Updates VALUES (4, 1, 1, CURRENT_DATE, 10);
+COMMIT;
+-- TEST
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE, 1, 1, NULL); -- Success
+SELECT * FROM Bookings;
+-- AFTER TEST
+CALL reset();
+-- TEST END
+
+-- TEST trigger 34 Insert Failure
 -- BEFORE TEST
 CALL reset();
 ALTER TABLE Attends DISABLE TRIGGER lock_attends;
@@ -336,85 +367,13 @@ SELECT * FROM Bookings;
 CALL reset();
 -- TEST END
 
--- TEST trigger 34 Health declaration insert_employee_declaration_success
--- BEFORE TEST
-CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1');
-BEGIN TRANSACTION;
-INSERT INTO Employees VALUES 
-    (1, 'Senior 1', 'Contact 1', 'senior1@company.com', NULL, 1),
-    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1),
-    (3, 'Resigned Senior 3', 'Contact 3', 'senior3@company.com', CURRENT_DATE, 1);
-INSERT INTO Superiors VALUES (1), (2), (3);
-INSERT INTO Seniors VALUES (1), (2), (3);
-COMMIT;
--- TEST
-INSERT INTO HealthDeclarations VALUES(1, CURRENT_DATE, 37.0); -- Success
-SELECT * FROM HealthDeclarations;
--- AFTER TEST
-CALL reset();
--- TEST END
+/*************************************************************************************
+* B-13 When an employee resigns, they are no longer allowed to approve any meetings. *
+*************************************************************************************/
 
--- TEST trigger 34 Health declaration insert_resigned_employee_declaration_failure
--- BEFORE TEST
-CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1');
-BEGIN TRANSACTION;
-INSERT INTO Employees VALUES 
-    (1, 'Senior 1', 'Contact 1', 'senior1@company.com', NULL, 1),
-    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1),
-    (3, 'Resigned Senior 3', 'Contact 3', 'senior3@company.com', CURRENT_DATE, 1);
-INSERT INTO Superiors VALUES (1), (2), (3);
-INSERT INTO Seniors VALUES (1), (2), (3);
-COMMIT;
--- TEST
-INSERT INTO HealthDeclarations VALUES(3, CURRENT_DATE, 37.0); -- Failure
-SELECT * FROM HealthDeclarations;
--- AFTER TEST
-CALL reset();
--- TEST END
-
--- TEST trigger 34 Health declaration update_employee_declaration_success
--- BEFORE TEST
-CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1');
-BEGIN TRANSACTION;
-INSERT INTO Employees VALUES 
-    (1, 'Senior 1', 'Contact 1', 'senior1@company.com', NULL, 1),
-    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1),
-    (3, 'Resigned Senior 3', 'Contact 3', 'senior3@company.com', CURRENT_DATE, 1);
-INSERT INTO Superiors VALUES (1), (2), (3);
-INSERT INTO Seniors VALUES (1), (2), (3);
-COMMIT;
--- TEST
-INSERT INTO HealthDeclarations VALUES(1, CURRENT_DATE, 37.0); -- Success
-SELECT * FROM HealthDeclarations;
-Update HealthDeclarations SET id = 2 WHERE id = 1; -- Success
-SELECT * FROM HealthDeclarations;
--- AFTER TEST
-CALL reset();
--- TEST END
-
--- TEST trigger 34 Health declaration update_resigned_employee_declaration_failure
--- BEFORE TEST
-CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1');
-BEGIN TRANSACTION;
-INSERT INTO Employees VALUES 
-    (1, 'Senior 1', 'Contact 1', 'senior1@company.com', NULL, 1),
-    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1),
-    (3, 'Resigned Senior 3', 'Contact 3', 'senior3@company.com', CURRENT_DATE, 1);
-INSERT INTO Superiors VALUES (1), (2), (3);
-INSERT INTO Seniors VALUES (1), (2), (3);
-COMMIT;
--- TEST
-INSERT INTO HealthDeclarations VALUES(1, CURRENT_DATE, 37.0); -- Success
-SELECT * FROM HealthDeclarations;
-Update HealthDeclarations SET id = 3 WHERE id = 1; -- Failure
-SELECT * FROM HealthDeclarations;
--- AFTER TEST
-CALL reset();
--- TEST END
+/****************************************************************************************
+* A-5 When an employee resigns, they are no longer allowed to join any booked meetings. *
+****************************************************************************************/
 
 -- TEST trigger 34 Attends meeting insert_employee_attendance_success
 -- BEFORE TEST
@@ -536,6 +495,10 @@ ALTER TABLE Attends ENABLE TRIGGER lock_attends;
 CALL reset();
 -- TEST END
 
+/************************************************************************************************
+* C-3 When an employee resigns, they are no longer allowed to change any meeting room capacities.
+************************************************************************************************/
+
 -- TEST trigger 34 Update meeting room capacity insert_employee_update_success
 -- BEFORE TEST
 CALL reset();
@@ -629,6 +592,90 @@ UPDATE Bookings SET approver_id = 1; -- Success
 INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 2, 1, NULL); -- Success
 UPDATE Bookings SET approver_id = 1 WHERE start_hour = 2; -- Success
 INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 3, 1, 2); -- Failure
+-- AFTER TEST
+CALL reset();
+-- TEST END
+
+/********************************************************************************************
+* H-6 When an employee resigns, they are no longer allowed to make any health declarations. *
+********************************************************************************************/
+
+-- TEST trigger 34 Health declaration insert_employee_declaration_success
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES 
+    (1, 'Senior 1', 'Contact 1', 'senior1@company.com', NULL, 1),
+    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1),
+    (3, 'Resigned Senior 3', 'Contact 3', 'senior3@company.com', CURRENT_DATE, 1);
+INSERT INTO Superiors VALUES (1), (2), (3);
+INSERT INTO Seniors VALUES (1), (2), (3);
+COMMIT;
+-- TEST
+INSERT INTO HealthDeclarations VALUES(1, CURRENT_DATE, 37.0); -- Success
+SELECT * FROM HealthDeclarations;
+-- AFTER TEST
+CALL reset();
+-- TEST END
+
+-- TEST trigger 34 Health declaration insert_resigned_employee_declaration_failure
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES 
+    (1, 'Senior 1', 'Contact 1', 'senior1@company.com', NULL, 1),
+    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1),
+    (3, 'Resigned Senior 3', 'Contact 3', 'senior3@company.com', CURRENT_DATE, 1);
+INSERT INTO Superiors VALUES (1), (2), (3);
+INSERT INTO Seniors VALUES (1), (2), (3);
+COMMIT;
+-- TEST
+INSERT INTO HealthDeclarations VALUES(3, CURRENT_DATE, 37.0); -- Failure
+SELECT * FROM HealthDeclarations;
+-- AFTER TEST
+CALL reset();
+-- TEST END
+
+-- TEST trigger 34 Health declaration update_employee_declaration_success
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES 
+    (1, 'Senior 1', 'Contact 1', 'senior1@company.com', NULL, 1),
+    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1),
+    (3, 'Resigned Senior 3', 'Contact 3', 'senior3@company.com', CURRENT_DATE, 1);
+INSERT INTO Superiors VALUES (1), (2), (3);
+INSERT INTO Seniors VALUES (1), (2), (3);
+COMMIT;
+-- TEST
+INSERT INTO HealthDeclarations VALUES(1, CURRENT_DATE, 37.0); -- Success
+SELECT * FROM HealthDeclarations;
+Update HealthDeclarations SET id = 2 WHERE id = 1; -- Success
+SELECT * FROM HealthDeclarations;
+-- AFTER TEST
+CALL reset();
+-- TEST END
+
+-- TEST trigger 34 Health declaration update_resigned_employee_declaration_failure
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES 
+    (1, 'Senior 1', 'Contact 1', 'senior1@company.com', NULL, 1),
+    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1),
+    (3, 'Resigned Senior 3', 'Contact 3', 'senior3@company.com', CURRENT_DATE, 1);
+INSERT INTO Superiors VALUES (1), (2), (3);
+INSERT INTO Seniors VALUES (1), (2), (3);
+COMMIT;
+-- TEST
+INSERT INTO HealthDeclarations VALUES(1, CURRENT_DATE, 37.0); -- Success
+SELECT * FROM HealthDeclarations;
+Update HealthDeclarations SET id = 3 WHERE id = 1; -- Failure
+SELECT * FROM HealthDeclarations;
 -- AFTER TEST
 CALL reset();
 -- TEST END
