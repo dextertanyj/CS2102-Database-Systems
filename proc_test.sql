@@ -793,16 +793,14 @@ CALL reset();
 * UNBOOK ROOM *
 **************/
 
--- TEST unbook_room_partial_batch_success
+-- TEST Partial Booking Success
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
-INSERT INTO Employees VALUES
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1);
-INSERT INTO Superiors VALUES (1), (2);
-INSERT INTO Managers VALUES (1), (2);
+INSERT INTO Employees VALUES (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
 COMMIT;
 BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
@@ -812,28 +810,21 @@ INSERT INTO Bookings VALUES
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 3, 1, NULL);
-INSERT INTO Attends VALUES
-    (1, 1, 1, CURRENT_DATE + 1, 1),
-    (1, 1, 1, CURRENT_DATE + 1, 2),
-    (1, 1, 1, CURRENT_DATE + 1, 3);
 -- TEST
-CALL unbook_room(1, 1, CURRENT_DATE + 1, 1, 2, 1);
-SELECT COUNT(*) FROM Bookings; -- Returns 2
-SELECT COUNT(*) FROM Attends; -- Returns 2
+CALL unbook_room(1, 1, CURRENT_DATE + 1, 2, 3, 1);
+SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns (1, 1, CURRENT_DATE + 1, 1, 1, NULL), (1, 1, CURRENT_DATE + 1, 3, 1, NULL)
 -- AFTER TEST
 CALL reset();
 -- TEST END
 
--- TEST unbook_room_entire_batch_success
+-- TEST Complete Booking Success
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
-INSERT INTO Employees VALUES
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1);
-INSERT INTO Superiors VALUES (1), (2);
-INSERT INTO Managers VALUES (1), (2);
+INSERT INTO Employees VALUES (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
 COMMIT;
 BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
@@ -843,24 +834,44 @@ INSERT INTO Bookings VALUES
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 3, 1, NULL);
-INSERT INTO Attends VALUES
-    (1, 1, 1, CURRENT_DATE + 1, 1),
-    (1, 1, 1, CURRENT_DATE + 1, 2),
-    (1, 1, 1, CURRENT_DATE + 1, 3);
 -- TEST
 CALL unbook_room(1, 1, CURRENT_DATE + 1, 1, 4, 1);
-SELECT COUNT(*) FROM Bookings; -- Returns 0
-SELECT COUNT(*) FROM Attends; -- Returns 0
+SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns NULL
 -- AFTER TEST
 CALL reset();
 -- TEST END
 
--- TEST unbook_room_different_employee_failure
+-- TEST Approved Booking Success
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
-INSERT INTO Employees VALUES
+INSERT INTO Employees VALUES (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
+COMMIT;
+BEGIN TRANSACTION;
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
+INSERT INTO Bookings VALUES 
+    (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
+    (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
+    (1, 1, CURRENT_DATE + 1, 3, 1, NULL);
+UPDATE Bookings SET approver_id = 1;
+-- TEST
+CALL unbook_room(1, 1, CURRENT_DATE + 1, 1, 4, 1);
+SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns NULL
+-- AFTER TEST
+CALL reset();
+-- TEST END
+
+-- TEST Different Creator Failure
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
     (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1);
 INSERT INTO Superiors VALUES (1), (2);
@@ -874,28 +885,57 @@ INSERT INTO Bookings VALUES
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 3, 1, NULL);
-INSERT INTO Attends VALUES
-    (1, 1, 1, CURRENT_DATE + 1, 1),
-    (1, 1, 1, CURRENT_DATE + 1, 2),
-    (1, 1, 1, CURRENT_DATE + 1, 3);
 -- TEST
-CALL unbook_room(1, 1, CURRENT_DATE + 1, 1, 3, 2);
-SELECT COUNT(*) FROM Bookings; -- Returns 3
-SELECT COUNT(*) FROM Attends; -- Returns 3
+CALL unbook_room(1, 1, CURRENT_DATE + 1, 2, 3, 2);
+SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns (1, 1, CURRENT_DATE + 1, 1, 1, NULL), (1, 1, CURRENT_DATE + 1, 2, 1, NULL), (1, 1, CURRENT_DATE + 1, 3, 1, NULL)
 -- AFTER TEST
 CALL reset();
 -- TEST END
 
--- TEST unbook_room_non_existent_booking_failure
+-- TEST Missing Booking Failure
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1);
-INSERT INTO Superiors VALUES (1), (2);
-INSERT INTO Managers VALUES (1), (2);
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
+COMMIT;
+BEGIN TRANSACTION;
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
+-- TEST
+CALL unbook_room(1, 1, CURRENT_DATE + 1, 1, 2, 1); -- Exception
+-- AFTER TEST
+CALL reset();
+-- TEST END
+
+-- TEST Missing Room Failure
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
+COMMIT;
+-- TEST
+CALL unbook_room(1, 1, CURRENT_DATE + 1, 1, 2, 1); -- Exception
+-- AFTER TEST
+CALL reset();
+-- TEST END
+
+-- TEST Invalid Duration Failure 
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
 COMMIT;
 BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
@@ -905,45 +945,9 @@ INSERT INTO Bookings VALUES
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 3, 1, NULL);
-INSERT INTO Attends VALUES
-    (1, 1, 1, CURRENT_DATE + 1, 1),
-    (1, 1, 1, CURRENT_DATE + 1, 2),
-    (1, 1, 1, CURRENT_DATE + 1, 3);
 -- TEST
-CALL unbook_room(1, 1, CURRENT_DATE + 1, 4, 5, 1);
-SELECT COUNT(*) FROM Bookings; -- Returns 3
-SELECT COUNT(*) FROM Attends; -- Returns 3
--- AFTER TEST
-CALL reset();
--- TEST END
-
--- TEST unbook_room_non_existent_room_failure
--- BEFORE TEST
-CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1');
-BEGIN TRANSACTION;
-INSERT INTO Employees VALUES
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1);
-INSERT INTO Superiors VALUES (1), (2);
-INSERT INTO Managers VALUES (1), (2);
-COMMIT;
-BEGIN TRANSACTION;
-INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
-INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
-COMMIT;
-INSERT INTO Bookings VALUES 
-    (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
-    (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
-    (1, 1, CURRENT_DATE + 1, 3, 1, NULL);
-INSERT INTO Attends VALUES
-    (1, 1, 1, CURRENT_DATE + 1, 1),
-    (1, 1, 1, CURRENT_DATE + 1, 2),
-    (1, 1, 1, CURRENT_DATE + 1, 3);
--- TEST
-CALL unbook_room(1, 2, CURRENT_DATE + 1, 1, 2, 1);
-SELECT COUNT(*) FROM Bookings; -- Returns 3
-SELECT COUNT(*) FROM Attends; -- Returns 3
+CALL unbook_room(1, 1, CURRENT_DATE + 1, 3, 2, 1); -- Exception
+SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns (1, 1, CURRENT_DATE + 1, 1, 1, NULL), (1, 1, CURRENT_DATE + 1, 2, 1, NULL), (1, 1, CURRENT_DATE + 1, 3, 1, NULL)
 -- AFTER TEST
 CALL reset();
 -- TEST END
