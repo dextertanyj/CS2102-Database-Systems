@@ -254,165 +254,151 @@ CALL reset();
 * CHANGE CAPACITY *
 ******************/
 
--- TEST change_capacity_success
+-- TEST Different Date Success
 -- BEFORE TEST
 CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
-    (3, 'Manager 3', 'Contact 3', 'manager3@company.com', NULL, 2),
-    (4, 'Resigned Manager 4', 'Contact 4', 'manager4@company.com', CURRENT_DATE, 1),
-    (5, 'Senior 5', 'Contact 5', 'senior5@company.com', NULL, 1),
-    (6, 'Junior 6', 'Contact 6', 'junior6@company.com', NULL, 1);
-INSERT INTO Juniors VALUES (6);
-INSERT INTO Superiors VALUES (1), (2), (3), (4), (5);
-INSERT INTO Seniors VALUES (5);
-INSERT INTO Managers VALUES (1), (2), (3), (4);
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
 COMMIT;
 BEGIN TRANSACTION;
-INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
-INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 10);
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 COMMIT;
 -- TEST
-CALL change_capacity(1, 1, 20, 2, CURRENT_DATE); -- Success
-SELECT capacity FROM Updates WHERE floor = 1 AND room = 1 AND date = CURRENT_DATE; -- Returns 20
+CALL change_capacity(1, 1, 20, 1, CURRENT_DATE + 1);
+SELECT * FROM Updates ORDER BY date, floor, room; -- Returns (1, 1, 1, CURRENT_DATE, 10), (1, 1, 1, CURRENT_DATE + 1, 20)
 -- AFTER TEST
 CALL reset();
 -- TEST END
 
--- TEST change_capacity_resigned_employee_failure
+-- TEST Same Date Success
 -- BEFORE TEST
 CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
-    (3, 'Manager 3', 'Contact 3', 'manager3@company.com', NULL, 2),
-    (4, 'Resigned Manager 4', 'Contact 4', 'manager4@company.com', CURRENT_DATE, 1),
-    (5, 'Senior 5', 'Contact 5', 'senior5@company.com', NULL, 1),
-    (6, 'Junior 6', 'Contact 6', 'junior6@company.com', NULL, 1);
-INSERT INTO Juniors VALUES (6);
-INSERT INTO Superiors VALUES (1), (2), (3), (4), (5);
-INSERT INTO Seniors VALUES (5);
-INSERT INTO Managers VALUES (1), (2), (3), (4);
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
 COMMIT;
 BEGIN TRANSACTION;
-INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
-INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 10);
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 COMMIT;
 -- TEST
-CALL change_capacity(1, 1, 20, 3, CURRENT_DATE); -- Failure
+CALL change_capacity(1, 1, 20, 1, CURRENT_DATE); -- Success
+SELECT * FROM Updates ORDER BY date, floor, room; -- Returns (1, 1, 1, CURRENT_DATE, 20)
 -- AFTER TEST
 CALL reset();
 -- TEST END
 
--- TEST change_capacity_different_department_failure
+-- TEST Resigned Employee Failure
 -- BEFORE TEST
 CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
-    (3, 'Manager 3', 'Contact 3', 'manager3@company.com', NULL, 2),
-    (4, 'Resigned Manager 4', 'Contact 4', 'manager4@company.com', CURRENT_DATE, 1),
-    (5, 'Senior 5', 'Contact 5', 'senior5@company.com', NULL, 1),
-    (6, 'Junior 6', 'Contact 6', 'junior6@company.com', NULL, 1);
-INSERT INTO Juniors VALUES (6);
-INSERT INTO Superiors VALUES (1), (2), (3), (4), (5);
-INSERT INTO Seniors VALUES (5);
-INSERT INTO Managers VALUES (1), (2), (3), (4);
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
 COMMIT;
 BEGIN TRANSACTION;
-INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
-INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 10);
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 COMMIT;
+UPDATE Employees SET resignation_date = CURRENT_DATE WHERE id = 1;
 -- TEST
-CALL change_capacity(1, 1, 20, 2, CURRENT_DATE); -- Failure
+CALL change_capacity(1, 1, 20, 1, CURRENT_DATE); -- Exception
+SELECT * FROM Updates ORDER BY date, floor, room; -- Returns (1, 1, 1, CURRENT_DATE, 10)
 -- AFTER TEST
 CALL reset();
 -- TEST END
 
--- TEST change_capacity_senior_failure
+-- TEST Different Department Failure
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
-    (3, 'Manager 3', 'Contact 3', 'manager3@company.com', NULL, 2),
-    (4, 'Resigned Manager 4', 'Contact 4', 'manager4@company.com', CURRENT_DATE, 1),
-    (5, 'Senior 5', 'Contact 5', 'senior5@company.com', NULL, 1),
-    (6, 'Junior 6', 'Contact 6', 'junior6@company.com', NULL, 1);
-INSERT INTO Juniors VALUES (6);
-INSERT INTO Superiors VALUES (1), (2), (3), (4), (5);
-INSERT INTO Seniors VALUES (5);
-INSERT INTO Managers VALUES (1), (2), (3), (4);
+    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 2);
+INSERT INTO Superiors VALUES (1), (2);
+INSERT INTO Managers VALUES (1), (2);
 COMMIT;
 BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
-INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 10);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 COMMIT;
 -- TEST
-CALL change_capacity(1, 1, 20, 5, CURRENT_DATE); -- Success
+CALL change_capacity(1, 1, 20, 2, CURRENT_DATE); -- Exception
+SELECT * FROM Updates ORDER BY date, floor, room; -- Returns (1, 1, 1, CURRENT_DATE, 10)
 -- AFTER TEST
 CALL reset();
 -- TEST END
 
--- TEST change_capacity_junior_failure
+-- TEST Senior Failure
 -- BEFORE TEST
 CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
-    (3, 'Manager 3', 'Contact 3', 'manager3@company.com', NULL, 2),
-    (4, 'Resigned Manager 4', 'Contact 4', 'manager4@company.com', CURRENT_DATE, 1),
-    (5, 'Senior 5', 'Contact 5', 'senior5@company.com', NULL, 1),
-    (6, 'Junior 6', 'Contact 6', 'junior6@company.com', NULL, 1);
-INSERT INTO Juniors VALUES (6);
-INSERT INTO Superiors VALUES (1), (2), (3), (4), (5);
-INSERT INTO Seniors VALUES (5);
-INSERT INTO Managers VALUES (1), (2), (3), (4);
+    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2);
+INSERT INTO Managers VALUES (1);
+INSERT INTO Seniors VALUES (2);
 COMMIT;
 BEGIN TRANSACTION;
-INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
-INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 10);
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 COMMIT;
 -- TEST
-CALL change_capacity(1, 1, 20, 6, CURRENT_DATE); -- Success
+CALL change_capacity(1, 1, 20, 2, CURRENT_DATE); -- Exception
+SELECT * FROM Updates ORDER BY date, floor, room; -- Returns (1, 1, 1, CURRENT_DATE, 10)
 -- AFTER TEST
 CALL reset();
 -- TEST END
 
--- TEST change_capacity_non_existant_room_failure
+-- TEST Junior Failure
 -- BEFORE TEST
 CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
-    (3, 'Manager 3', 'Contact 3', 'manager3@company.com', NULL, 2),
-    (4, 'Resigned Manager 4', 'Contact 4', 'manager4@company.com', CURRENT_DATE, 1),
-    (5, 'Senior 5', 'Contact 5', 'senior5@company.com', NULL, 1),
-    (6, 'Junior 6', 'Contact 6', 'junior6@company.com', NULL, 1);
-INSERT INTO Juniors VALUES (6);
-INSERT INTO Superiors VALUES (1), (2), (3), (4), (5);
-INSERT INTO Seniors VALUES (5);
-INSERT INTO Managers VALUES (1), (2), (3), (4);
+    (2, 'Junior 2', 'Contact 2', 'junior2@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
+INSERT INTO Juniors VALUES (2);
 COMMIT;
 BEGIN TRANSACTION;
-INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
-INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 10);
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 COMMIT;
 -- TEST
-CALL change_capacity(2, 1, 20, 1, CURRENT_DATE); -- Failure
+CALL change_capacity(1, 1, 20, 2, CURRENT_DATE); -- Exception
+SELECT * FROM Updates ORDER BY date, floor, room; -- Returns (1, 1, 1, CURRENT_DATE, 10)
+-- AFTER TEST
+CALL reset();
+-- TEST END
+
+-- TEST Missing Room Failure
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES 
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
+COMMIT;
+-- TEST
+CALL change_capacity(1, 1, 10, 1, CURRENT_DATE); -- Exception
+SELECT * FROM Updates ORDER BY date, floor, room; -- Returns NULL
 -- AFTER TEST
 CALL reset();
 -- TEST END
