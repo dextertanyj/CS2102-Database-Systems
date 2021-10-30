@@ -10,7 +10,9 @@ RETURNS SETOF RECORD AS $$
     ) AS LatestRelevantUpdate;
 $$ LANGUAGE sql;
 
--------------------------- ADMIN --------------------------
+/****************
+***** BASIC *****
+****************/
 
 CREATE OR REPLACE PROCEDURE add_department 
 (id INT, name VARCHAR(255)) 
@@ -124,9 +126,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE VIEW RoomCapacity AS 
-SELECT floor, room, date, capacity
-FROM Updates NATURAL JOIN (SELECT floor, room, MAX(date) AS date FROM Updates WHERE date <= CURRENT_DATE GROUP BY (floor, room)) AS LatestUpdate;
+/***************
+***** CORE *****
+***************/
 
 CREATE OR REPLACE FUNCTION search_room
 (IN required_capacity INT, IN date DATE, IN start_hour INT, IN end_hour INT, OUT floor INT, OUT room INT, OUT department_id INT, OUT capacity INT)
@@ -194,18 +196,6 @@ BEGIN
         AND B.start_hour BETWEEN unbook_room.start_hour AND (unbook_room.end_hour - 1);
 END;
 $$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE VIEW latest_recorded_temperature AS
-SELECT id, temperature, date
-FROM HealthDeclarations h1
-WHERE h1.date >= (SELECT MAX(h2.date) FROM HealthDeclarations h2
-                    WHERE h1.id = h2.id
-                    GROUP BY h2.id);
-
-CREATE OR REPLACE VIEW resigned_employees AS
-SELECT id, name, contact_number, email, resignation_date, department_id
-FROM Employees
-WHERE resignation_date IS NOT NULL;
 
 CREATE OR REPLACE PROCEDURE join_meeting
 (floor_number INT, room_number INT, join_date DATE, starting_hour INT, ending_hour INT, e_id INT)
@@ -276,7 +266,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--------------------------- ADMIN --------------------------
+/****************
+***** ADMIN *****
+****************/
 
 CREATE OR REPLACE FUNCTION non_compliance
 (IN start_date DATE, IN end_date DATE, OUT employee_id INT, OUT number_of_days INT)
@@ -337,6 +329,10 @@ BEGIN
     END IF;
 END;
 $$ LANGUAGE plpgsql;
+
+/*****************
+***** HEALTH *****
+*****************/
 
 CREATE OR REPLACE PROCEDURE declare_health
 (id INT, date DATE, temperature NUMERIC(3, 1))
