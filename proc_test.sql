@@ -504,9 +504,15 @@ INSERT INTO Employees VALUES
 INSERT INTO Superiors VALUES (1);
 INSERT INTO Managers VALUES (1);
 COMMIT;
+BEGIN TRANSACTION;
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 1);
 -- TEST
 CALL remove_employee(1, CURRENT_DATE);
 SELECT * FROM Employees ORDER BY id; -- Returns (1, 'Manager 1', 'Contact 1', 'manager1@company.com', CURRENT_DATE, 1)
+SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns NULL; 
 -- AFTER TEST
 CALL reset();
 -- TEST END
