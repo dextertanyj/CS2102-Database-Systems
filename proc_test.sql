@@ -590,387 +590,201 @@ CALL reset();
 * BOOK ROOM *
 ************/
 
--- TEST book_room_single_hour_success
+-- TEST Single Hour Success
 -- BEFORE TEST
 CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 2),
-    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE, 1),
-    (4, 'Senior 4', 'Contact 4', 'senior4@company.com', NULL, 1),
-    (5, 'Junior 5', 'Contact 5', 'junior5@company.com', NULL, 1);
-INSERT INTO Juniors VALUES (5);
-INSERT INTO Superiors VALUES (1), (2), (3), (4);
-INSERT INTO Seniors VALUES (4);
-INSERT INTO Managers VALUES (1), (2), (3);
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
 COMMIT;
 BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 COMMIT;
-INSERT INTO Bookings VALUES 
-    (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
-    (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
-    (1, 1, CURRENT_DATE + 1, 3, 1, NULL);
-INSERT INTO Attends VALUES
-    (1, 1, 1, CURRENT_DATE + 1, 1),
-    (1, 1, 1, CURRENT_DATE + 1, 2),
-    (1, 1, 1, CURRENT_DATE + 1, 3);
 -- TEST
-CALL book_room(1, 1, CURRENT_DATE + 2, 0, 1, 2);
-SELECT COUNT(*) FROM Bookings WHERE floor = 1 AND room = 1 AND date = CURRENT_DATE + 2; -- Return 1
+CALL book_room(1, 1, CURRENT_DATE + 1, 1, 2, 1);
+SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns (1, 1, CURRENT_DATE + 1, 1, 1, NULL)
 -- AFTER TEST
 CALL reset();
 -- TEST END
 
--- TEST book_room_single_hour_success
+-- TEST Multiple Hour Success
 -- BEFORE TEST
 CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 2),
-    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE, 1),
-    (4, 'Senior 4', 'Contact 4', 'senior4@company.com', NULL, 1),
-    (5, 'Junior 5', 'Contact 5', 'junior5@company.com', NULL, 1);
-INSERT INTO Juniors VALUES (5);
-INSERT INTO Superiors VALUES (1), (2), (3), (4);
-INSERT INTO Seniors VALUES (4);
-INSERT INTO Managers VALUES (1), (2), (3);
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
 COMMIT;
 BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 COMMIT;
-INSERT INTO Bookings VALUES 
-    (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
-    (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
-    (1, 1, CURRENT_DATE + 1, 3, 1, NULL);
-INSERT INTO Attends VALUES
-    (1, 1, 1, CURRENT_DATE + 1, 1),
-    (1, 1, 1, CURRENT_DATE + 1, 2),
-    (1, 1, 1, CURRENT_DATE + 1, 3);
 -- TEST
-CALL book_room(1, 1, CURRENT_DATE + 1, 23, 24, 2);
-SELECT COUNT(*) FROM Bookings WHERE floor = 1 AND room = 1 AND date = CURRENT_DATE + 2; -- Return 1
+CALL book_room(1, 1, CURRENT_DATE + 1, 0, 24, 1);
+SELECT * FROM Bookings ORDER BY date, start_hour, floor, room LIMIT 2; -- Returns (1, 1, CURRENT_DATE + 1, 0, 1, NULL), (1, 1, CURRENT_DATE + 1, 1, 1, NULL)
+SELECT COUNT(*) FROM Bookings; -- Returns 24
 -- AFTER TEST
 CALL reset();
 -- TEST END
 
--- TEST book_room_multiple_hour_success
+-- TEST Senior Success
 -- BEFORE TEST
 CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 2),
-    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE, 1),
-    (4, 'Senior 4', 'Contact 4', 'senior4@company.com', NULL, 1),
-    (5, 'Junior 5', 'Contact 5', 'junior5@company.com', NULL, 1);
-INSERT INTO Juniors VALUES (5);
-INSERT INTO Superiors VALUES (1), (2), (3), (4);
-INSERT INTO Seniors VALUES (4);
-INSERT INTO Managers VALUES (1), (2), (3);
+    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2);
+INSERT INTO Managers VALUES (1);
+INSERT INTO Seniors VALUES (2);
 COMMIT;
 BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 COMMIT;
-INSERT INTO Bookings VALUES 
-    (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
-    (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
-    (1, 1, CURRENT_DATE + 1, 3, 1, NULL);
-INSERT INTO Attends VALUES
-    (1, 1, 1, CURRENT_DATE + 1, 1),
-    (1, 1, 1, CURRENT_DATE + 1, 2),
-    (1, 1, 1, CURRENT_DATE + 1, 3);
 -- TEST
-CALL book_room(1, 1, CURRENT_DATE + 2, 4, 6, 2); -- Success
-SELECT COUNT(*) FROM Bookings WHERE floor = 1 AND room = 1 AND date = CURRENT_DATE + 2; -- Return 2
+CALL book_room(1, 1, CURRENT_DATE + 1, 1, 2, 2);
+SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns (1, 1, CURRENT_DATE + 1, 1, 2, NULL)
 -- AFTER TEST
 CALL reset();
 -- TEST END
 
--- TEST book_room_senior_success
+-- TEST Invalid End Time Failure
 -- BEFORE TEST
 CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 2),
-    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE, 1),
-    (4, 'Senior 4', 'Contact 4', 'senior4@company.com', NULL, 1),
-    (5, 'Junior 5', 'Contact 5', 'junior5@company.com', NULL, 1);
-INSERT INTO Juniors VALUES (5);
-INSERT INTO Superiors VALUES (1), (2), (3), (4);
-INSERT INTO Seniors VALUES (4);
-INSERT INTO Managers VALUES (1), (2), (3);
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
 COMMIT;
 BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 COMMIT;
-INSERT INTO Bookings VALUES 
-    (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
-    (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
-    (1, 1, CURRENT_DATE + 1, 3, 1, NULL);
-INSERT INTO Attends VALUES
-    (1, 1, 1, CURRENT_DATE + 1, 1),
-    (1, 1, 1, CURRENT_DATE + 1, 2),
-    (1, 1, 1, CURRENT_DATE + 1, 3);
 -- TEST
-CALL book_room(1, 1, CURRENT_DATE + 2, 4, 6, 4); -- Success
-SELECT COUNT(*) FROM Bookings WHERE floor = 1 AND room = 1 AND date = CURRENT_DATE + 2; -- Return 2
+CALL book_room(1, 1, CURRENT_DATE + 1, 1, 25, 1); -- Exception
+SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns NULL
 -- AFTER TEST
 CALL reset();
 -- TEST END
 
--- TEST book_room_invalid_end_time_failure
+-- TEST Invalid Duration Failure
 -- BEFORE TEST
 CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 2),
-    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE, 1),
-    (4, 'Senior 4', 'Contact 4', 'senior4@company.com', NULL, 1),
-    (5, 'Junior 5', 'Contact 5', 'junior5@company.com', NULL, 1);
-INSERT INTO Juniors VALUES (5);
-INSERT INTO Superiors VALUES (1), (2), (3), (4);
-INSERT INTO Seniors VALUES (4);
-INSERT INTO Managers VALUES (1), (2), (3);
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
 COMMIT;
 BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 COMMIT;
-INSERT INTO Bookings VALUES 
-    (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
-    (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
-    (1, 1, CURRENT_DATE + 1, 3, 1, NULL);
-INSERT INTO Attends VALUES
-    (1, 1, 1, CURRENT_DATE + 1, 1),
-    (1, 1, 1, CURRENT_DATE + 1, 2),
-    (1, 1, 1, CURRENT_DATE + 1, 3);
 -- TEST
-CALL book_room(1, 1, CURRENT_DATE + 1, 24, 25, 1); -- Failure
-SELECT COUNT(*) FROM Bookings WHERE floor = 1 AND room = 1 AND date = CURRENT_DATE + 1; -- Return 3
+CALL book_room(1, 1, CURRENT_DATE + 1, 3, 2, 1); -- Exception
+SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns NULL
 -- AFTER TEST
 CALL reset();
 -- TEST END
 
--- TEST book_room_invalid_duration_failure
+-- TEST Invalid Start Time Failure
 -- BEFORE TEST
 CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 2),
-    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE, 1),
-    (4, 'Senior 4', 'Contact 4', 'senior4@company.com', NULL, 1),
-    (5, 'Junior 5', 'Contact 5', 'junior5@company.com', NULL, 1);
-INSERT INTO Juniors VALUES (5);
-INSERT INTO Superiors VALUES (1), (2), (3), (4);
-INSERT INTO Seniors VALUES (4);
-INSERT INTO Managers VALUES (1), (2), (3);
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
 COMMIT;
 BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 COMMIT;
-INSERT INTO Bookings VALUES 
-    (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
-    (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
-    (1, 1, CURRENT_DATE + 1, 3, 1, NULL);
-INSERT INTO Attends VALUES
-    (1, 1, 1, CURRENT_DATE + 1, 1),
-    (1, 1, 1, CURRENT_DATE + 1, 2),
-    (1, 1, 1, CURRENT_DATE + 1, 3);
 -- TEST
-CALL book_room(1, 1, CURRENT_DATE + 1, 24, 2, 1); -- Failure
-SELECT COUNT(*) FROM Bookings WHERE floor = 1 AND room = 1 AND date = CURRENT_DATE + 1; -- Return 3
+CALL book_room(1, 1, CURRENT_DATE + 1, -1, 2, 1); -- Exception
+SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns NULL
 -- AFTER TEST
 CALL reset();
 -- TEST END
 
--- TEST book_room_invalid_start_time_failure
+-- TEST Complete Overlap Failure
 -- BEFORE TEST
 CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 2),
-    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE, 1),
-    (4, 'Senior 4', 'Contact 4', 'senior4@company.com', NULL, 1),
-    (5, 'Junior 5', 'Contact 5', 'junior5@company.com', NULL, 1);
-INSERT INTO Juniors VALUES (5);
-INSERT INTO Superiors VALUES (1), (2), (3), (4);
-INSERT INTO Seniors VALUES (4);
-INSERT INTO Managers VALUES (1), (2), (3);
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
 COMMIT;
 BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 COMMIT;
-INSERT INTO Bookings VALUES 
+INSERT INTO Bookings VALUES
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 3, 1, NULL);
-INSERT INTO Attends VALUES
-    (1, 1, 1, CURRENT_DATE + 1, 1),
-    (1, 1, 1, CURRENT_DATE + 1, 2),
-    (1, 1, 1, CURRENT_DATE + 1, 3);
 -- TEST
-CALL book_room(1, 1, CURRENT_DATE + 1, -1, 0, 1); -- Failure
-SELECT COUNT(*) FROM Bookings WHERE floor = 1 AND room = 1 AND date = CURRENT_DATE + 1; -- Return 3
+CALL book_room(1, 1, CURRENT_DATE + 1, 2, 3, 1); -- Exception
+SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns (1, 1, CURRENT_DATE + 1, 1, 1, NULL), (1, 1, CURRENT_DATE + 1, 2, 1, NULL), (1, 1, CURRENT_DATE + 1, 3, 1, NULL)
 -- AFTER TEST
 CALL reset();
 -- TEST END
 
--- TEST book_room_overlapping_periods_failure
+-- TEST Partial Overlap Failure
 -- BEFORE TEST
 CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 2),
-    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE, 1),
-    (4, 'Senior 4', 'Contact 4', 'senior4@company.com', NULL, 1),
-    (5, 'Junior 5', 'Contact 5', 'junior5@company.com', NULL, 1);
-INSERT INTO Juniors VALUES (5);
-INSERT INTO Superiors VALUES (1), (2), (3), (4);
-INSERT INTO Seniors VALUES (4);
-INSERT INTO Managers VALUES (1), (2), (3);
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
 COMMIT;
 BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 COMMIT;
-INSERT INTO Bookings VALUES 
-    (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
-    (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
-    (1, 1, CURRENT_DATE + 1, 3, 1, NULL);
-INSERT INTO Attends VALUES
-    (1, 1, 1, CURRENT_DATE + 1, 1),
-    (1, 1, 1, CURRENT_DATE + 1, 2),
-    (1, 1, 1, CURRENT_DATE + 1, 3);
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 1, NULL);
 -- TEST
-CALL book_room(1, 1, CURRENT_DATE + 1, 1, 2, 1); -- Failure
-SELECT COUNT(*) FROM Bookings WHERE floor = 1 AND room = 1 AND date = CURRENT_DATE + 1; -- Return 3
+CALL book_room(1, 1, CURRENT_DATE + 1, 0, 2, 1); -- Failure
+SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns (1, 1, CURRENT_DATE + 1, 1, 1, NULL)
 -- AFTER TEST
 CALL reset();
 -- TEST END
 
--- TEST book_room_overlapping_periods_failure
+-- TEST Junior Failure
 -- BEFORE TEST
 CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 2),
-    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE, 1),
-    (4, 'Senior 4', 'Contact 4', 'senior4@company.com', NULL, 1),
-    (5, 'Junior 5', 'Contact 5', 'junior5@company.com', NULL, 1);
-INSERT INTO Juniors VALUES (5);
-INSERT INTO Superiors VALUES (1), (2), (3), (4);
-INSERT INTO Seniors VALUES (4);
-INSERT INTO Managers VALUES (1), (2), (3);
+    (2, 'Junior 2', 'Contact 2', 'junior2@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
+INSERT INTO Juniors VALUES (2);
 COMMIT;
 BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 COMMIT;
-INSERT INTO Bookings VALUES 
-    (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
-    (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
-    (1, 1, CURRENT_DATE + 1, 3, 1, NULL);
-INSERT INTO Attends VALUES
-    (1, 1, 1, CURRENT_DATE + 1, 1),
-    (1, 1, 1, CURRENT_DATE + 1, 2),
-    (1, 1, 1, CURRENT_DATE + 1, 3);
 -- TEST
-CALL book_room(1, 1, CURRENT_DATE + 1, 1, 4, 1); -- Failure
-SELECT COUNT(*) FROM Bookings WHERE floor = 1 AND room = 1 AND date = CURRENT_DATE + 1; -- Return 3
--- AFTER TEST
-CALL reset();
--- TEST END
-
--- TEST book_room_overlapping_periods_failure
--- BEFORE TEST
-CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
-BEGIN TRANSACTION;
-INSERT INTO Employees VALUES 
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 2),
-    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE, 1),
-    (4, 'Senior 4', 'Contact 4', 'senior4@company.com', NULL, 1),
-    (5, 'Junior 5', 'Contact 5', 'junior5@company.com', NULL, 1);
-INSERT INTO Juniors VALUES (5);
-INSERT INTO Superiors VALUES (1), (2), (3), (4);
-INSERT INTO Seniors VALUES (4);
-INSERT INTO Managers VALUES (1), (2), (3);
-COMMIT;
-BEGIN TRANSACTION;
-INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
-INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
-COMMIT;
-INSERT INTO Bookings VALUES 
-    (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
-    (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
-    (1, 1, CURRENT_DATE + 1, 3, 1, NULL);
-INSERT INTO Attends VALUES
-    (1, 1, 1, CURRENT_DATE + 1, 1),
-    (1, 1, 1, CURRENT_DATE + 1, 2),
-    (1, 1, 1, CURRENT_DATE + 1, 3);
--- TEST
-CALL book_room(1, 1, CURRENT_DATE + 1, 1, 10, 1); -- Failure
-SELECT COUNT(*) FROM Bookings WHERE floor = 1 AND room = 1 AND date = CURRENT_DATE + 1; -- Return 3
--- AFTER TEST
-CALL reset();
--- TEST END
-
--- TEST book_room_junior_failure
--- BEFORE TEST
-CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
-BEGIN TRANSACTION;
-INSERT INTO Employees VALUES 
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 2),
-    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE, 1),
-    (4, 'Senior 4', 'Contact 4', 'senior4@company.com', NULL, 1),
-    (5, 'Junior 5', 'Contact 5', 'junior5@company.com', NULL, 1);
-INSERT INTO Juniors VALUES (5);
-INSERT INTO Superiors VALUES (1), (2), (3), (4);
-INSERT INTO Seniors VALUES (4);
-INSERT INTO Managers VALUES (1), (2), (3);
-COMMIT;
-BEGIN TRANSACTION;
-INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
-INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
-COMMIT;
-INSERT INTO Bookings VALUES 
-    (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
-    (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
-    (1, 1, CURRENT_DATE + 1, 3, 1, NULL);
-INSERT INTO Attends VALUES
-    (1, 1, 1, CURRENT_DATE + 1, 1),
-    (1, 1, 1, CURRENT_DATE + 1, 2),
-    (1, 1, 1, CURRENT_DATE + 1, 3);
--- TEST
-CALL book_room(1, 1, CURRENT_DATE + 1, 1, 10, 5); -- Failure
-SELECT COUNT(*) FROM Bookings WHERE floor = 1 AND room = 1 AND date = CURRENT_DATE + 1; -- Return 3
+CALL book_room(1, 1, CURRENT_DATE + 1, 1, 10, 2); -- Exception
+SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns NULL
 -- AFTER TEST
 CALL reset();
 -- TEST END
