@@ -458,7 +458,7 @@ SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns (1, 1,
 CALL reset();
 -- END TEST
 
--- TEST Insert No Declaration Success
+-- TEST Insert Fever Failure
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
