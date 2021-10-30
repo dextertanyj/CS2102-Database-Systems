@@ -494,55 +494,45 @@ CALL reset();
 * REMOVE EMPLOYEE *
 ******************/
 
--- TEST remove_employee_success
+-- TEST Success
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Resigned Manager 2', 'Contact 2', 'manager2@company.com', CURRENT_DATE - 1, 1);
-INSERT INTO Superiors VALUES (1), (2);
-INSERT INTO Managers VALUES (1), (2);
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
 COMMIT;
 -- TEST
-CALL remove_employee(1, CURRENT_DATE); -- Success
-SELECT E.resignation_date FROM Employees AS E WHERE E.id = 1; -- Returns CURRENT_DATE
+CALL remove_employee(1, CURRENT_DATE);
+SELECT * FROM Employees ORDER BY id; -- Returns (1, 'Manager 1', 'Contact 1', 'manager1@company.com', CURRENT_DATE, 1)
 -- AFTER TEST
 CALL reset();
 -- TEST END
 
--- TEST remove_employee_already_resigned_failure
+-- TEST Resigned Failure
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Resigned Manager 2', 'Contact 2', 'manager2@company.com', CURRENT_DATE - 1, 1);
-INSERT INTO Superiors VALUES (1), (2);
-INSERT INTO Managers VALUES (1), (2);
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', CURRENT_DATE - 1, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
 COMMIT;
 -- TEST
-CALL remove_employee(2, CURRENT_DATE); -- Failure
-SELECT E.resignation_date FROM Employees AS E WHERE E.id = 2; -- Returns CURRENT_DATE - 1
+CALL remove_employee(1, CURRENT_DATE); -- Failure
+SELECT * FROM Employees ORDER BY id; -- Returns (1, 'Manager 1', 'Contact 1', 'manager1@company.com', CURRENT_DATE - 1, 1)
 -- AFTER TEST
 CALL reset();
 -- TEST END
 
--- TEST remove_employee_non_existant_employee_failure
+-- TEST Missing Employee Failure
 -- BEFORE TEST
 CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1');
-BEGIN TRANSACTION;
-INSERT INTO Employees VALUES 
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Resigned Manager 2', 'Contact 2', 'manager2@company.com', CURRENT_DATE - 1, 1);
-INSERT INTO Superiors VALUES (1), (2);
-INSERT INTO Managers VALUES (1), (2);
-COMMIT;
 -- TEST
-CALL remove_employee(3, CURRENT_DATE); -- Failure
+CALL remove_employee(1, CURRENT_DATE); -- Failure
 -- AFTER TEST
 CALL reset();
 -- TEST END
