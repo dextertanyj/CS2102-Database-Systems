@@ -252,7 +252,7 @@ $$ LANGUAGE plpgsql;
 DROP TRIGGER IF EXISTS update_capacity_perms ON Updates;
 
 CREATE TRIGGER update_capacity_perms
-BEFORE INSERT ON Updates
+BEFORE INSERT OR UPDATE ON Updates
 FOR EACH ROW EXECUTE FUNCTION check_update_capacity_perms();
 
 -- C-4 A meeting room can only have its capacity updated for a date not in the past, i.e. in the present or the future.
@@ -268,7 +268,7 @@ $$ LANGUAGE plpgsql;
 DROP TRIGGER IF EXISTS update_capacity_not_in_past ON Updates;
 
 CREATE TRIGGER update_capacity_not_in_past
-BEFORE INSERT ON Updates
+BEFORE INSERT OR UDPATE ON Updates
 FOR EACH ROW EXECUTE FUNCTION check_update_capacity_time();
 
 -- B-12 When an employee resigns, they are no longer allowed to book any meetings.
@@ -589,15 +589,19 @@ DECLARE
                             AND room = NEW.room);
                             
     current_room_count INT := (SELECT COUNT(*)
-                                FROM Attends 
-                                WHERE floor = NEW.floor
-                                AND room = NEW.room
-                                AND date = NEW.date
-                                AND start_hour = NEW.start_hour);
+                                FROM Attends AS A
+                                WHERE A.floor = NEW.floor
+                                AND A.room = NEW.room
+                                AND A.date = NEW.date
+                                AND A.start_hour = NEW.start_hour);
 BEGIN
+    IF room_capacity IS NULL THEN
+        RAISE EXCEPTION 'Meeting room does not have an effective capacity record.';
+    END IF;
     IF TG_OP = 'INSERT' AND current_room_count >= room_capacity THEN
         RAISE EXCEPTION 'Cannot attend booking due to meeting room capacity limit reached';
-    ELSIF TG_OP = 'UPDATE' AND current_room_count >= room_capacity AND (NEW.floor <> OLD.floor OR NEW.room <> OLD.room OR NEW.date <> OLD.date OR NEW.start_hour <> OLD.start_hour) THEN
+    END IF;
+    IF TG_OP = 'UPDATE' AND current_room_count >= room_capacity AND (NEW.floor <> OLD.floor OR NEW.room <> OLD.room OR NEW.date <> OLD.date OR NEW.start_hour <> OLD.start_hour) THEN
         RAISE EXCEPTION 'Cannot attend booking due to meeting room capacity limit reached';
     END IF;
     RETURN NEW;
