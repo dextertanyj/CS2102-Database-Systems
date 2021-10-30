@@ -253,81 +253,99 @@ BEFORE INSERT ON Updates
 FOR EACH ROW EXECUTE FUNCTION check_update_capacity_time();
 
 -- B-12 When an employee resigns, they are no longer allowed to book any meetings.
--- B-13 When an employee resigns, they are no longer allowed to approve any meetings.
-CREATE OR REPLACE FUNCTION check_resignation_booking_create_approve() RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION check_resigned_creator() RETURNS TRIGGER AS $$
 DECLARE
-	creator_resignation_date DATE := NULL;
-	approver_resignation_date DATE := NULL;
+	resignation_date DATE := NULL;
 BEGIN
-	SELECT resignation_date INTO creator_resignation_date FROM Employees e WHERE e.id = NEW.creator_id;
-	SELECT resignation_date INTO approver_resignation_date FROM Employees e WHERE e.id = NEW.approver_id;
-	IF (creator_resignation_date IS NOT NULL) THEN
-		RAISE EXCEPTION 'Employee attempting to book meeting has resigned.';
-	ELSIF (approver_resignation_date IS NOT NULL) THEN
-		RAISE EXCEPTION 'Employee attempting to approve meeting has resigned.';
+	SELECT E.resignation_date INTO resignation_date FROM Employees AS E WHERE E.id = NEW.creator_id;
+	IF (resignation_date IS NOT NULL) THEN
+		RAISE EXCEPTION 'Unable to book meeting as employee has resigned';
 	END IF ;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS check_resignation_booking_create_approve_trigger ON Bookings;
-CREATE TRIGGER check_resignation_booking_create_approve_trigger
+DROP TRIGGER IF EXISTS check_resigned_creator_trigger ON Bookings;
+
+CREATE TRIGGER check_resigned_creator_trigger
 BEFORE INSERT OR UPDATE ON Bookings
-FOR EACH ROW EXECUTE FUNCTION check_resignation_booking_create_approve();
+FOR EACH ROW EXECUTE FUNCTION check_resigned_creator();
+
+-- B-13 When an employee resigns, they are no longer allowed to approve any meetings.
+CREATE OR REPLACE FUNCTION check_resigned_approver() RETURNS TRIGGER AS $$
+DECLARE
+	resignation_date DATE := NULL;
+BEGIN
+	SELECT E.resignation_date INTO resignation_date FROM Employees AS E WHERE E.id = NEW.approver_id;
+	IF (resignation_date IS NOT NULL) THEN
+		RAISE EXCEPTION 'Unable to approve meeting as employee has resigned';
+	END IF ;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS check_resigned_approver_trigger ON Bookings;
+
+CREATE TRIGGER check_resigned_approver_trigger
+BEFORE INSERT OR UPDATE OF approver_id ON Bookings
+FOR EACH ROW EXECUTE FUNCTION check_resigned_approver();
 
 -- H-6 When an employee resigns, they are no longer allowed to make any health declarations.
-CREATE OR REPLACE FUNCTION check_resignation_health_declaration() RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION check_resigned_health_delcaration() RETURNS TRIGGER AS $$
 DECLARE
-	employee_resignation_date DATE := NULL;
+	resignation_date DATE := NULL;
 BEGIN
-	SELECT resignation_date INTO employee_resignation_date FROM Employees e WHERE e.id = NEW.id;
-	IF (employee_resignation_date IS NOT NULL) THEN
-		RAISE EXCEPTION 'Employee attempting to declare temperature has resigned.';
+	SELECT E.resignation_date INTO resignation_date FROM Employees AS E WHERE E.id = NEW.id;
+	IF (resignation_date IS NOT NULL) THEN
+		RAISE EXCEPTION 'Unable to declare health status as employee has resigned';
 	END IF;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS check_resignation_health_declaration_trigger ON HealthDeclarations;
-CREATE TRIGGER check_resignation_health_declaration_trigger
+DROP TRIGGER IF EXISTS check_resigned_health_delcaration_trigger ON HealthDeclarations;
+
+CREATE TRIGGER check_resigned_health_delcaration_trigger
 BEFORE INSERT OR UPDATE ON HealthDeclarations
-FOR EACH ROW EXECUTE FUNCTION check_resignation_health_declaration();
+FOR EACH ROW EXECUTE FUNCTION check_resigned_health_delcaration();
 
 -- A-5 When an employee resigns, they are no longer allowed to join any booked meetings.
-CREATE OR REPLACE FUNCTION check_resignation_attend() RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION check_resigned_attends() RETURNS TRIGGER AS $$
 DECLARE
-	employee_resignation_date DATE := NULL;
+	resignation_date DATE := NULL;
 BEGIN
-	SELECT resignation_date INTO employee_resignation_date FROM Employees e WHERE e.id = NEW.employee_id;
-	IF (employee_resignation_date IS NOT NULL) THEN
+	SELECT E.resignation_date INTO resignation_date FROM Employees AS E WHERE E.id = NEW.employee_id;
+	IF (resignation_date IS NOT NULL) THEN
 		RAISE EXCEPTION 'Employee attempting to attend meeting has resigned.';
 	END IF;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS check_resignation_attend_trigger ON Attends;
-CREATE TRIGGER check_resignation_attend_trigger
+DROP TRIGGER IF EXISTS check_resigned_attends_trigger ON Attends;
+
+CREATE TRIGGER check_resigned_attends_trigger
 BEFORE INSERT OR UPDATE ON Attends
-FOR EACH ROW EXECUTE FUNCTION check_resignation_attend();
+FOR EACH ROW EXECUTE FUNCTION check_resigned_attends();
 
 -- C-3 When an employee resigns, they are no longer allowed to change any meeting room capacities.
-CREATE OR REPLACE FUNCTION check_resignation_updates() RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION check_resigned_updates() RETURNS TRIGGER AS $$
 DECLARE
-	employee_resignation_date DATE := NULL;
+	resignation_date DATE := NULL;
 BEGIN
-	SELECT resignation_date INTO employee_resignation_date FROM Employees e WHERE e.id = NEW.manager_id;
-	IF (employee_resignation_date IS NOT NULL) THEN
+	SELECT E.resignation_date INTO resignation_date FROM Employees AS E WHERE E.id = NEW.manager_id;
+	IF (resignation_date IS NOT NULL) THEN
 		RAISE EXCEPTION 'Employee attempting to update meeting room capacity has resigned.';
 	END IF;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS check_resignation_updates_trigger ON Updates;
-CREATE TRIGGER check_resignation_updates_trigger
+DROP TRIGGER IF EXISTS check_resigned_updates_trigger ON Updates;
+
+CREATE TRIGGER check_resigned_updates_trigger
 BEFORE INSERT OR UPDATE ON Updates
-FOR EACH ROW EXECUTE FUNCTION check_resignation_updates();
+FOR EACH ROW EXECUTE FUNCTION check_resigned_updates();
 
 -- B-5 The employee booking the room immediately joins the booked meeting.
 CREATE OR REPLACE FUNCTION insert_meeting_creator()
