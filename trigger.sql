@@ -428,9 +428,6 @@ FOR EACH ROW EXECUTE FUNCTION meeting_approver_department_check();
 CREATE OR REPLACE FUNCTION booking_date_check()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF (NEW.date = OLD.date AND NEW.start_hour = OLD.start_hour AND NEW.floor = OLD.floor AND NEW.room = OLD.room) THEN
-        RETURN NEW;
-    END IF;
     IF ((NEW.date < CURRENT_DATE) OR (NEW.date = CURRENT_DATE AND NEW.start_hour <= extract(HOUR FROM CURRENT_TIME))) THEN
         RAISE EXCEPTION 'Booking date and time must be in the future';
     END IF;
@@ -441,7 +438,7 @@ $$ LANGUAGE plpgsql;
 DROP TRIGGER IF EXISTS booking_date_check_trigger ON Bookings;
 
 CREATE TRIGGER booking_date_check_trigger
-BEFORE INSERT OR UPDATE ON Bookings
+BEFORE INSERT OR UPDATE OF floor, room, date, start_hour ON Bookings
 FOR EACH ROW EXECUTE FUNCTION booking_date_check();
 
 -- B-8 An approval can only be made for future meetings.
@@ -450,9 +447,6 @@ RETURNS TRIGGER AS $$
 DECLARE
     current_hours_into_the_day INT := DATE_PART('HOUR', CURRENT_TIMESTAMP);
 BEGIN
-    IF (NEW.approver_id IS NOT DISTINCT FROM OLD.approver_id) THEN
-        RETURN NEW;
-    END IF;
     IF (NEW.approver_id IS NOT NULL AND (NEW.date < CURRENT_DATE OR (NEW.date = CURRENT_DATE AND NEW.start_hour <= current_hours_into_the_day))) THEN
         RAISE EXCEPTION 'Cannot approve meetings of the past';
     END IF;
@@ -463,7 +457,7 @@ $$ LANGUAGE plpgsql;
 DROP TRIGGER IF EXISTS approval_only_for_future_meetings_trigger ON Bookings;
 
 CREATE TRIGGER approval_only_for_future_meetings_trigger
-BEFORE INSERT OR UPDATE ON Bookings
+BEFORE INSERT OR UPDATE OF approver_id ON Bookings
 FOR EACH ROW EXECUTE FUNCTION approval_only_for_future_meetings_trigger();
 
 -- A-2 An employee can only join future meetings.
