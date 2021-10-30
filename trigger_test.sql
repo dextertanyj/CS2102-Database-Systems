@@ -577,15 +577,13 @@ CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
-    (1, 'Senior 1', 'Contact 1', 'senior1@company.com', NULL, 1),
-    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1),
-    (3, 'Resigned Senior 3', 'Contact 3', 'senior3@company.com', CURRENT_DATE, 1);
-INSERT INTO Superiors VALUES (1), (2), (3);
-INSERT INTO Seniors VALUES (1), (2), (3);
+    (1, 'Senior 1', 'Contact 1', 'senior1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Seniors VALUES (1);
 COMMIT;
 -- TEST
-INSERT INTO HealthDeclarations VALUES(1, CURRENT_DATE, 37.0); -- Success
-SELECT * FROM HealthDeclarations;
+INSERT INTO HealthDeclarations VALUES(1, CURRENT_DATE, 37.0);
+SELECT * FROM HealthDeclarations ORDER BY date, id; -- Returns (1, CURRENT_DATE, 37.0)
 -- AFTER TEST
 CALL reset();
 -- TEST END
@@ -596,15 +594,14 @@ CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
-    (1, 'Senior 1', 'Contact 1', 'senior1@company.com', NULL, 1),
-    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1),
-    (3, 'Resigned Senior 3', 'Contact 3', 'senior3@company.com', CURRENT_DATE, 1);
-INSERT INTO Superiors VALUES (1), (2), (3);
-INSERT INTO Seniors VALUES (1), (2), (3);
+    (1, 'Senior 1', 'Contact 1', 'senior1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Seniors VALUES (1);
 COMMIT;
+UPDATE Employees SET resignation_date = CURRENT_DATE WHERE id = 1;
 -- TEST
-INSERT INTO HealthDeclarations VALUES(3, CURRENT_DATE, 37.0); -- Failure
-SELECT * FROM HealthDeclarations;
+INSERT INTO HealthDeclarations VALUES(1, CURRENT_DATE, 37.0); -- Exception
+SELECT * FROM HealthDeclarations ORDER BY date, id; -- Returns NULL
 -- AFTER TEST
 CALL reset();
 -- TEST END
@@ -616,16 +613,14 @@ INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Senior 1', 'Contact 1', 'senior1@company.com', NULL, 1),
-    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1),
-    (3, 'Resigned Senior 3', 'Contact 3', 'senior3@company.com', CURRENT_DATE, 1);
-INSERT INTO Superiors VALUES (1), (2), (3);
-INSERT INTO Seniors VALUES (1), (2), (3);
+    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2);
+INSERT INTO Seniors VALUES (1), (2);
 COMMIT;
+INSERT INTO HealthDeclarations VALUES(1, CURRENT_DATE, 37.0);
 -- TEST
-INSERT INTO HealthDeclarations VALUES(1, CURRENT_DATE, 37.0); -- Success
-SELECT * FROM HealthDeclarations;
-Update HealthDeclarations SET id = 2 WHERE id = 1; -- Success
-SELECT * FROM HealthDeclarations;
+Update HealthDeclarations SET id = 2 WHERE id = 1;
+SELECT * FROM HealthDeclarations ORDER BY date, id; -- Returns (2, CURRENT_DATE, 37.0)
 -- AFTER TEST
 CALL reset();
 -- TEST END
@@ -637,16 +632,15 @@ INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Senior 1', 'Contact 1', 'senior1@company.com', NULL, 1),
-    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1),
-    (3, 'Resigned Senior 3', 'Contact 3', 'senior3@company.com', CURRENT_DATE, 1);
-INSERT INTO Superiors VALUES (1), (2), (3);
-INSERT INTO Seniors VALUES (1), (2), (3);
+    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2);
+INSERT INTO Seniors VALUES (1), (2);
 COMMIT;
+INSERT INTO HealthDeclarations VALUES(1, CURRENT_DATE, 37.0);
+UPDATE Employees SET resignation_date = CURRENT_DATE WHERE id = 2;
 -- TEST
-INSERT INTO HealthDeclarations VALUES(1, CURRENT_DATE, 37.0); -- Success
-SELECT * FROM HealthDeclarations;
-Update HealthDeclarations SET id = 3 WHERE id = 1; -- Failure
-SELECT * FROM HealthDeclarations;
+Update HealthDeclarations SET id = 2 WHERE id = 1;
+SELECT * FROM HealthDeclarations ORDER BY date, id; -- Returns (1, CURRENT_DATE, 37.0)
 -- AFTER TEST
 CALL reset();
 -- TEST END
