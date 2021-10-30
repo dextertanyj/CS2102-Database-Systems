@@ -2139,7 +2139,11 @@ INSERT INTO Managers VALUES (1);
 INSERT INTO MeetingRooms VALUES (1, 1, 'Meeting Room 1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 10);
 COMMIT;
-
+ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+ALTER TABLE Attends DISABLE TRIGGER employee_join_only_future_meetings_trigger;
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE - 1, 10, 2);
+ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+ALTER TABLE Attends ENABLE TRIGGER employee_join_only_future_meetings_trigger;
 INSERT INTO Bookings VALUES
     (1, 1, CURRENT_DATE + 1, 11, 1),
     (1, 1, CURRENT_DATE + 1, 10, 1),
@@ -2154,6 +2158,7 @@ SELECT * FROM Attends WHERE employee_id = 2;
 /* Expected: 
  employee_id | floor | room |       date       | start_hour
 -------------+-------+------+------------------+------------
+           2 |     1 |    1 | CURRENT_DATE - 1 |         10
            2 |     1 |    1 | CURRENT_DATE + 1 |         10
            2 |     1 |    1 | CURRENT_DATE + 1 |         11
            2 |     1 |    1 | CURRENT_DATE + 1 |         11
@@ -2186,6 +2191,11 @@ INSERT INTO Managers VALUES (1);
 INSERT INTO MeetingRooms VALUES (1, 1, 'Meeting Room 1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 10);
 COMMIT;
+ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+ALTER TABLE Attends DISABLE TRIGGER employee_join_only_future_meetings_trigger;
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE - 1, 10, 2);
+ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+ALTER TABLE Attends ENABLE TRIGGER employee_join_only_future_meetings_trigger;
 INSERT INTO Bookings VALUES
     (1, 1, CURRENT_DATE + 1, 11, 1),
     (1, 1, CURRENT_DATE + 1, 10, 1),
@@ -2193,9 +2203,20 @@ INSERT INTO Bookings VALUES
     (1, 1, CURRENT_DATE + 2, 11, 2);
 UPDATE Bookings SET approver_id = 1 WHERE ROW(date, start_hour) = (CURRENT_DATE + 2, 11);
 -- TEST
+SELECT * FROM Bookings;
+/* Expected:
+ floor | room |       date       | start_hour | creator_id | approver_id
+-------+------+------------------+------------+------------+-------------
+     1 |    1 | CURRENT_DATE + 1 |         10 |          2 |
+     1 |    1 | CURRENT_DATE + 1 |         11 |          1 |
+     1 |    1 | CURRENT_DATE + 1 |         10 |          1 |
+     1 |    1 | CURRENT_DATE + 1 |         10 |          2 |
+     1 |    1 | CURRENT_DATE + 1 |         11 |          2 |           1
+(5 rows)
+*/
 SELECT * FROM view_manager_report(CURRENT_DATE, 1);
 /* Expected:
- floor | room |       date       | start_hour | creator_id | approval_id
+ floor | room |       date       | start_hour | creator_id | approver_id
 -------+------+------------------+------------+------------+-------------
      1 |    1 | CURRENT_DATE + 1 |         10 |          1 |
      1 |    1 | CURRENT_DATE + 1 |         11 |          1 |

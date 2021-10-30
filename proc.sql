@@ -298,7 +298,7 @@ RETURNS SETOF RECORD AS $$
 $$ LANGUAGE sql;
 
 CREATE OR REPLACE FUNCTION view_manager_report
-(IN start_date DATE, IN manager_id INT, OUT floor INT, OUT room INT, OUT date DATE, OUT start_hour INT, OUT creator_id INT, OUT approval_id INT)
+(IN start_date DATE, IN manager_id INT, OUT floor INT, OUT room INT, OUT date DATE, OUT start_hour INT, OUT creator_id INT, OUT approver_id INT)
 RETURNS SETOF RECORD AS $$
 BEGIN
     IF (SELECT id FROM Managers WHERE id = manager_id) IS NULL THEN
