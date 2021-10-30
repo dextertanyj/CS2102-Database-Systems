@@ -16,6 +16,10 @@ AS $$
 CASCADE;
 $$ LANGUAGE sql;
 
+/*****************
+* ADD DEPARTMENT *
+*****************/
+
 -- TEST add_department_unique_name_unique_id_success
 -- BEFORE TEST
 CALL reset();
@@ -49,6 +53,10 @@ SELECT COUNT(*) FROM departments; -- Return 2;
 CALL reset();
 -- TEST END
 
+/********************
+* REMOVE DEPARTMENT *
+********************/
+
 -- TEST remove_department_success
 -- BEFORE TEST
 CALL reset();
@@ -69,6 +77,10 @@ CALL remove_department(3, CURRENT_DATE); -- Failure
 -- AFTER TEST
 CALL reset();
 -- TEST END
+
+/***********
+* ADD ROOM *
+***********/
 
 -- TEST add_room_sucess
 -- BEFORE TEST
@@ -256,6 +268,10 @@ CALL add_room(2, 1, 'Room 2-1', 10, 5, CURRENT_DATE); -- Failure
 CALL reset();
 -- TEST END
 
+/******************
+* CHANGE CAPACITY *
+******************/
+
 -- TEST change_capacity_success
 -- BEFORE TEST
 CALL reset();
@@ -419,6 +435,10 @@ CALL change_capacity(2, 1, 20, 1, CURRENT_DATE); -- Failure
 CALL reset();
 -- TEST END
 
+/***************
+* ADD EMPLOYEE *
+***************/
+
 -- TEST add_employee_manager_success
 -- BEFORE TEST
 CALL reset();
@@ -521,6 +541,10 @@ SELECT * FROM Seniors AS J JOIN Employees AS E ON J.id = E.id WHERE E.name = 'Ma
 CALL reset();
 -- TEST END
 
+/******************
+* REMOVE EMPLOYEE *
+******************/
+
 -- TEST remove_employee_success
 -- BEFORE TEST
 CALL reset();
@@ -574,6 +598,10 @@ CALL remove_employee(3, CURRENT_DATE); -- Failure
 CALL reset();
 -- TEST END
 
+/**************
+* SEARCH ROOM *
+**************/
+
 -- TEST search_room
 -- BEFORE TEST
 CALL reset();
@@ -612,6 +640,10 @@ SELECT search_room(10, CURRENT_DATE + 2, 1, 3); -- Returns (1, 1, 1, 10), (2, 1,
 -- AFTER TEST
 CALL reset();
 -- TEST END
+
+/************
+* BOOK ROOM *
+************/
 
 -- TEST book_room_single_hour_success
 -- BEFORE TEST
@@ -998,6 +1030,10 @@ SELECT COUNT(*) FROM Bookings WHERE floor = 1 AND room = 1 AND date = CURRENT_DA
 CALL reset();
 -- TEST END
 
+/**************
+* UNBOOK ROOM *
+**************/
+
 -- TEST unbook_room_partial_batch_success
 -- BEFORE TEST
 CALL reset();
@@ -1153,6 +1189,22 @@ SELECT COUNT(*) FROM Attends; -- Returns 3
 CALL reset();
 -- TEST END
 
+/***************
+* JOIN MEETING *
+***************/
+
+/****************
+* LEAVE MEETING *
+****************/
+
+/******************
+* APPROVE MEETING *
+******************/
+
+/*****************
+* NON COMPLIANCE *
+*****************/
+
 -- TEST non_compliance
 -- BEFORE TEST
 CALL reset();
@@ -1189,6 +1241,10 @@ SELECT * FROM non_compliance(CURRENT_DATE - 3, CURRENT_DATE); -- Expected: (4,4)
 CALL reset();
 -- TEST END
 
+/**********************
+* VIEW BOOKING REPORT *
+**********************/
+
 -- TEST view_booking_report
 -- BEFORE TEST
 CALL reset();
@@ -1223,6 +1279,18 @@ ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
 ALTER TABLE Attends ENABLE TRIGGER lock_attends;
 CALL reset();
 -- TEST END
+
+/**********************
+* VIEW FUTURE MEETING *
+**********************/
+
+/**********************
+* VIEW MANAGER REPORT *
+**********************/
+
+/*****************
+* DECLARE HEALTH *
+*****************/
 
 -- TEST declare_health_successful
 -- BEFORE TEST
@@ -1383,6 +1451,10 @@ SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (2, CURRENT_DATE,
 -- AFTER TEST
 CALL reset();
 -- END TEST
+
+/******************
+* CONTACT TRACING *
+******************/
 
 -- TEST contact_tracing_no_fever
 -- BEFORE TEST
