@@ -25,7 +25,7 @@ $$ LANGUAGE sql;
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
 -- TEST
-CALL add_department(2, 'Department 2'); -- Success
+CALL add_department(2, 'Department 2');
 SELECT * FROM Departments ORDER BY id; -- Returns (1, 'Department 1', NULL), (2, 'Department 2', NULL)
 -- AFTER TEST
 CALL reset();
@@ -36,7 +36,7 @@ CALL reset();
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
 -- TEST
-CALL add_department(2, 'Department 1'); -- Success
+CALL add_department(2, 'Department 1');
 SELECT * FROM Departments ORDER BY id; -- Returns (1, 'Department 1', NULL), (2, 'Department 1', NULL)
 -- AFTER TEST
 CALL reset();
@@ -47,7 +47,7 @@ CALL reset();
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
 -- TEST
-CALL add_department(1, 'Department 2'); -- Failure
+CALL add_department(1, 'Department 2'); -- Exception
 SELECT * FROM Departments ORDER BY id; -- Returns (1, 'Department 1', NULL)
 -- AFTER TEST
 CALL reset();
@@ -73,7 +73,7 @@ CALL reset();
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
 -- TEST
-CALL remove_department(2); -- Failure
+CALL remove_department(2); -- Exception
 SELECT * FROM Departments ORDER BY id; -- Returns (1, 'Department 1', NULL)
 -- AFTER TEST
 CALL reset();
@@ -84,7 +84,7 @@ CALL reset();
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1', CURRENT_DATE - 1);
 -- TEST
-CALL remove_department(1); -- Failure
+CALL remove_department(1); -- Exception
 SELECT * FROM Departments ORDER BY id; -- Returns (1, 'Department 1', CURRENT_DATE - 1)
 -- AFTER TEST
 CALL reset();
@@ -149,7 +149,7 @@ INSERT INTO MeetingRooms VALUES (1, 1, 'Room Name', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 COMMIT;
 -- TEST
-CALL add_room(1, 1, 'Another Name', 10, 1, CURRENT_DATE + 1);
+CALL add_room(1, 1, 'Another Name', 10, 1, CURRENT_DATE + 1); -- Exception
 SELECT * FROM MeetingRooms ORDER BY floor, room; -- Returns (1, 1, 'Room Name', 1)
 SELECT * FROM Updates ORDER BY date, floor, room; -- Returns (1, 1, 1, CURRENT_DATE, 10)
 -- AFTER TEST
@@ -211,7 +211,7 @@ INSERT INTO Superiors VALUES (1);
 INSERT INTO Managers VALUES (1);
 COMMIT;
 -- TEST
-CALL add_room(1, 1, 'Room 1-1', 10, 1, CURRENT_DATE); -- Failure
+CALL add_room(1, 1, 'Room 1-1', 10, 1, CURRENT_DATE); -- Exception
 SELECT * FROM MeetingRooms ORDER BY floor, room; -- Returns NULL
 -- AFTER TEST
 CALL reset();
@@ -228,7 +228,7 @@ INSERT INTO Superiors VALUES (1);
 INSERT INTO Seniors VALUES (1);
 COMMIT;
 -- TEST
-CALL add_room(1, 1, 'Room 1-1', 10, 1, CURRENT_DATE); -- Failure
+CALL add_room(1, 1, 'Room 1-1', 10, 1, CURRENT_DATE); -- Exception
 SELECT * FROM MeetingRooms ORDER BY floor, room; -- Returns NULL
 -- AFTER TEST
 CALL reset();
@@ -244,7 +244,7 @@ INSERT INTO Employees VALUES
 INSERT INTO Juniors VALUES (1);
 COMMIT;
 -- TEST
-CALL add_room(1, 1, 'Room 1-1', 10, 1, CURRENT_DATE); -- Failure
+CALL add_room(1, 1, 'Room 1-1', 10, 1, CURRENT_DATE); -- Exception
 SELECT * FROM MeetingRooms ORDER BY floor, room; -- Returns NULL
 -- AFTER TEST
 CALL reset();
@@ -522,7 +522,7 @@ INSERT INTO Superiors VALUES (1);
 INSERT INTO Managers VALUES (1);
 COMMIT;
 -- TEST
-CALL remove_employee(1, CURRENT_DATE); -- Failure
+CALL remove_employee(1, CURRENT_DATE); -- Exception
 SELECT * FROM Employees ORDER BY id; -- Returns (1, 'Manager 1', 'Contact 1', 'manager1@company.com', CURRENT_DATE - 1, 1)
 -- AFTER TEST
 CALL reset();
@@ -532,7 +532,7 @@ CALL reset();
 -- BEFORE TEST
 CALL reset();
 -- TEST
-CALL remove_employee(1, CURRENT_DATE); -- Failure
+CALL remove_employee(1, CURRENT_DATE); -- Exception
 -- AFTER TEST
 CALL reset();
 -- TEST END
