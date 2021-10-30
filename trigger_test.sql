@@ -375,123 +375,105 @@ CALL reset();
 * A-5 When an employee resigns, they are no longer allowed to join any booked meetings. *
 ****************************************************************************************/
 
--- TEST trigger 34 Attends meeting insert_employee_attendance_success
+-- TEST Insert Success
 -- BEFORE TEST
 CALL reset();
-ALTER TABLE Attends DISABLE TRIGGER lock_attends;
 INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
-    (1, 'Senior 1', 'Contact 1', 'senior1@company.com', NULL, 1),
-    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1),
-    (3, 'Resigned Senior 3', 'Contact 3', 'senior3@company.com', CURRENT_DATE, 1),
-    (4, 'Senior 4', 'Contact 4', 'senior4@company.com', NULL, 1),
-    (5, 'Manager 5', 'Contact 5', 'manager5@company.com', NULL, 1);
-INSERT INTO Superiors VALUES (1), (2), (3), (4), (5);
-INSERT INTO Seniors VALUES (1), (2), (3), (4);
-INSERT INTO Managers VALUES (5);
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2);
+INSERT INTO Managers VALUES (1);
+INSERT INTO Seniors VALUES (2);
 COMMIT;
 BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
-INSERT INTO Updates VALUES (4, 1, 1, CURRENT_DATE, 10);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 COMMIT;
-INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE, 1, 4, NULL);
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 1, NULL);
 -- TEST
-INSERT INTO Attends VALUES(1, 1, 1, CURRENT_DATE, 1); -- Success
-SELECT * FROM Attends;
+INSERT INTO Attends VALUES(2, 1, 1, CURRENT_DATE + 1, 1);
+SELECT * FROM Attends ORDER BY date, start_hour, floor, room; -- Returns (1, 1, 1, CURRENT_DATE + 1, 1), (2, 1, 1, CURRENT_DATE + 1, 1)
 -- AFTER TEST
-ALTER TABLE Attends ENABLE TRIGGER lock_attends;
 CALL reset();
 -- TEST END
 
--- TEST trigger 34 Attends meeting insert_resigned_employee_attendance_failure
+-- TEST Insert Resigned Failure
 -- BEFORE TEST
 CALL reset();
-ALTER TABLE Attends DISABLE TRIGGER lock_attends;
 INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
-    (1, 'Senior 1', 'Contact 1', 'senior1@company.com', NULL, 1),
-    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1),
-    (3, 'Resigned Senior 3', 'Contact 3', 'senior3@company.com', CURRENT_DATE, 1),
-    (4, 'Senior 4', 'Contact 4', 'senior4@company.com', NULL, 1),
-    (5, 'Manager 5', 'Contact 5', 'manager5@company.com', NULL, 1);
-INSERT INTO Superiors VALUES (1), (2), (3), (4), (5);
-INSERT INTO Seniors VALUES (1), (2), (3), (4);
-INSERT INTO Managers VALUES (5);
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2);
+INSERT INTO Managers VALUES (1);
+INSERT INTO Seniors VALUES (2);
 COMMIT;
 BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
-INSERT INTO Updates VALUES (4, 1, 1, CURRENT_DATE, 10);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 COMMIT;
-INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE, 1, 4, NULL);
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 1, NULL);
+UPDATE Employees SET resignation_date = CURRENT_DATE WHERE id = 2;
 -- TEST
-INSERT INTO Attends VALUES(3, 1, 1, CURRENT_DATE, 1); -- Failure
-SELECT * FROM Attends;
+INSERT INTO Attends VALUES(2, 1, 1, CURRENT_DATE + 1, 1); -- Exception
+SELECT * FROM Attends ORDER BY date, start_hour, floor, room; -- Returns (1, 1, 1, CURRENT_DATE + 1, 1)
 -- AFTER TEST
-ALTER TABLE Attends ENABLE TRIGGER lock_attends;
 CALL reset();
 -- TEST END
 
--- TEST trigger 34 Attends meeting update_employee_attendance_success
+-- TEST Update Success
 -- BEFORE TEST
 CALL reset();
-ALTER TABLE Attends DISABLE TRIGGER lock_attends;
 INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
-    (1, 'Senior 1', 'Contact 1', 'senior1@company.com', NULL, 1),
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
     (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1),
-    (3, 'Resigned Senior 3', 'Contact 3', 'senior3@company.com', CURRENT_DATE, 1),
-    (4, 'Senior 4', 'Contact 4', 'senior4@company.com', NULL, 1),
-    (5, 'Manager 5', 'Contact 5', 'manager5@company.com', NULL, 1);
-INSERT INTO Superiors VALUES (1), (2), (3), (4), (5);
-INSERT INTO Seniors VALUES (1), (2), (3), (4);
-INSERT INTO Managers VALUES (5);
+    (3, 'Senior 3', 'Contact 3', 'senior3@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2), (3);
+INSERT INTO Managers VALUES (1);
+INSERT INTO Seniors VALUES (2), (3);
 COMMIT;
 BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
-INSERT INTO Updates VALUES (4, 1, 1, CURRENT_DATE, 10);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 COMMIT;
-INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE, 1, 4, NULL);
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 1, NULL);
+INSERT INTO Attends VALUES(2, 1, 1, CURRENT_DATE + 1, 1);
 -- TEST
-INSERT INTO Attends VALUES(1, 1, 1, CURRENT_DATE, 1); -- Success
-SELECT * FROM Attends;
-UPDATE Attends SET employee_id = 2 WHERE employee_id = 1; -- Success
-SELECT * FROM Attends;
+UPDATE Attends SET employee_id = 3 WHERE employee_id = 2;
+SELECT * FROM Attends ORDER BY date, start_hour, floor, room; -- Returns (1, 1, 1, CURRENT_DATE + 1, 1), (3, 1, 1, CURRENT_DATE + 1, 1)
 -- AFTER TEST
-ALTER TABLE Attends ENABLE TRIGGER lock_attends;
 CALL reset();
 -- TEST END
 
--- TEST trigger 34 Attends meeting update_resigned_employee_attendance_failure
+-- TEST Update Resigned Failure
 -- BEFORE TEST
 CALL reset();
-ALTER TABLE Attends DISABLE TRIGGER lock_attends;
 INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
-    (1, 'Senior 1', 'Contact 1', 'senior1@company.com', NULL, 1),
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
     (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1),
-    (3, 'Resigned Senior 3', 'Contact 3', 'senior3@company.com', CURRENT_DATE, 1),
-    (4, 'Senior 4', 'Contact 4', 'senior4@company.com', NULL, 1),
-    (5, 'Manager 5', 'Contact 5', 'manager5@company.com', NULL, 1);
-INSERT INTO Superiors VALUES (1), (2), (3), (4), (5);
-INSERT INTO Seniors VALUES (1), (2), (3), (4);
-INSERT INTO Managers VALUES (5);
+    (3, 'Senior 3', 'Contact 3', 'senior3@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2), (3);
+INSERT INTO Managers VALUES (1);
+INSERT INTO Seniors VALUES (2), (3);
 COMMIT;
 BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
-INSERT INTO Updates VALUES (4, 1, 1, CURRENT_DATE, 10);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 COMMIT;
-INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE, 1, 4, NULL);
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 1, NULL);
+INSERT INTO Attends VALUES(2, 1, 1, CURRENT_DATE + 1, 1);
+UPDATE Employees SET resignation_date = CURRENT_DATE WHERE id = 3;
 -- TEST
-INSERT INTO Attends VALUES(1, 1, 1, CURRENT_DATE, 1); -- Success
-SELECT * FROM Attends;
-UPDATE Attends SET employee_id = 3 WHERE employee_id = 1; -- Failure
-SELECT * FROM Attends;
+UPDATE Attends SET employee_id = 3 WHERE employee_id = 2; -- Exception
+SELECT * FROM Attends ORDER BY date, start_hour, floor, room; -- Returns (1, 1, 1, CURRENT_DATE + 1, 1), (2, 1, 1, CURRENT_DATE + 1, 1)
 -- AFTER TEST
-ALTER TABLE Attends ENABLE TRIGGER lock_attends;
 CALL reset();
 -- TEST END
 
@@ -499,7 +481,7 @@ CALL reset();
 * C-3 When an employee resigns, they are no longer allowed to change any meeting room capacities.
 ************************************************************************************************/
 
--- TEST trigger 34 Update meeting room capacity insert_employee_update_success
+-- TEST Insert Success
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -522,7 +504,7 @@ SELECT * FROM Updates;
 CALL reset();
 -- TEST END
 
--- TEST trigger 34 Update meeting room capacity insert_resigned_employee_update_failure
+-- TEST Insert Resigned Failure
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -545,7 +527,7 @@ SELECT * FROM Updates;
 CALL reset();
 -- TEST END
 
--- TEST trigger 34 Update meeting room capacity update_employee_update_success
+-- TEST Update Success
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -570,7 +552,7 @@ SELECT * FROM Updates;
 CALL reset();
 -- TEST END
 
--- TEST trigger 34 Update meeting room capacity update_resigned_employee_update_failure
+-- TEST Update Resigned Failure
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -600,7 +582,7 @@ CALL reset();
 * H-6 When an employee resigns, they are no longer allowed to make any health declarations. *
 ********************************************************************************************/
 
--- TEST trigger 34 Health declaration insert_employee_declaration_success
+-- TEST Insert Success
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -619,7 +601,7 @@ SELECT * FROM HealthDeclarations;
 CALL reset();
 -- TEST END
 
--- TEST trigger 34 Health declaration insert_resigned_employee_declaration_failure
+-- TEST Insert Resigned Failure
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -638,7 +620,7 @@ SELECT * FROM HealthDeclarations;
 CALL reset();
 -- TEST END
 
--- TEST trigger 34 Health declaration update_employee_declaration_success
+-- TEST Update Success
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -659,7 +641,7 @@ SELECT * FROM HealthDeclarations;
 CALL reset();
 -- TEST END
 
--- TEST trigger 34 Health declaration update_resigned_employee_declaration_failure
+-- TEST Update Resigned Failure
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
