@@ -407,104 +407,85 @@ CALL reset();
 * ADD EMPLOYEE *
 ***************/
 
--- TEST add_employee_manager_success
+-- TEST Manager Success
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
-BEGIN TRANSACTION;
-INSERT INTO Employees VALUES 
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
-INSERT INTO Seniors VALUES (1);
-INSERT INTO Managers VALUES (1);
-COMMIT;
 -- TEST
-SELECT add_employee('John Doe', 'Contact 1', 'manager', 1); -- Success
-SELECT * FROM Managers AS M JOIN Employees AS E ON M.id = E.id WHERE E.name = 'John Doe';
+SELECT add_employee('John Doe', 'Contact 1', 'manager', 1);
+SELECT * FROM Employees NATURAL JOIN Managers ORDER BY id; -- Returns (*, 'John Doe', 'Contact 1', 'johndoe@company.com', NULL, 1);
 -- AFTER TEST
 CALL reset();
 -- TEST END
 
--- TEST add_employee_senior_success
+-- TEST Senior Success
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
-BEGIN TRANSACTION;
-INSERT INTO Employees VALUES 
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
-INSERT INTO Seniors VALUES (1);
-INSERT INTO Managers VALUES (1);
-COMMIT;
 -- TEST
-SELECT add_employee('John Doe', 'Contact 1', 'manager', 1); -- Success
-SELECT * FROM Managers AS M JOIN Employees AS E ON M.id = E.id WHERE E.name = 'John Doe';
-SELECT add_employee('John Doe', 'Contact 1', 'senior' , 1); -- Success
-SELECT * FROM Seniors AS S JOIN Employees AS E ON S.id = E.id WHERE E.name = 'John Doe';
+SELECT add_employee('John Doe', 'Contact 1', 'senior', 1);
+SELECT * FROM Employees NATURAL JOIN Seniors ORDER BY id; -- Returns (*, 'John Doe', 'Contact 1', 'johndoe@company.com', NULL, 1);
 -- AFTER TEST
 CALL reset();
 -- TEST END
 
--- TEST add_employee_junior_success
+-- TEST Junior Success
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
-BEGIN TRANSACTION;
-INSERT INTO Employees VALUES 
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
-INSERT INTO Seniors VALUES (1);
-INSERT INTO Managers VALUES (1);
-COMMIT;
 -- TEST
-SELECT add_employee('John Doe', 'Contact 1', 'junior' , 1); -- Success
-SELECT * FROM Seniors AS J JOIN Employees AS E ON J.id = E.id WHERE E.name = 'John Doe';
+SELECT add_employee('John Doe', 'Contact 1', 'junior', 1);
+SELECT * FROM Employees NATURAL JOIN Juniors ORDER BY id; -- Returns (*, 'John Doe', 'Contact 1', 'johndoe@company.com', NULL, 1);
 -- AFTER TEST
 CALL reset();
 -- TEST END
 
--- TEST add_employee_invalid_department_failure
+-- TEST Duplicate Name Success
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
-INSERT INTO Seniors VALUES (1);
+    (1, 'John Doe', 'Contact 1', 'johndoe@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
 INSERT INTO Managers VALUES (1);
 COMMIT;
 -- TEST
-SELECT add_employee('John Doe', 'Contact 1', 'junior', 2); -- Failure
+SELECT add_employee('John Doe', 'Contact 2', 'manager' , 1);
+SELECT * FROM Employees NATURAL JOIN Managers ORDER BY id; -- Returns (*, 'John Doe', 'Contact 1', 'johndoe@company.com', NULL, 1), (*, 'John Doe', 'Contact 2', 'johndoe_1@company.com', NULL, 1);
 -- AFTER TEST
 CALL reset();
 -- TEST END
 
--- TEST add_employee_unknown_type_failure
+-- TEST Invalid Department Failure
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
-BEGIN TRANSACTION;
-INSERT INTO Employees VALUES 
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
-INSERT INTO Seniors VALUES (1);
-INSERT INTO Managers VALUES (1);
-COMMIT;
 -- TEST
-SELECT add_employee('John Doe', 'Contact 1', 'Unknown' , 1); -- Failure
+SELECT add_employee('John Doe', 'Contact 1', 'manager', 2); -- Exception
+SELECT * FROM Employees ORDER BY id; -- Returns NULL
 -- AFTER TEST
 CALL reset();
 -- TEST END
 
--- TEST add_employee_duplicate_name_success
+-- TEST Removed Department Failure
 -- BEFORE TEST
 CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1');
-BEGIN TRANSACTION;
-INSERT INTO Employees VALUES 
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
-INSERT INTO Seniors VALUES (1);
-INSERT INTO Managers VALUES (1);
-COMMIT;
+INSERT INTO Departments VALUES (1, 'Department 1', CURRENT_DATE);
 -- TEST
-SELECT add_employee('Manager 1', 'Contact 2', 'manager' , 1); -- Success
-SELECT * FROM Seniors AS J JOIN Employees AS E ON J.id = E.id WHERE E.name = 'Manager 1' AND E.contact = 'Contact 2';
+SELECT add_employee('John Doe', 'Contact 1', 'manager', 2);
+SELECT * FROM Employees ORDER BY id; -- Returns NULL
+-- AFTER TEST
+CALL reset();
+-- TEST END
+
+-- TEST Unknown Type Failure
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1', CURRENT_DATE);
+-- TEST
+SELECT add_employee('John Doe', 'Contact 1', 'unknown', 1);
+SELECT * FROM Employees ORDER BY id; -- Returns NULL
 -- AFTER TEST
 CALL reset();
 -- TEST END
