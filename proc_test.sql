@@ -57,23 +57,35 @@ CALL reset();
 * REMOVE DEPARTMENT *
 ********************/
 
--- TEST remove_department_success
+-- TEST Existing Department Success
 -- BEFORE TEST
 CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+INSERT INTO Departments VALUES (1, 'Department 1');
 -- TEST
-CALL remove_department(1, CURRENT_DATE); -- Success
-SELECT removal_date FROM Departments WHERE id = 1; -- Returns CURRENT_DATE
+CALL remove_department(1); -- Success
+SELECT * FROM Departments ORDER BY id; -- Returns (1, 'Department 1', CURRENT_DATE)
 -- AFTER TEST
 CALL reset();
 -- TEST END
 
--- TEST remove_department_non_existant_department_failure
+-- TEST Missing Department Failure
 -- BEFORE TEST
 CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+INSERT INTO Departments VALUES (1, 'Department 1');
 -- TEST
-CALL remove_department(3, CURRENT_DATE); -- Failure
+CALL remove_department(2); -- Failure
+SELECT * FROM Departments ORDER BY id; -- Returns (1, 'Department 1', NULL)
+-- AFTER TEST
+CALL reset();
+-- TEST END
+
+-- TEST Removed Department Failure
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1', CURRENT_DATE - 1);
+-- TEST
+CALL remove_department(1); -- Failure
+SELECT * FROM Departments ORDER BY id; -- Returns (1, 'Department 1', CURRENT_DATE - 1)
 -- AFTER TEST
 CALL reset();
 -- TEST END
