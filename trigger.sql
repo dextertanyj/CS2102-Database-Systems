@@ -476,7 +476,7 @@ $$ LANGUAGE plpgsql;
 DROP TRIGGER IF EXISTS booking_date_check_trigger ON Bookings;
 
 CREATE TRIGGER booking_date_check_trigger
-BEFORE INSERT OR UPDATE ON Bookings
+BEFORE INSERT OR UPDATE OF floor, room, date, start_hour ON Bookings
 FOR EACH ROW EXECUTE FUNCTION booking_date_check();
 
 -- B-8 An approval can only be made for future meetings.
@@ -486,7 +486,7 @@ DECLARE
     current_hours_into_the_day INT := DATE_PART('HOUR', CURRENT_TIMESTAMP);
 BEGIN
     IF (NEW.approver_id IS NOT NULL AND (NEW.date < CURRENT_DATE OR (NEW.date = CURRENT_DATE AND NEW.start_hour <= current_hours_into_the_day))) THEN
-        RAISE EXCEPTION 'Cannot approve or update meetings of the past';
+        RAISE EXCEPTION 'Cannot approve meetings of the past';
     END IF;
     RETURN NEW;
 END;
@@ -495,7 +495,7 @@ $$ LANGUAGE plpgsql;
 DROP TRIGGER IF EXISTS approval_only_for_future_meetings_trigger ON Bookings;
 
 CREATE TRIGGER approval_only_for_future_meetings_trigger
-BEFORE INSERT OR UPDATE ON Bookings
+BEFORE INSERT OR UPDATE OF approver_id ON Bookings
 FOR EACH ROW EXECUTE FUNCTION approval_only_for_future_meetings_trigger();
 
 -- A-2 An employee can only join future meetings.
@@ -659,3 +659,24 @@ DROP TRIGGER IF EXISTS lock_removed_department_meeting_rooms_trigger ON MeetingR
 CREATE TRIGGER lock_removed_department_meeting_rooms_trigger
 BEFORE INSERT OR UPDATE ON MeetingRooms
 FOR EACH ROW EXECUTE FUNCTION lock_removed_department();
+
+-- E-7 When an employee resigns, the employee is removed from all future meetings, approved or otherwise.
+-- E-8 When an employee resigns, the employee has all their future booked meetings cancelled, approved or otherwise.
+-- E-9 When an employee resigns, all future approvals granted by the employee are revoked.
+CREATE OR REPLACE FUNCTION resigned_employee_cleanup()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF (NEW.resignation_date IS NOT NULL) THEN
+        DELETE FROM Bookings AS B WHERE B.date > NEW.resignation_date AND B.creator_id = NEW.id;
+        DELETE FROM Attends AS A WHERE A.date > NEW.resignation_date AND A.employee_id = NEW.id;
+        UPDATE Bookings AS B SET approver_id = NULL WHERE B.date > NEW.resignation_date AND B.approver_id = NEW.id;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS resigned_employee_cleanup_trigger ON Employees;
+
+CREATE TRIGGER resigned_employee_cleanup_trigger
+AFTER INSERT OR UPDATE OF resignation_date ON Employees
+FOR EACH ROW EXECUTE FUNCTION resigned_employee_cleanup();

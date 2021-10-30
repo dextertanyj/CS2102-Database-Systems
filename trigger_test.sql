@@ -1979,6 +1979,94 @@ SELECT * FROM MeetingRooms; -- Returns (1, 1, 'Room 1-1', 1);
 CALL reset();
 -- END TEST
 
+/********************************************************************************************************************
+* E-7 When an employee resigns, the employee is removed from all future meetings, approved or otherwise.            *
+* E-8 When an employee resigns, the employee has all their future booked meetings cancelled, approved or otherwise. *
+* E-9 When an employee resigns, all future approvals granted by the employee are revoked.                           *
+********************************************************************************************************************/
+
+-- TEST Success
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2);
+INSERT INTO Managers VALUES (1), (2);
+COMMIT;
+BEGIN TRANSACTION;
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
+ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+ALTER TABLE Attends DISABLE TRIGGER employee_join_only_future_meetings_trigger;
+INSERT INTO Bookings VALUES 
+    (1, 1, CURRENT_DATE - 3, 1, 1, NULL),
+    (1, 1, CURRENT_DATE - 3, 2, 2, NULL),
+    (1, 1, CURRENT_DATE - 3, 4, 2, NULL),
+    (1, 1, CURRENT_DATE - 2, 1, 1, NULL),
+    (1, 1, CURRENT_DATE - 1, 1, 1, NULL),
+    (1, 1, CURRENT_DATE - 1, 3, 1, NULL),
+    (1, 1, CURRENT_DATE - 1, 2, 2, NULL),
+    (1, 1, CURRENT_DATE - 1, 4, 2, NULL),
+    (1, 1, CURRENT_DATE + 1, 1, 1, NULL), -- Removed
+    (1, 1, CURRENT_DATE + 1, 2, 2, NULL),
+    (1, 1, CURRENT_DATE + 1, 3, 1, NULL), -- Approved, Removed
+    (1, 1, CURRENT_DATE + 1, 4, 2, NULL),
+    (1, 1, CURRENT_DATE + 1, 6, 2, NULL); -- Approval removed
+ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+INSERT INTO Attends VALUES
+    (1, 1, 1, CURRENT_DATE - 3, 2),
+    (1, 1, 1, CURRENT_DATE - 3, 4), -- Approved
+    (1, 1, 1, CURRENT_DATE - 1, 2), -- Removed
+    (1, 1, 1, CURRENT_DATE - 1, 4), -- Approved, Removed
+    (1, 1, 1, CURRENT_DATE + 1, 2), -- Removed
+    (1, 1, 1, CURRENT_DATE + 1, 4); -- Approved, Removed
+ALTER TABLE Attends ENABLE TRIGGER employee_join_only_future_meetings_trigger;
+ALTER TABLE Bookings DISABLE TRIGGER approval_only_for_future_meetings_trigger;
+UPDATE Bookings SET approver_id = 2 WHERE start_hour = 3 OR start_hour = 4;
+UPDATE Bookings SET approver_id = 1 WHERE start_hour = 6;
+ALTER TABLE Bookings ENABLE TRIGGER approval_only_for_future_meetings_trigger;
+-- TEST
+UPDATE Employees SET resignation_date = CURRENT_DATE - 2 WHERE id = 1;
+SELECT * FROM Bookings ORDER BY date, start_hour, floor, room;
+/*
+Returns:
+ floor | room |       date       | start_hour | creator_id | approver_id 
+-------+------+------------------+------------+------------+-------------
+     1 |    1 | CURRENT_DATE - 3 |          1 |          1 |            
+     1 |    1 | CURRENT_DATE - 3 |          2 |          2 |            
+     1 |    1 | CURRENT_DATE - 3 |          4 |          2 |           2
+     1 |    1 | CURRENT_DATE - 2 |          1 |          1 |            
+     1 |    1 | CURRENT_DATE - 1 |          2 |          2 |            
+     1 |    1 | CURRENT_DATE - 1 |          4 |          2 |           2
+     1 |    1 | CURRENT_DATE + 1 |          2 |          2 |            
+     1 |    1 | CURRENT_DATE + 1 |          4 |          2 |           2
+     1 |    1 | CURRENT_DATE + 1 |          6 |          2 |            
+*/
+SELECT * FROM Attends ORDER BY date, start_hour, floor, room, employee_id;
+/*
+Returns:
+ employee_id | floor | room |       date       | start_hour 
+-------------+-------+------+------------------+------------
+           1 |     1 |    1 | CURRENT_DATE - 3 |          1
+           1 |     1 |    1 | CURRENT_DATE - 3 |          2
+           2 |     1 |    1 | CURRENT_DATE - 3 |          2
+           1 |     1 |    1 | CURRENT_DATE - 3 |          4
+           2 |     1 |    1 | CURRENT_DATE - 3 |          4
+           1 |     1 |    1 | CURRENT_DATE - 2 |          1
+           2 |     1 |    1 | CURRENT_DATE - 1 |          2
+           2 |     1 |    1 | CURRENT_DATE - 1 |          4
+           2 |     1 |    1 | CURRENT_DATE + 1 |          2
+           2 |     1 |    1 | CURRENT_DATE + 1 |          4
+           2 |     1 |    1 | CURRENT_DATE + 1 |          6
+*/
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
 --
 DROP PROCEDURE IF EXISTS reset();
 SET client_min_messages TO NOTICE;
