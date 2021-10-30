@@ -130,7 +130,7 @@ CALL reset();
 * A-3 If an employee is having a fever, they cannot join a booked meeting. *
 ***************************************************************************/
 
--- TEST Insert Success 
+-- TEST Insert With Declaration Success 
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -211,7 +211,7 @@ SELECT * FROM Attends ORDER BY date, start_hour, floor, room, employee_id; -- Re
 CALL reset();
 -- END TEST
 
--- TEST Update Success 
+-- TEST Update With Declaration Success 
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -417,7 +417,7 @@ CALL reset();
 * B-10 If an employee is having a fever, they cannot book a room. *
 ******************************************************************/
 
--- TEST Insert Success
+-- TEST Insert With Declaration Success
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -479,7 +479,7 @@ SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns NULL
 CALL reset();
 -- END TEST
 
--- TEST Update Success
+-- TEST Update With Declaration Success
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
