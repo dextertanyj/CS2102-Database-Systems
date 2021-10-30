@@ -20,35 +20,35 @@ $$ LANGUAGE sql;
 * ADD DEPARTMENT *
 *****************/
 
--- TEST add_department_unique_name_unique_id_success
+-- TEST Unique Name & ID Success
 -- BEFORE TEST
 CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+INSERT INTO Departments VALUES (1, 'Department 1');
 -- TEST
-CALL add_department(3, 'Department 3'); -- Success
-SELECT COUNT(*) FROM departments; -- Return 3;
+CALL add_department(2, 'Department 2'); -- Success
+SELECT * FROM Departments ORDER BY id; -- Returns (1, 'Department 1', NULL), (2, 'Department 2', NULL)
 -- AFTER TEST
 CALL reset();
 -- TEST END
 
--- TEST add_department_unique_id_duplicate_name_success
+-- TEST Duplicate Name Success
 -- BEFORE TEST
 CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+INSERT INTO Departments VALUES (1, 'Department 1');
 -- TEST
-CALL add_department(3, 'Department 1'); -- Success
-SELECT COUNT(*) FROM departments; -- Return 3;
+CALL add_department(2, 'Department 1'); -- Success
+SELECT * FROM Departments ORDER BY id; -- Returns (1, 'Department 1', NULL), (2, 'Department 1', NULL)
 -- AFTER TEST
 CALL reset();
 -- TEST END
 
--- TEST add_department_duplicate_id_failure
+-- TEST Duplicate ID Failure
 -- BEFORE TEST
 CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2');
+INSERT INTO Departments VALUES (1, 'Department 1');
 -- TEST
-CALL add_department(1, 'Department 4'); -- Failure
-SELECT COUNT(*) FROM departments; -- Return 2;
+CALL add_department(1, 'Department 2'); -- Failure
+SELECT * FROM Departments ORDER BY id; -- Returns (1, 'Department 1', NULL)
 -- AFTER TEST
 CALL reset();
 -- TEST END
