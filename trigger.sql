@@ -291,7 +291,7 @@ BEFORE INSERT OR UPDATE OF approver_id ON Bookings
 FOR EACH ROW EXECUTE FUNCTION check_resigned_approver();
 
 -- H-6 When an employee resigns, they are no longer allowed to make any health declarations.
-CREATE OR REPLACE FUNCTION check_resigned_health_delcaration() RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION check_resigned_health_declaration() RETURNS TRIGGER AS $$
 DECLARE
 	resignation_date DATE := NULL;
 BEGIN
@@ -305,7 +305,7 @@ $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS check_resigned_health_delcaration_trigger ON HealthDeclarations;
 
-CREATE TRIGGER check_resigned_health_delcaration_trigger
+CREATE TRIGGER check_resigned_health_declaration_trigger
 BEFORE INSERT OR UPDATE ON HealthDeclarations
 FOR EACH ROW EXECUTE FUNCTION check_resigned_health_delcaration();
 
