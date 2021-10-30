@@ -1663,11 +1663,11 @@ SELECT * FROM MeetingRooms; -- Returns (1, 1, 'Room 1-1', 1);
 CALL reset();
 -- END TEST
 
-/*******************************************************************************************************************
-* E-7 When an employee resigns, the employee is removed from all future meetings, approved or otherwise.           *
-* E-8 When an employee resigns, the employee has all their future booked meetings canclled, approved or otherwise. *
-* E-9 When an employee resigns, all future approvals granted by the employee are revoked.                          *
-*******************************************************************************************************************/
+/********************************************************************************************************************
+* E-7 When an employee resigns, the employee is removed from all future meetings, approved or otherwise.            *
+* E-8 When an employee resigns, the employee has all their future booked meetings cancelled, approved or otherwise. *
+* E-9 When an employee resigns, all future approvals granted by the employee are revoked.                           *
+********************************************************************************************************************/
 
 -- TEST Success
 -- BEFORE TEST
