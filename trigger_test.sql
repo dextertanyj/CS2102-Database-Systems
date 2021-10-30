@@ -250,23 +250,39 @@ CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
-    (1, 'Senior 1', 'Contact 1', 'senior1@company.com', NULL, 1),
-    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1),
-    (3, 'Resigned Senior 3', 'Contact 3', 'senior3@company.com', CURRENT_DATE, 1),
-    (4, 'Manager 4', 'Contact 4', 'manager4@company.com', NULL, 1),
-    (5, 'Manager 5', 'Contact 5', 'manager5@company.com', NULL, 1),
-    (6, 'Resigned Manager 6', 'Contact 6', 'manager6@company.com', CURRENT_DATE, 1);
-INSERT INTO Superiors VALUES (1), (2), (3), (4), (5), (6);
-INSERT INTO Seniors VALUES (1), (2), (3);
-INSERT INTO Managers VALUES (4), (5), (6);
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
 COMMIT;
 BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
-INSERT INTO Updates VALUES (4, 1, 1, CURRENT_DATE, 10);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 COMMIT;
 -- TEST
-INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE, 1, 1, NULL); -- Success
-SELECT * FROM Bookings;
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 1, NULL);
+SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns (1, 1, CURRENT_DATE + 1, 1, NULL)
+-- AFTER TEST
+CALL reset();
+-- TEST END
+
+-- TEST Insert Resigned Failure
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES 
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
+COMMIT;
+BEGIN TRANSACTION;
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
+UPDATE Employees SET resignation_date = CURRENT_DATE WHERE id = 1;
+-- TEST
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 1, NULL); -- Exception
+SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns NULL
 -- AFTER TEST
 CALL reset();
 -- TEST END
@@ -277,92 +293,43 @@ CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
-    (1, 'Senior 1', 'Contact 1', 'senior1@company.com', NULL, 1),
-    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1),
-    (3, 'Resigned Senior 3', 'Contact 3', 'senior3@company.com', CURRENT_DATE, 1),
-    (4, 'Manager 4', 'Contact 4', 'manager4@company.com', NULL, 1),
-    (5, 'Manager 5', 'Contact 5', 'manager5@company.com', NULL, 1),
-    (6, 'Resigned Manager 6', 'Contact 6', 'manager6@company.com', CURRENT_DATE, 1);
-INSERT INTO Superiors VALUES (1), (2), (3), (4), (5), (6);
-INSERT INTO Seniors VALUES (1), (2), (3);
-INSERT INTO Managers VALUES (4), (5), (6);
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2);
+INSERT INTO Managers VALUES (1), (2);
 COMMIT;
 BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
-INSERT INTO Updates VALUES (4, 1, 1, CURRENT_DATE, 10);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 COMMIT;
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 1, NULL);
 -- TEST
-INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE, 1, 1, NULL); -- Success
-SELECT * FROM Bookings;
+UPDATE Bookings SET creator_id = 2 WHERE creator_id = 1;
+SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns (1, 1, CURRENT_DATE + 1, 2, NULL)
 -- AFTER TEST
 CALL reset();
 -- TEST END
 
--- TEST trigger 34 Insert Failure
--- BEFORE TEST
-CALL reset();
-ALTER TABLE Attends DISABLE TRIGGER lock_attends;
-INSERT INTO Departments VALUES (1, 'Department 1');
-BEGIN TRANSACTION;
-INSERT INTO Employees VALUES 
-    (1, 'Senior 1', 'Contact 1', 'senior1@company.com', NULL, 1),
-    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1),
-    (3, 'Resigned Senior 3', 'Contact 3', 'senior3@company.com', CURRENT_DATE, 1),
-    (4, 'Manager 4', 'Contact 4', 'manager4@company.com', NULL, 1),
-    (5, 'Manager 5', 'Contact 5', 'manager5@company.com', NULL, 1),
-    (6, 'Resigned Manager 6', 'Contact 6', 'manager6@company.com', CURRENT_DATE, 1);
-INSERT INTO Superiors VALUES (1), (2), (3), (4), (5), (6);
-INSERT INTO Seniors VALUES (1), (2), (3);
-INSERT INTO Managers VALUES (4), (5), (6);
-COMMIT;
-BEGIN TRANSACTION;
-INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
-INSERT INTO Updates VALUES (4, 1, 1, CURRENT_DATE, 10);
-COMMIT;
--- TEST
-INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE, 1, 1, 6); -- Failure
-INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE, 1, 3, NULL); -- Failure
-INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE, 1, 3, 6); -- Failure
-INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE, 1, 1, NULL); -- Success
-UPDATE Bookings SET approver_id = 4 WHERE start_hour = 1; -- Success
-UPDATE Bookings SET creator_id = 3 WHERE creator_id = 1; -- Failure
-UPDATE Bookings SET approver_id = 6 WHERE approver_id = 4; -- Failure
-UPDATE Bookings SET creator_id = 3, approver_id = 6 WHERE creator_id = 1; -- Failure
-UPDATE Bookings SET creator_id = 2 where creator_id = 1; -- Success
-SELECT * FROM Bookings;
-UPDATE Bookings SET approver_id = 5 where approver_id IS NULL; -- Success
-SELECT * FROM Bookings;
--- AFTER TEST
-CALL reset();
--- TEST END
-
--- TEST trigger 34 Meeting room booking or approval update_resigned_employee_booking_failure
+-- TEST Update Resigned Failure
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
-    (1, 'Senior 1', 'Contact 1', 'senior1@company.com', NULL, 1),
-    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1),
-    (3, 'Resigned Senior 3', 'Contact 3', 'senior3@company.com', CURRENT_DATE, 1),
-    (4, 'Manager 4', 'Contact 4', 'manager4@company.com', NULL, 1),
-    (5, 'Manager 5', 'Contact 5', 'manager5@company.com', NULL, 1),
-    (6, 'Resigned Manager 6', 'Contact 6', 'manager6@company.com', CURRENT_DATE, 1);
-INSERT INTO Superiors VALUES (1), (2), (3), (4), (5), (6);
-INSERT INTO Seniors VALUES (1), (2), (3);
-INSERT INTO Managers VALUES (4), (5), (6);
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2);
+INSERT INTO Managers VALUES (1), (2);
 COMMIT;
 BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
-INSERT INTO Updates VALUES (4, 1, 1, CURRENT_DATE, 10);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
 COMMIT;
+UPDATE Employees SET resignation_date = CURRENT_DATE WHERE id = 2;
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 1, NULL);
 -- TEST
-INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE, 1, 1, NULL); -- Success
-SELECT * FROM Bookings;
-UPDATE Bookings SET creator_id = 3 WHERE creator_id = 1; -- Failure
-SELECT * FROM Bookings;
-UPDATE Bookings SET approver_id = 6 WHERE approver_id IS NULL; -- Failure
-SELECT * FROM Bookings;
+UPDATE Bookings SET creator_id = 2 WHERE creator_id = 1; -- Exception
+SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns (1, 1, CURRENT_DATE + 1, 1, NULL)
 -- AFTER TEST
 CALL reset();
 -- TEST END
