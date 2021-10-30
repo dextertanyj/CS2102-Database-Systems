@@ -124,7 +124,7 @@ BEGIN
     IF ((SELECT resignation_date FROM Employees AS E WHERE E.id = remove_employee.id) IS NOT NULL) THEN
         RAISE EXCEPTION 'Employee % has already resigned.', id;
     END IF;
-    UPDATE Employees AS E SET resignation_date = date WHERE E.id = id;
+    UPDATE Employees AS E SET resignation_date = date WHERE E.id = remove_employee.id;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -182,16 +182,16 @@ BEGIN
             (SELECT * FROM Bookings AS B 
             WHERE B.floor = unbook_room.floor 
                 AND B.room = unbook_room.room 
-                AND B.start_hour = unbook_room.loop_hour)
+                AND B.start_hour = loop_hour)
         ) THEN
             RAISE EXCEPTION
             'No existing booking found (floor:% room:% date:% start hour:%).',
             floor, room, date, loop_hour;
         END IF;
-        IF ((SELECT * FROM Bookings AS B 
+        IF ((SELECT creator_id FROM Bookings AS B 
             WHERE B.floor = unbook_room.floor 
                 AND B.room = unbook_room.room 
-                AND B.start_hour = unbook_room.loop_hour) 
+                AND B.start_hour = loop_hour) 
             IS DISTINCT FROM unbook_room.employee_id
         ) THEN
             RAISE EXCEPTION
@@ -236,7 +236,7 @@ BEGIN
             (SELECT * FROM Attends AS A
             WHERE A.floor = leave_meeting.floor
                 AND A.room = leave_meeting.room
-                AND A.start_hour = leave_meeting.loop_hour
+                AND A.start_hour = loop_hour
                 AND A.employee_id = leave_meeting.employee_id)
         ) THEN
             RAISE EXCEPTION
@@ -277,13 +277,13 @@ $$ LANGUAGE plpgsql;
 ****************/
 
 CREATE OR REPLACE FUNCTION non_compliance
-(IN start_date DATE, IN end_date DATE, OUT employee_id INT, OUT number_of_days INT)
+(IN start_date DATE, IN end_date DATE, OUT employee_id INT, OUT number_of_days BIGINT)
 RETURNS SETOF RECORD AS $$
 BEGIN
     IF (start_date > end_date) THEN
         RAISE EXCEPTION 'Query date interval is invalid.';
     END IF;
-    RETURN QUERY 
+    RETURN QUERY
         WITH CTE AS (
             SELECT H.id AS id, COUNT(*) AS days_declared
             FROM HealthDeclarations AS H
@@ -296,7 +296,7 @@ BEGIN
         FROM Employees AS E LEFT JOIN CTE AS C ON E.id = C.id
         WHERE (E.resignation_date IS NULL OR E.resignation_date >= start_date)
             AND (C.days_declared IS NULL OR C.days_declared < end_date - start_date + 1)
-        ORDER BY number_of_days;
+        ORDER BY number_of_days DESC;
 END;
 $$ LANGUAGE plpgsql;
 
