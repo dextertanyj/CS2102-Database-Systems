@@ -1055,162 +1055,125 @@ CALL reset();
 * DECLARE HEALTH *
 *****************/
 
--- TEST declare_health_successful
+-- TEST Success
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
-INSERT INTO Employees VALUES
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
-    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE - 1, 1);
-INSERT INTO Superiors VALUES (1), (2), (3);
-INSERT INTO Managers VALUES (1), (2), (3);
+INSERT INTO Employees VALUES (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
 COMMIT;
-INSERT INTO HealthDeclarations VALUES (2, CURRENT_DATE, 37.0);
 -- TEST
-CALL declare_health(1, CURRENT_DATE, 37.5); -- Success
-SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (1, CURRENT_DATE, 37.5), (2, CURRENT_DATE, 37.0)
+CALL declare_health(1, CURRENT_DATE, 37.5);
+SELECT * FROM HealthDeclarations ORDER BY date, id; -- Returns (1, CURRENT_DATE, 37.5);
 -- AFTER TEST
 CALL reset();
 -- END TEST
 
--- TEST declare_health_repeat_successful
+-- TEST Repeat Declaration Successful
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
-INSERT INTO Employees VALUES
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
-    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE - 1, 1);
-INSERT INTO Superiors VALUES (1), (2), (3);
-INSERT INTO Managers VALUES (1), (2), (3);
+INSERT INTO Employees VALUES (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
 COMMIT;
-INSERT INTO HealthDeclarations VALUES (2, CURRENT_DATE, 37.0);
+INSERT INTO HealthDeclarations VALUES (1, CURRENT_DATE, 37.0);
 -- TEST
-CALL declare_health(2, CURRENT_DATE, 37.5); -- Success
-SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (2, CURRENT_DATE, 37.5)
+CALL declare_health(1, CURRENT_DATE, 37.5);
+SELECT * FROM HealthDeclarations ORDER BY date, id; -- Returns (1, CURRENT_DATE, 37.5)
 -- AFTER TEST
 CALL reset();
 -- END TEST
 
--- TEST declare_health_retired_failure
+-- TEST Retired Failure
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
-INSERT INTO Employees VALUES
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
-    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE - 1, 1);
-INSERT INTO Superiors VALUES (1), (2), (3);
-INSERT INTO Managers VALUES (1), (2), (3);
+INSERT INTO Employees VALUES (1, 'Manager 1', 'Contact 1', 'manager1@company.com', CURRENT_DATE, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
 COMMIT;
-INSERT INTO HealthDeclarations VALUES (2, CURRENT_DATE, 37.0);
 -- TEST
-CALL declare_health(3, CURRENT_DATE, 37.5); -- Failure
-SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (2, CURRENT_DATE, 37.0)
+CALL declare_health(1, CURRENT_DATE, 37.5); -- Exception
+SELECT * FROM HealthDeclarations ORDER BY date, id; -- Returns NULL
 -- AFTER TEST
 CALL reset();
 -- END TEST
 
--- TEST declare_health_non_existent_employee_failure
+-- TEST Missing Employee Failure
 -- BEFORE TEST
 CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1');
-BEGIN TRANSACTION;
-INSERT INTO Employees VALUES
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
-    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE - 1, 1);
-INSERT INTO Superiors VALUES (1), (2), (3);
-INSERT INTO Managers VALUES (1), (2), (3);
-COMMIT;
-INSERT INTO HealthDeclarations VALUES (2, CURRENT_DATE, 37.0);
 -- TEST
-CALL declare_health(4, CURRENT_DATE, 37.5); -- Failure
-SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (2, CURRENT_DATE, 37.0)
+CALL declare_health(1, CURRENT_DATE, 37.5); -- Exception
+SELECT * FROM HealthDeclarations ORDER BY date, id; -- Returns NULL
 -- AFTER TEST
 CALL reset();
 -- END TEST
 
--- TEST declare_health_past_date_failure
+-- TEST Past Date Failure
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
-INSERT INTO Employees VALUES
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
-    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE - 1, 1);
-INSERT INTO Superiors VALUES (1), (2), (3);
-INSERT INTO Managers VALUES (1), (2), (3);
+INSERT INTO Employees VALUES (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
 COMMIT;
-INSERT INTO HealthDeclarations VALUES (2, CURRENT_DATE, 37.0);
 -- TEST
-CALL declare_health(1, CURRENT_DATE - 1, 37.5); -- Failure
-SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (2, CURRENT_DATE, 37.0)
+CALL declare_health(1, CURRENT_DATE - 1, 37.5); -- Exception
+SELECT * FROM HealthDeclarations ORDER BY date, id; -- Returns NULL
 -- AFTER TEST
 CALL reset();
 -- END TEST
 
--- TEST declare_health_future_date_failure
+-- TEST Future Date Failure
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
-INSERT INTO Employees VALUES
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
-    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE - 1, 1);
-INSERT INTO Superiors VALUES (1), (2), (3);
-INSERT INTO Managers VALUES (1), (2), (3);
+INSERT INTO Employees VALUES (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
 COMMIT;
-INSERT INTO HealthDeclarations VALUES (2, CURRENT_DATE, 37.0);
 -- TEST
-CALL declare_health(1, CURRENT_DATE + 1, 37.5); -- Failure
-SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (2, CURRENT_DATE, 37.0)
+CALL declare_health(1, CURRENT_DATE + 1, 37.5); -- Exception
+SELECT * FROM HealthDeclarations ORDER BY date, id; -- Returns NULL
 -- AFTER TEST
 CALL reset();
 -- END TEST
 
--- TEST declare_health_low_temperature_failure
+-- TEST Low Temperature Failure
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
-INSERT INTO Employees VALUES
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
-    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE - 1, 1);
-INSERT INTO Superiors VALUES (1), (2), (3);
-INSERT INTO Managers VALUES (1), (2), (3);
+INSERT INTO Employees VALUES (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
 COMMIT;
-INSERT INTO HealthDeclarations VALUES (2, CURRENT_DATE, 37.0);
 -- TEST
-CALL declare_health(1, CURRENT_DATE, 33.0); -- Failure
-SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (2, CURRENT_DATE, 37.0)
+CALL declare_health(1, CURRENT_DATE, 33.0); -- Exception
+SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns NULL
 -- AFTER TEST
 CALL reset();
 -- END TEST
 
--- TEST declare_health_high_temperature_failure
+-- TEST High Temperature Failure
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
-INSERT INTO Employees VALUES
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
-    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
-    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE - 1, 1);
-INSERT INTO Superiors VALUES (1), (2), (3);
-INSERT INTO Managers VALUES (1), (2), (3);
+INSERT INTO Employees VALUES (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
 COMMIT;
-INSERT INTO HealthDeclarations VALUES (2, CURRENT_DATE, 37.0);
 -- TEST
-CALL declare_health(1, CURRENT_DATE, 45.0); -- Failure
-SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (2, CURRENT_DATE, 37.0)
+CALL declare_health(1, CURRENT_DATE, 45.0); -- Exception
+SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns NULL
 -- AFTER TEST
 CALL reset();
 -- END TEST
@@ -1219,7 +1182,7 @@ CALL reset();
 * CONTACT TRACING *
 ******************/
 
--- TEST contact_tracing_no_fever
+-- TEST No Fever
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -1230,11 +1193,16 @@ INSERT INTO Employees VALUES
 INSERT INTO Superiors VALUES (1), (2);
 INSERT INTO Managers VALUES (1), (2);
 COMMIT;
+ALTER TABLE Updates DISABLE TRIGGER update_capacity_not_in_past;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES
     (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES
     (1, 1, 1, CURRENT_DATE - 5, 10);
+COMMIT;
+ALTER TABLE Updates ENABLE TRIGGER update_capacity_not_in_past;
 ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+ALTER TABLE Attends DISABLE TRIGGER employee_join_only_future_meetings_trigger;
 INSERT INTO Bookings VALUES
     (1, 1, CURRENT_DATE - 2, 1, 1, NULL),
     (1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 1, 1, NULL),
@@ -1242,13 +1210,14 @@ INSERT INTO Bookings VALUES
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL);
 ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
 INSERT INTO Attends VALUES
-    (2, 1, 1, CURRENT_DATE - 2, 0),
+    (2, 1, 1, CURRENT_DATE - 2, 1),
     (2, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 1),
     (2, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1),
-    (2, 1, 1, CURRENT_DATE + 1, 0);
-ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+    (2, 1, 1, CURRENT_DATE + 1, 1);
+ALTER TABLE Attends ENABLE TRIGGER employee_join_only_future_meetings_trigger;
+ALTER TABLE Bookings DISABLE TRIGGER approval_only_for_future_meetings_trigger;
 UPDATE Bookings SET approver_id = 2 WHERE date = CURRENT_DATE - 2 OR date = CURRENT_DATE + 1;
-ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+ALTER TABLE Bookings ENABLE TRIGGER approval_only_for_future_meetings_trigger;
 INSERT INTO HealthDeclarations VALUES (1, CURRENT_DATE, 37.0);
 -- TEST
 SELECT * FROM contact_tracing(1); -- Returns NULL
@@ -1281,7 +1250,7 @@ Returns:
 CALL reset();
 -- END TEST
 
--- TEST contact_tracing_no_declaration
+-- TEST No Declaration
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -1292,11 +1261,16 @@ INSERT INTO Employees VALUES
 INSERT INTO Superiors VALUES (1), (2);
 INSERT INTO Managers VALUES (1), (2);
 COMMIT;
+ALTER TABLE Updates DISABLE TRIGGER update_capacity_not_in_past;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES
     (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES
     (1, 1, 1, CURRENT_DATE - 5, 10);
+COMMIT;
+ALTER TABLE Updates ENABLE TRIGGER update_capacity_not_in_past;
 ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+ALTER TABLE Attends DISABLE TRIGGER employee_join_only_future_meetings_trigger;
 INSERT INTO Bookings VALUES
     (1, 1, CURRENT_DATE - 2, 1, 1, NULL),
     (1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 1, 1, NULL),
@@ -1308,9 +1282,10 @@ INSERT INTO Attends VALUES
     (2, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 1),
     (2, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1),
     (2, 1, 1, CURRENT_DATE + 1, 1);
-ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+ALTER TABLE Attends ENABLE TRIGGER employee_join_only_future_meetings_trigger;
+ALTER TABLE Bookings DISABLE TRIGGER approval_only_for_future_meetings_trigger;
 UPDATE Bookings SET approver_id = 2 WHERE date = CURRENT_DATE - 2 OR date = CURRENT_DATE + 1;
-ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+ALTER TABLE Bookings ENABLE TRIGGER approval_only_for_future_meetings_trigger;
 -- TEST
 SELECT * FROM contact_tracing(1); -- Throws error
 SELECT * FROM Bookings ORDER BY date, start_hour, floor, room;
@@ -1341,7 +1316,7 @@ Returns:
 CALL reset();
 -- END TEST
 
--- TEST contact_tracing_fever_has_future_booking_no_close_contact
+-- TEST Fever With Future Bookings Without Close Contacts
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -1353,13 +1328,20 @@ INSERT INTO Employees VALUES
 INSERT INTO Superiors VALUES (1), (2), (3);
 INSERT INTO Managers VALUES (1), (2), (3);
 COMMIT;
+ALTER TABLE Updates DISABLE TRIGGER update_capacity_not_in_past;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES
     (1, 1, 'Room 1-1', 1),
     (1, 2, 'Room 1-2', 1),
     (2, 1, 'Room 2-1', 1);
 INSERT INTO Updates VALUES
-    (1, 1, 1, CURRENT_DATE - 5, 10);
+    (1, 1, 1, CURRENT_DATE - 5, 10),
+    (1, 1, 2, CURRENT_DATE - 5, 10),
+    (1, 2, 1, CURRENT_DATE - 5, 10);
+COMMIT;
+ALTER TABLE Updates ENABLE TRIGGER update_capacity_not_in_past;
 ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+ALTER TABLE Attends DISABLE TRIGGER employee_join_only_future_meetings_trigger;
 INSERT INTO Bookings VALUES
     (1, 1, CURRENT_DATE - 4, 1, 1, NULL), -- Attended by ALL
     (1, 1, CURRENT_DATE - 2, 1, 1, NULL), -- Not Approved, Attended by ALL
@@ -1380,9 +1362,10 @@ INSERT INTO Attends VALUES
     (2, 1, 1, CURRENT_DATE + 1, 1),
     (3, 1, 1, CURRENT_DATE + 1, 1),
     (2, 1, 1, CURRENT_DATE + 8, 1);
-ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+ALTER TABLE Attends ENABLE TRIGGER employee_join_only_future_meetings_trigger;
+ALTER TABLE Bookings DISABLE TRIGGER approval_only_for_future_meetings_trigger;
 UPDATE Bookings SET approver_id = 2 WHERE date = CURRENT_DATE - 4 OR date = CURRENT_DATE OR date = CURRENT_DATE + 1;
-ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+ALTER TABLE Bookings ENABLE TRIGGER approval_only_for_future_meetings_trigger;
 INSERT INTO HealthDeclarations VALUES (1, CURRENT_DATE, 37.6);
 -- TEST
 SELECT * FROM contact_tracing(1); -- Returns NULL
@@ -1420,7 +1403,7 @@ Returns:
 CALL reset();
 -- END TEST
 
--- TEST contact_tracing_fever_has_future_attendance_no_close_contact
+-- TEST Fever With Future Attendance Without Close Contacts
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -1432,13 +1415,20 @@ INSERT INTO Employees VALUES
 INSERT INTO Superiors VALUES (1), (2), (3);
 INSERT INTO Managers VALUES (1), (2), (3);
 COMMIT;
+ALTER TABLE Updates DISABLE TRIGGER update_capacity_not_in_past;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES
     (1, 1, 'Room 1-1', 1),
     (1, 2, 'Room 1-2', 1),
     (2, 1, 'Room 2-1', 1);
 INSERT INTO Updates VALUES
-    (1, 1, 1, CURRENT_DATE - 5, 10);
+    (1, 1, 1, CURRENT_DATE - 5, 10),
+    (1, 1, 2, CURRENT_DATE - 5, 10),
+    (1, 2, 1, CURRENT_DATE - 5, 10);
+COMMIT;
+ALTER TABLE Updates ENABLE TRIGGER update_capacity_not_in_past;
 ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+ALTER TABLE Attends DISABLE TRIGGER employee_join_only_future_meetings_trigger;
 INSERT INTO Bookings VALUES
     (1, 1, CURRENT_DATE - 4, 1, 1, NULL), -- Attended by ALL
     (1, 1, CURRENT_DATE - 2, 1, 1, NULL), -- Not Approved, Attended by ALL
@@ -1458,9 +1448,10 @@ INSERT INTO Attends VALUES
     (1, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1), -- Removed
     (1, 1, 1, CURRENT_DATE + 1, 2), -- Removed
     (1, 1, 1, CURRENT_DATE + 8, 2);
-ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+ALTER TABLE Attends ENABLE TRIGGER employee_join_only_future_meetings_trigger;
+ALTER TABLE Bookings DISABLE TRIGGER approval_only_for_future_meetings_trigger;
 UPDATE Bookings SET approver_id = 2 WHERE date = CURRENT_DATE - 4 OR date = CURRENT_DATE OR date = CURRENT_DATE + 1;
-ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+ALTER TABLE Bookings ENABLE TRIGGER approval_only_for_future_meetings_trigger;
 INSERT INTO HealthDeclarations VALUES (1, CURRENT_DATE, 37.6);
 -- TEST
 SELECT * FROM contact_tracing(1); -- Returns NULL
@@ -1502,7 +1493,7 @@ Returns:
 CALL reset();
 -- END TEST
 
--- TEST contact_tracing_fever_has_close_contact_has_future_attendance
+-- TEST Fever With Close Contacts With Future Attendances
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -1517,13 +1508,20 @@ INSERT INTO Employees VALUES
 INSERT INTO Superiors VALUES (1), (2), (3), (4), (5), (6);
 INSERT INTO Managers VALUES (1), (2), (3), (4), (5), (6);
 COMMIT;
+ALTER TABLE Updates DISABLE TRIGGER update_capacity_not_in_past;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES
     (1, 1, 'Room 1-1', 1),
     (1, 2, 'Room 1-2', 1),
     (2, 1, 'Room 2-1', 1);
 INSERT INTO Updates VALUES
-    (1, 1, 1, CURRENT_DATE - 5, 10);
+    (1, 1, 1, CURRENT_DATE - 5, 10),
+    (1, 1, 2, CURRENT_DATE - 5, 10),
+    (1, 2, 1, CURRENT_DATE - 5, 10);
+COMMIT;
+ALTER TABLE Updates ENABLE TRIGGER update_capacity_not_in_past;
 ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+ALTER TABLE Attends DISABLE TRIGGER employee_join_only_future_meetings_trigger;
 INSERT INTO Bookings VALUES
     (1, 1, CURRENT_DATE - 4, 1, 1, NULL), -- Attended by 6
     (1, 1, CURRENT_DATE - 2, 1, 1, NULL), -- Attended by 2
@@ -1557,9 +1555,10 @@ INSERT INTO Attends VALUES
     (4, 1, 1, CURRENT_DATE + 8, 2),
     (5, 1, 1, CURRENT_DATE + 8, 2),
     (6, 1, 1, CURRENT_DATE + 8, 2);
-ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+ALTER TABLE Attends ENABLE TRIGGER employee_join_only_future_meetings_trigger;
+ALTER TABLE Bookings DISABLE TRIGGER approval_only_for_future_meetings_trigger;
 UPDATE Bookings SET approver_id = 2;
-ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+ALTER TABLE Bookings ENABLE TRIGGER approval_only_for_future_meetings_trigger;
 INSERT INTO HealthDeclarations VALUES (1, CURRENT_DATE, 37.6);
 -- TEST
 SELECT * FROM contact_tracing(1); -- Returns (2), (3), (4), (5)
@@ -1606,7 +1605,7 @@ Returns:
 CALL reset();
 -- END TEST
 
--- TEST contact_tracing_fever_has_close_contact_has_future_booking
+-- TEST Fever With Close Contacts With Future Bookings
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -1620,13 +1619,20 @@ INSERT INTO Employees VALUES
 INSERT INTO Superiors VALUES (1), (2), (3), (4), (5);
 INSERT INTO Managers VALUES (1), (2), (3), (4), (5);
 COMMIT;
+ALTER TABLE Updates DISABLE TRIGGER update_capacity_not_in_past;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES
     (1, 1, 'Room 1-1', 1),
     (1, 2, 'Room 1-2', 1),
     (2, 1, 'Room 2-1', 1);
 INSERT INTO Updates VALUES
-    (1, 1, 1, CURRENT_DATE - 5, 10);
+    (1, 1, 1, CURRENT_DATE - 5, 10),
+    (1, 1, 2, CURRENT_DATE - 5, 10),
+    (1, 2, 1, CURRENT_DATE - 5, 10);
+COMMIT;
+ALTER TABLE Updates ENABLE TRIGGER update_capacity_not_in_past;
 ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+ALTER TABLE Attends DISABLE TRIGGER employee_join_only_future_meetings_trigger;
 INSERT INTO Bookings VALUES
     (1, 1, CURRENT_DATE - 2, 1, 1, NULL), -- Attended by 2
     (1, 1, CURRENT_DATE - 2, 2, 2, NULL), -- Attended by 1 and 3
@@ -1645,9 +1651,10 @@ INSERT INTO Attends VALUES
     (1, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 2),
     (5, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 2),
     (4, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 1);
-ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+ALTER TABLE Attends ENABLE TRIGGER employee_join_only_future_meetings_trigger;
+ALTER TABLE Bookings DISABLE TRIGGER approval_only_for_future_meetings_trigger;
 UPDATE Bookings SET approver_id = 2;
-ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+ALTER TABLE Bookings ENABLE TRIGGER approval_only_for_future_meetings_trigger;
 INSERT INTO HealthDeclarations VALUES (1, CURRENT_DATE, 37.6);
 -- TEST
 SELECT * FROM contact_tracing(1); -- Returns (2), (3), (4), (5)
