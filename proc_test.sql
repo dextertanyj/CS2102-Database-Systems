@@ -1,17 +1,19 @@
 SET client_min_messages TO WARNING;
 CREATE OR REPLACE PROCEDURE reset()
 AS $$
-    TRUNCATE Departments CASCADE;
-    TRUNCATE Employees CASCADE;
-    TRUNCATE Juniors CASCADE;
-    TRUNCATE Superiors CASCADE;
-    TRUNCATE Seniors CASCADE;
-    TRUNCATE Managers CASCADE;
-    TRUNCATE HealthDeclarations CASCADE;
-    TRUNCATE MeetingRooms CASCADE;
-    TRUNCATE Bookings CASCADE;
-    TRUNCATE Attends CASCADE;
-    TRUNCATE Updates CASCADE;
+    TRUNCATE
+    Departments,
+    Employees,
+    Juniors,
+    Superiors,
+    Seniors,
+    Managers,
+    HealthDeclarations,
+    MeetingRooms,
+    Bookings,
+    Attends,
+    Updates 
+CASCADE;
 $$ LANGUAGE sql;
 
 -- TEST add_department_unique_name_unique_id_success
@@ -84,8 +86,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1), (1, 2, 'Room 1-2', 2);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10), (2, 1, 2, CURRENT_DATE, 10);
+COMMIT;
 -- TEST
 CALL add_room(2, 1, 'Room 2-1', 10, 1, CURRENT_DATE); -- Success
 SELECT COUNT(*) FROM MeetingRooms; -- Returns 3
@@ -110,8 +114,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1), (1, 2, 'Room 1-2', 2);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10), (2, 1, 2, CURRENT_DATE, 10);
+COMMIT;
 -- TEST
 CALL add_room(2, 1, 'Room 1-1', 10, 1, CURRENT_DATE); -- Success
 SELECT COUNT(*) FROM MeetingRooms; -- Returns 3
@@ -136,8 +142,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1), (1, 2, 'Room 1-2', 2);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10), (2, 1, 2, CURRENT_DATE, 10);
+COMMIT;
 -- TEST
 CALL add_room(1, 1, 'Room Unique Name', 10, 1, CURRENT_DATE); -- Failure
 -- AFTER TEST
@@ -160,8 +168,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1), (1, 2, 'Room 1-2', 2);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10), (2, 1, 2, CURRENT_DATE, 10);
+COMMIT;
 -- TEST
 CALL add_room(1, 1, 'Room Unique Name', 10, 1, CURRENT_DATE); -- Failure
 -- AFTER TEST
@@ -184,8 +194,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1), (1, 2, 'Room 1-2', 2);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10), (2, 1, 2, CURRENT_DATE, 10);
+COMMIT;
 -- TEST
 CALL add_room(2, 1, 'Room 2-1', 10, 3, CURRENT_DATE); -- Failure
 -- AFTER TEST
@@ -208,8 +220,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1), (1, 2, 'Room 1-2', 2);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10), (2, 1, 2, CURRENT_DATE, 10);
+COMMIT;
 -- TEST
 CALL add_room(2, 1, 'Room 2-1', 10, 4, CURRENT_DATE); -- Failure
 -- AFTER TEST
@@ -232,8 +246,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1), (1, 2, 'Room 1-2', 2);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10), (2, 1, 2, CURRENT_DATE, 10);
+COMMIT;
 -- TEST
 CALL add_room(2, 1, 'Room 2-1', 10, 5, CURRENT_DATE); -- Failure
 -- AFTER TEST
@@ -257,8 +273,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4), (5);
 INSERT INTO Seniors VALUES (5);
 INSERT INTO Managers VALUES (1), (2), (3), (4);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 10);
+COMMIT;
 -- TEST
 CALL change_capacity(1, 1, 20, 2, CURRENT_DATE); -- Success
 SELECT capacity FROM Updates WHERE floor = 1 AND room = 1 AND date = CURRENT_DATE; -- Returns 20
@@ -283,8 +301,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4), (5);
 INSERT INTO Seniors VALUES (5);
 INSERT INTO Managers VALUES (1), (2), (3), (4);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 10);
+COMMIT;
 -- TEST
 CALL change_capacity(1, 1, 20, 3, CURRENT_DATE); -- Failure
 -- AFTER TEST
@@ -308,8 +328,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4), (5);
 INSERT INTO Seniors VALUES (5);
 INSERT INTO Managers VALUES (1), (2), (3), (4);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 10);
+COMMIT;
 -- TEST
 CALL change_capacity(1, 1, 20, 2, CURRENT_DATE); -- Failure
 -- AFTER TEST
@@ -333,8 +355,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4), (5);
 INSERT INTO Seniors VALUES (5);
 INSERT INTO Managers VALUES (1), (2), (3), (4);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 10);
+COMMIT;
 -- TEST
 CALL change_capacity(1, 1, 20, 5, CURRENT_DATE); -- Success
 -- AFTER TEST
@@ -358,8 +382,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4), (5);
 INSERT INTO Seniors VALUES (5);
 INSERT INTO Managers VALUES (1), (2), (3), (4);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 10);
+COMMIT;
 -- TEST
 CALL change_capacity(1, 1, 20, 6, CURRENT_DATE); -- Success
 -- AFTER TEST
@@ -383,8 +409,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4), (5);
 INSERT INTO Seniors VALUES (5);
 INSERT INTO Managers VALUES (1), (2), (3), (4);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 10);
+COMMIT;
 -- TEST
 CALL change_capacity(2, 1, 20, 1, CURRENT_DATE); -- Failure
 -- AFTER TEST
@@ -556,6 +584,7 @@ INSERT INTO Employees VALUES
 INSERT INTO Superiors VALUES (1);
 INSERT INTO Managers VALUES (1);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES
     (1, 1, 'Room 1', 1),
     (1, 2, 'Room 2', 1),
@@ -564,6 +593,7 @@ INSERT INTO Updates VALUES
     (1, 1, 1, CURRENT_DATE, 10),
     (1, 1, 2, CURRENT_DATE, 5),
     (1, 2, 1, CURRENT_DATE, 10);
+COMMIT;
 INSERT INTO Bookings VALUES 
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
@@ -599,8 +629,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
 INSERT INTO Bookings VALUES 
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
@@ -632,8 +664,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
 INSERT INTO Bookings VALUES 
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
@@ -665,8 +699,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
 INSERT INTO Bookings VALUES 
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
@@ -698,8 +734,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
 INSERT INTO Bookings VALUES 
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
@@ -731,8 +769,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
 INSERT INTO Bookings VALUES 
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
@@ -764,8 +804,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
 INSERT INTO Bookings VALUES 
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
@@ -797,8 +839,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
 INSERT INTO Bookings VALUES 
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
@@ -830,8 +874,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
 INSERT INTO Bookings VALUES 
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
@@ -863,8 +909,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
 INSERT INTO Bookings VALUES 
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
@@ -896,8 +944,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
 INSERT INTO Bookings VALUES 
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
@@ -929,8 +979,10 @@ INSERT INTO Superiors VALUES (1), (2), (3), (4);
 INSERT INTO Seniors VALUES (4);
 INSERT INTO Managers VALUES (1), (2), (3);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
 INSERT INTO Bookings VALUES 
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
@@ -957,8 +1009,10 @@ INSERT INTO Employees VALUES
 INSERT INTO Superiors VALUES (1), (2);
 INSERT INTO Managers VALUES (1), (2);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
 INSERT INTO Bookings VALUES 
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
@@ -986,8 +1040,10 @@ INSERT INTO Employees VALUES
 INSERT INTO Superiors VALUES (1), (2);
 INSERT INTO Managers VALUES (1), (2);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
 INSERT INTO Bookings VALUES 
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
@@ -1015,8 +1071,10 @@ INSERT INTO Employees VALUES
 INSERT INTO Superiors VALUES (1), (2);
 INSERT INTO Managers VALUES (1), (2);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
 INSERT INTO Bookings VALUES 
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
@@ -1044,8 +1102,10 @@ INSERT INTO Employees VALUES
 INSERT INTO Superiors VALUES (1), (2);
 INSERT INTO Managers VALUES (1), (2);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
 INSERT INTO Bookings VALUES 
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
@@ -1073,8 +1133,10 @@ INSERT INTO Employees VALUES
 INSERT INTO Superiors VALUES (1), (2);
 INSERT INTO Managers VALUES (1), (2);
 COMMIT;
+BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 10);
+COMMIT;
 INSERT INTO Bookings VALUES 
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
@@ -1099,7 +1161,7 @@ BEGIN TRANSACTION;
 INSERT INTO Employees VALUES 
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
     (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 2),
-    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE - 1, 1),
+    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', NULL, 1),
     (4, 'Senior 4', 'Contact 4', 'senior4@company.com', NULL, 1),
     (5, 'Junior 5', 'Contact 5', 'junior5@company.com', NULL, 1);
 INSERT INTO Juniors VALUES (5);
@@ -1119,8 +1181,669 @@ INSERT INTO HealthDeclarations VALUES
     (3, CURRENT_DATE - 1, 37.0),
     (5, CURRENT_DATE - 2, 37.0),
     (5, CURRENT_DATE - 1, 37.0);
+-- Set Manager 3 to Resigned after declaring temperature (Otherwise temperature declaration is not allowed by trigger)
+UPDATE Employees SET resignation_date = CURRENT_DATE - 1 WHERE id = 3;
 -- TEST
-SELECT * FROM non_compliance(CURRENT_DATE - 3, CURRENT_DATE); -- Expected: (2,1), (3,1), (4,4), (5,2)
+SELECT * FROM non_compliance(CURRENT_DATE - 3, CURRENT_DATE); -- Expected: (4,4), (5,2), (2,1), (3,1)
+-- AFTER TEST
+CALL reset();
+-- TEST END
+
+-- TEST view_booking_report
+-- BEFORE TEST
+CALL reset();
+ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+ALTER TABLE Attends DISABLE TRIGGER lock_attends;
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES 
+    (1, 'Senior 1', 'Contact 1', 'senior1@company.com', NULL, 1),
+    (2, 'Senior 2', 'Contact 2', 'senior2@company.com', NULL, 1),
+    (3, 'Manager 3', 'Contact 3', 'manager3@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2), (3);
+INSERT INTO Seniors VALUES (1), (2);
+INSERT INTO Managers VALUES (3);
+COMMIT;
+BEGIN TRANSACTION;
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
+INSERT INTO Updates VALUES (3, 1, 1, CURRENT_DATE - 2, 10);
+COMMIT;
+INSERT INTO Bookings VALUES
+    (1, 1, CURRENT_DATE - 1, 1, 1, NULL),
+    (1, 1, CURRENT_DATE, 1, 1, NULL),
+    (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
+    (1, 1, CURRENT_DATE + 2, 1, 1, NULL),
+    (1, 1, CURRENT_DATE + 3, 1, 1, 3),
+    (1, 1, CURRENT_DATE, 2, 2, NULL),
+    (1, 1, CURRENT_DATE, 3, 2, NULL);
+-- TEST
+SELECT * FROM view_booking_report(CURRENT_DATE, 1); -- Expected: (1,1,CURRENT_DATE,1,f), (1,1,CURRENT_DATE + 1,2,f), (1,1,CURRENT_DATE + 2,1,f)
+-- AFTER TEST
+ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+ALTER TABLE Attends ENABLE TRIGGER lock_attends;
+CALL reset();
+-- TEST END
+
+-- TEST declare_health_successful
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
+    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE - 1, 1);
+INSERT INTO Superiors VALUES (1), (2), (3);
+INSERT INTO Managers VALUES (1), (2), (3);
+COMMIT;
+INSERT INTO HealthDeclarations VALUES (2, CURRENT_DATE, 37.0);
+-- TEST
+CALL declare_health(1, CURRENT_DATE, 37.5); -- Success
+SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (1, CURRENT_DATE, 37.5), (2, CURRENT_DATE, 37.0)
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST declare_health_repeat_successful
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
+    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE - 1, 1);
+INSERT INTO Superiors VALUES (1), (2), (3);
+INSERT INTO Managers VALUES (1), (2), (3);
+COMMIT;
+INSERT INTO HealthDeclarations VALUES (2, CURRENT_DATE, 37.0);
+-- TEST
+CALL declare_health(2, CURRENT_DATE, 37.5); -- Success
+SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (2, CURRENT_DATE, 37.5)
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST declare_health_retired_failure
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
+    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE - 1, 1);
+INSERT INTO Superiors VALUES (1), (2), (3);
+INSERT INTO Managers VALUES (1), (2), (3);
+COMMIT;
+INSERT INTO HealthDeclarations VALUES (2, CURRENT_DATE, 37.0);
+-- TEST
+CALL declare_health(3, CURRENT_DATE, 37.5); -- Failure
+SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (2, CURRENT_DATE, 37.0)
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST declare_health_non_existent_employee_failure
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
+    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE - 1, 1);
+INSERT INTO Superiors VALUES (1), (2), (3);
+INSERT INTO Managers VALUES (1), (2), (3);
+COMMIT;
+INSERT INTO HealthDeclarations VALUES (2, CURRENT_DATE, 37.0);
+-- TEST
+CALL declare_health(4, CURRENT_DATE, 37.5); -- Failure
+SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (2, CURRENT_DATE, 37.0)
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST declare_health_past_date_failure
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
+    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE - 1, 1);
+INSERT INTO Superiors VALUES (1), (2), (3);
+INSERT INTO Managers VALUES (1), (2), (3);
+COMMIT;
+INSERT INTO HealthDeclarations VALUES (2, CURRENT_DATE, 37.0);
+-- TEST
+CALL declare_health(1, CURRENT_DATE - 1, 37.5); -- Failure
+SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (2, CURRENT_DATE, 37.0)
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST declare_health_future_date_failure
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
+    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE - 1, 1);
+INSERT INTO Superiors VALUES (1), (2), (3);
+INSERT INTO Managers VALUES (1), (2), (3);
+COMMIT;
+INSERT INTO HealthDeclarations VALUES (2, CURRENT_DATE, 37.0);
+-- TEST
+CALL declare_health(1, CURRENT_DATE + 1, 37.5); -- Failure
+SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (2, CURRENT_DATE, 37.0)
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST declare_health_low_temperature_failure
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
+    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE - 1, 1);
+INSERT INTO Superiors VALUES (1), (2), (3);
+INSERT INTO Managers VALUES (1), (2), (3);
+COMMIT;
+INSERT INTO HealthDeclarations VALUES (2, CURRENT_DATE, 37.0);
+-- TEST
+CALL declare_health(1, CURRENT_DATE, 33.0); -- Failure
+SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (2, CURRENT_DATE, 37.0)
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST declare_health_high_temperature_failure
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
+    (3, 'Resigned Manager 3', 'Contact 3', 'manager3@company.com', CURRENT_DATE - 1, 1);
+INSERT INTO Superiors VALUES (1), (2), (3);
+INSERT INTO Managers VALUES (1), (2), (3);
+COMMIT;
+INSERT INTO HealthDeclarations VALUES (2, CURRENT_DATE, 37.0);
+-- TEST
+CALL declare_health(1, CURRENT_DATE, 45.0); -- Failure
+SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (2, CURRENT_DATE, 37.0)
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST contact_tracing_no_fever
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2);
+INSERT INTO Managers VALUES (1), (2);
+COMMIT;
+INSERT INTO MeetingRooms VALUES
+    (1, 1, 'Room 1-1', 1);
+INSERT INTO Updates VALUES
+    (1, 1, 1, CURRENT_DATE - 5, 10);
+ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+INSERT INTO Bookings VALUES
+    (1, 1, CURRENT_DATE - 2, 1, 1, NULL),
+    (1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 1, 1, NULL),
+    (1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1, 1, NULL),
+    (1, 1, CURRENT_DATE + 1, 1, 1, NULL);
+ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+INSERT INTO Attends VALUES
+    (2, 1, 1, CURRENT_DATE - 2, 0),
+    (2, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 1),
+    (2, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1),
+    (2, 1, 1, CURRENT_DATE + 1, 0);
+ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+UPDATE Bookings SET approver_id = 2 WHERE date = CURRENT_DATE - 2 OR date = CURRENT_DATE + 1;
+ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+INSERT INTO HealthDeclarations VALUES (1, CURRENT_DATE, 37.0);
+-- TEST
+SELECT * FROM contact_tracing(1); -- Returns NULL
+SELECT * FROM Bookings ORDER BY date, start_hour, floor, room;
+/*
+Returns:
+ floor | room |       date       |    start_hour    | creator_id | approver_id 
+-------+------+------------------+------------------+------------+-------------
+     1 |    1 | CURRENT_DATE - 2 |                1 |          1 |           2
+     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1 |          1 |            
+     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1 |          1 |            
+     1 |    1 | CURRENT_DATE + 1 |                1 |          1 |           2
+*/
+SELECT * FROM Attends ORDER BY date, start_hour, floor, room, employee_id;
+/*
+Returns:
+ employee_id | floor | room |       date       |    start_hour    
+-------------+-------+------+------------------+------------------
+           1 |     1 |    1 | CURRENT_DATE - 2 |                1 
+           2 |     1 |    1 | CURRENT_DATE - 2 |                1
+           1 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1 
+           2 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1 
+           1 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR + 1 
+           2 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR + 1 
+           1 |     1 |    1 | CURRENT_DATE + 1 |                1
+           2 |     1 |    1 | CURRENT_DATE + 1 |                1
+*/
+-- TEST
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST contact_tracing_no_declaration
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2);
+INSERT INTO Managers VALUES (1), (2);
+COMMIT;
+INSERT INTO MeetingRooms VALUES
+    (1, 1, 'Room 1-1', 1);
+INSERT INTO Updates VALUES
+    (1, 1, 1, CURRENT_DATE - 5, 10);
+ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+INSERT INTO Bookings VALUES
+    (1, 1, CURRENT_DATE - 2, 1, 1, NULL),
+    (1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 1, 1, NULL),
+    (1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1, 1, NULL),
+    (1, 1, CURRENT_DATE + 1, 1, 1, NULL);
+ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+INSERT INTO Attends VALUES
+    (2, 1, 1, CURRENT_DATE - 2, 1),
+    (2, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 1),
+    (2, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1),
+    (2, 1, 1, CURRENT_DATE + 1, 1);
+ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+UPDATE Bookings SET approver_id = 2 WHERE date = CURRENT_DATE - 2 OR date = CURRENT_DATE + 1;
+ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+-- TEST
+SELECT * FROM contact_tracing(1); -- Throws error
+SELECT * FROM Bookings ORDER BY date, start_hour, floor, room;
+/*
+Returns:
+ floor | room |       date       |    start_hour    | creator_id | approver_id 
+-------+------+------------------+------------------+------------+-------------
+     1 |    1 | CURRENT_DATE - 2 |                1 |          1 |           2
+     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1 |          1 |            
+     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1 |          1 |            
+     1 |    1 | CURRENT_DATE + 1 |                1 |          1 |           2
+*/
+SELECT * FROM Attends ORDER BY date, start_hour, floor, room, employee_id;
+/*
+Returns:
+ employee_id | floor | room |       date       |    start_hour    
+-------------+-------+------+------------------+------------------
+           1 |     1 |    1 | CURRENT_DATE - 2 |                1
+           2 |     1 |    1 | CURRENT_DATE - 2 |                1
+           1 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1 
+           2 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1 
+           1 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR + 1 
+           2 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR + 1 
+           1 |     1 |    1 | CURRENT_DATE + 1 |                1
+           2 |     1 |    1 | CURRENT_DATE + 1 |                1
+*/
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST contact_tracing_fever_has_future_booking_no_close_contact
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
+    (3, 'Manager 3', 'Contact 3', 'manager3@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2), (3);
+INSERT INTO Managers VALUES (1), (2), (3);
+COMMIT;
+INSERT INTO MeetingRooms VALUES
+    (1, 1, 'Room 1-1', 1),
+    (1, 2, 'Room 1-2', 1),
+    (2, 1, 'Room 2-1', 1);
+INSERT INTO Updates VALUES
+    (1, 1, 1, CURRENT_DATE - 5, 10);
+ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+INSERT INTO Bookings VALUES
+    (1, 1, CURRENT_DATE - 4, 1, 1, NULL), -- Attended by ALL
+    (1, 1, CURRENT_DATE - 2, 1, 1, NULL), -- Not Approved, Attended by ALL
+    (1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 1, 1, NULL),
+    (1, 2, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 1, 2, NULL),
+    (2, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 1, 3, NULL),
+    (1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1, 1, NULL), -- Deleted
+    (1, 1, CURRENT_DATE + 1, 1, 1, NULL), -- Attended by ALL, Deleted
+    (1, 1, CURRENT_DATE + 1, 2, 2, NULL),
+    (1, 1, CURRENT_DATE + 1, 3, 3, NULL),
+    (1, 1, CURRENT_DATE + 8, 1, 1, NULL); -- Attended by 2
+ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+INSERT INTO Attends VALUES
+    (2, 1, 1, CURRENT_DATE - 4, 1),
+    (3, 1, 1, CURRENT_DATE - 4, 1),
+    (2, 1, 1, CURRENT_DATE - 2, 1),
+    (3, 1, 1, CURRENT_DATE - 2, 1),
+    (2, 1, 1, CURRENT_DATE + 1, 1),
+    (3, 1, 1, CURRENT_DATE + 1, 1),
+    (2, 1, 1, CURRENT_DATE + 8, 1);
+ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+UPDATE Bookings SET approver_id = 2 WHERE date = CURRENT_DATE - 4 OR date = CURRENT_DATE OR date = CURRENT_DATE + 1;
+ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+INSERT INTO HealthDeclarations VALUES (1, CURRENT_DATE, 37.6);
+-- TEST
+SELECT * FROM contact_tracing(1); -- Returns NULL
+SELECT * FROM Bookings ORDER BY date, start_hour, floor, room;
+/*
+Returns:
+ floor | room |       date       |    start_hour    | creator_id | approver_id 
+-------+------+------------------+------------------+------------+-------------
+     1 |    1 | CURRENT_DATE - 4 |                1 |          1 |           2
+     1 |    1 | CURRENT_DATE - 2 |                1 |          1 |            
+     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1 |          1 |           2
+     1 |    2 | CURRENT_DATE     | CURRENT_HOUR - 1 |          2 |           2
+     2 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1 |          3 |           2
+     1 |    1 | CURRENT_DATE + 1 |                2 |          2 |           2
+     1 |    1 | CURRENT_DATE + 1 |                3 |          3 |           2
+*/
+SELECT * FROM Attends ORDER BY date, start_hour, floor, room, employee_id;
+/*
+Returns:
+ employee_id | floor | room |       date       |    start_hour    
+-------------+-------+------+------------------+------------------
+           1 |     1 |    1 | CURRENT_DATE - 4 |                1
+           2 |     1 |    1 | CURRENT_DATE - 4 |                1
+           3 |     1 |    1 | CURRENT_DATE - 4 |                1
+           1 |     1 |    1 | CURRENT_DATE - 2 |                1
+           2 |     1 |    1 | CURRENT_DATE - 2 |                1
+           3 |     1 |    1 | CURRENT_DATE - 2 |                1
+           1 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1
+           2 |     1 |    2 | CURRENT_DATE     | CURRENT_HOUR - 1
+           3 |     2 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1
+           2 |     1 |    1 | CURRENT_DATE + 1 |                2
+           3 |     1 |    1 | CURRENT_DATE + 1 |                3
+*/
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST contact_tracing_fever_has_future_attendance_no_close_contact
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
+    (3, 'Manager 3', 'Contact 3', 'manager3@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2), (3);
+INSERT INTO Managers VALUES (1), (2), (3);
+COMMIT;
+INSERT INTO MeetingRooms VALUES
+    (1, 1, 'Room 1-1', 1),
+    (1, 2, 'Room 1-2', 1),
+    (2, 1, 'Room 2-1', 1);
+INSERT INTO Updates VALUES
+    (1, 1, 1, CURRENT_DATE - 5, 10);
+ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+INSERT INTO Bookings VALUES
+    (1, 1, CURRENT_DATE - 4, 1, 1, NULL), -- Attended by ALL
+    (1, 1, CURRENT_DATE - 2, 1, 1, NULL), -- Not Approved, Attended by ALL
+    (1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 1, 1, NULL),
+    (1, 2, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 1, 2, NULL),
+    (2, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 1, 3, NULL),
+    (1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1, 2, NULL), -- Attended By 1
+    (1, 1, CURRENT_DATE + 1, 2, 2, NULL), -- Attended by 1
+    (1, 1, CURRENT_DATE + 1, 3, 3, NULL),
+    (1, 1, CURRENT_DATE + 8, 2, 2, NULL);
+ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+INSERT INTO Attends VALUES
+    (2, 1, 1, CURRENT_DATE - 4, 1),
+    (3, 1, 1, CURRENT_DATE - 4, 1),
+    (2, 1, 1, CURRENT_DATE - 2, 1),
+    (3, 1, 1, CURRENT_DATE - 2, 1),
+    (1, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1), -- Removed
+    (1, 1, 1, CURRENT_DATE + 1, 2), -- Removed
+    (1, 1, 1, CURRENT_DATE + 8, 2);
+ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+UPDATE Bookings SET approver_id = 2 WHERE date = CURRENT_DATE - 4 OR date = CURRENT_DATE OR date = CURRENT_DATE + 1;
+ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+INSERT INTO HealthDeclarations VALUES (1, CURRENT_DATE, 37.6);
+-- TEST
+SELECT * FROM contact_tracing(1); -- Returns NULL
+SELECT * FROM Bookings ORDER BY date, start_hour, floor, room;
+/*
+Returns:
+ floor | room |       date       |    start_hour    | creator_id | approver_id 
+-------+------+------------------+------------------+------------+-------------
+     1 |    1 | CURRENT_DATE - 4 |                1 |          1 |           2
+     1 |    1 | CURRENT_DATE - 2 |                1 |          1 |            
+     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1 |          1 |           2
+     1 |    2 | CURRENT_DATE     | CURRENT_HOUR - 1 |          2 |           2
+     2 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1 |          3 |           2
+     1 |    1 | CURRENT_DATE     | CURRENT_HOUR + 1 |          2 |           2
+     1 |    1 | CURRENT_DATE + 1 |                2 |          2 |           2
+     1 |    1 | CURRENT_DATE + 1 |                3 |          3 |           2
+     1 |    1 | CURRENT_DATE + 8 |                2 |          2 |            
+*/
+SELECT * FROM Attends ORDER BY date, start_hour, floor, room, employee_id;
+/*
+Returns:
+ employee_id | floor | room |       date       |    start_hour    
+-------------+-------+------+------------------+------------------
+           1 |     1 |    1 | CURRENT_DATE - 4 |                1
+           2 |     1 |    1 | CURRENT_DATE - 4 |                1
+           3 |     1 |    1 | CURRENT_DATE - 4 |                1
+           1 |     1 |    1 | CURRENT_DATE - 2 |                1
+           2 |     1 |    1 | CURRENT_DATE - 2 |                1
+           3 |     1 |    1 | CURRENT_DATE - 2 |                1
+           1 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1
+           2 |     1 |    2 | CURRENT_DATE     | CURRENT_HOUR - 1
+           3 |     2 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1
+           2 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR + 1
+           2 |     1 |    1 | CURRENT_DATE + 1 |                2
+           3 |     1 |    1 | CURRENT_DATE + 1 |                3
+           2 |     1 |    1 | CURRENT_DATE + 8 |                2
+*/
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST contact_tracing_fever_has_close_contact_has_future_attendance
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
+    (3, 'Manager 3', 'Contact 3', 'manager3@company.com', NULL, 1),
+    (4, 'Manager 4', 'Contact 4', 'manager4@company.com', NULL, 1),
+    (5, 'Manager 5', 'Contact 5', 'manager5@company.com', NULL, 1),
+    (6, 'Manager 6', 'Contact 6', 'manager6@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2), (3), (4), (5), (6);
+INSERT INTO Managers VALUES (1), (2), (3), (4), (5), (6);
+COMMIT;
+INSERT INTO MeetingRooms VALUES
+    (1, 1, 'Room 1-1', 1),
+    (1, 2, 'Room 1-2', 1),
+    (2, 1, 'Room 2-1', 1);
+INSERT INTO Updates VALUES
+    (1, 1, 1, CURRENT_DATE - 5, 10);
+ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+INSERT INTO Bookings VALUES
+    (1, 1, CURRENT_DATE - 4, 1, 1, NULL), -- Attended by 6
+    (1, 1, CURRENT_DATE - 2, 1, 1, NULL), -- Attended by 2
+    (1, 1, CURRENT_DATE - 2, 2, 2, NULL), -- Attended by 1 and 3
+    (1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 2, 4, NULL), -- Attended by 1 and 5
+    (1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 1, 1, NULL), -- Attended by 4
+    (1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1, 6, NULL), -- Attended by all
+    (1, 1, CURRENT_DATE + 7, 6, 6, NULL),
+    (1, 1, CURRENT_DATE + 8, 2, 2, NULL); -- Attended by all
+ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+INSERT INTO Attends VALUES
+    (6, 1, 1, CURRENT_DATE - 4, 1),
+    (2, 1, 1, CURRENT_DATE - 2, 1),
+    (1, 1, 1, CURRENT_DATE - 2, 2),
+    (3, 1, 1, CURRENT_DATE - 2, 2),
+    (1, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 2),
+    (5, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 2),
+    (4, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 1),
+    (1, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1), -- Removed
+    (2, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1), -- Removed
+    (3, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1), -- Removed
+    (4, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1), -- Removed
+    (5, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1), -- Removed
+    (1, 1, 1, CURRENT_DATE + 7, 6), -- Removed
+    (2, 1, 1, CURRENT_DATE + 7, 6), -- Removed
+    (3, 1, 1, CURRENT_DATE + 7, 6), -- Removed
+    (4, 1, 1, CURRENT_DATE + 7, 6), -- Removed
+    (5, 1, 1, CURRENT_DATE + 7, 6), -- Removed
+    (1, 1, 1, CURRENT_DATE + 8, 2), -- Removed
+    (3, 1, 1, CURRENT_DATE + 8, 2),
+    (4, 1, 1, CURRENT_DATE + 8, 2),
+    (5, 1, 1, CURRENT_DATE + 8, 2),
+    (6, 1, 1, CURRENT_DATE + 8, 2);
+ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+UPDATE Bookings SET approver_id = 2;
+ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+INSERT INTO HealthDeclarations VALUES (1, CURRENT_DATE, 37.6);
+-- TEST
+SELECT * FROM contact_tracing(1); -- Returns (2), (3), (4), (5)
+SELECT * FROM Bookings ORDER BY date, start_hour, floor, room;
+/*
+Returns:
+ floor | room |       date       |    start_hour    | creator_id | approver_id 
+-------+------+------------------+------------------+------------+-------------
+     1 |    1 | CURRENT_DATE - 4 |                1 |          1 |           2
+     1 |    1 | CURRENT_DATE - 2 |                1 |          1 |           2
+     1 |    1 | CURRENT_DATE - 2 |                2 |          2 |           2
+     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 2 |          4 |           2
+     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1 |          1 |           2
+     1 |    1 | CURRENT_DATE     | CURRENT_HOUR + 1 |          6 |           2
+     1 |    1 | CURRENT_DATE + 7 |                6 |          6 |           2
+     1 |    1 | CURRENT_DATE + 8 |                2 |          2 |           2
+*/
+SELECT * FROM Attends ORDER BY date, start_hour, floor, room, employee_id;
+/*
+Returns:
+ employee_id | floor | room |       date       |    start_hour    
+-------------+-------+------+------------------+------------------
+           1 |     1 |    1 | CURRENT_DATE - 4 |                1
+           6 |     1 |    1 | CURRENT_DATE - 4 |                1
+           1 |     1 |    1 | CURRENT_DATE - 2 |                1
+           2 |     1 |    1 | CURRENT_DATE - 2 |                1
+           1 |     1 |    1 | CURRENT_DATE - 2 |                2
+           2 |     1 |    1 | CURRENT_DATE - 2 |                2
+           3 |     1 |    1 | CURRENT_DATE - 2 |                2
+           1 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 2
+           4 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 2
+           5 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 2
+           1 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1
+           4 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1
+           6 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR + 1
+           6 |     1 |    1 | CURRENT_DATE + 7 |                6
+           2 |     1 |    1 | CURRENT_DATE + 8 |                2
+           3 |     1 |    1 | CURRENT_DATE + 8 |                2
+           4 |     1 |    1 | CURRENT_DATE + 8 |                2
+           5 |     1 |    1 | CURRENT_DATE + 8 |                2
+           6 |     1 |    1 | CURRENT_DATE + 8 |                2
+*/
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST contact_tracing_fever_has_close_contact_has_future_booking
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Manager 2', 'Contact 2', 'manager2@company.com', NULL, 1),
+    (3, 'Manager 3', 'Contact 3', 'manager3@company.com', NULL, 1),
+    (4, 'Manager 4', 'Contact 4', 'manager4@company.com', NULL, 1),
+    (5, 'Manager 5', 'Contact 5', 'manager5@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2), (3), (4), (5);
+INSERT INTO Managers VALUES (1), (2), (3), (4), (5);
+COMMIT;
+INSERT INTO MeetingRooms VALUES
+    (1, 1, 'Room 1-1', 1),
+    (1, 2, 'Room 1-2', 1),
+    (2, 1, 'Room 2-1', 1);
+INSERT INTO Updates VALUES
+    (1, 1, 1, CURRENT_DATE - 5, 10);
+ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+INSERT INTO Bookings VALUES
+    (1, 1, CURRENT_DATE - 2, 1, 1, NULL), -- Attended by 2
+    (1, 1, CURRENT_DATE - 2, 2, 2, NULL), -- Attended by 1 and 3
+    (1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 2, 4, NULL), -- Attended by 1 and 5
+    (1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 1, 1, NULL), -- Attended by 4
+    (1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) + 1, 2, NULL), -- Removed
+    (1, 1, CURRENT_DATE + 7, 3, 3, NULL), -- Removed
+    (1, 1, CURRENT_DATE + 7, 4, 4, NULL), -- Removed
+    (1, 1, CURRENT_DATE + 7, 5, 5, NULL), -- Removed
+    (1, 1, CURRENT_DATE + 8, 2, 2, NULL);
+ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+INSERT INTO Attends VALUES
+    (2, 1, 1, CURRENT_DATE - 2, 1),
+    (1, 1, 1, CURRENT_DATE - 2, 2),
+    (3, 1, 1, CURRENT_DATE - 2, 2),
+    (1, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 2),
+    (5, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 2),
+    (4, 1, 1, CURRENT_DATE, extract(HOUR FROM CURRENT_TIME) - 1);
+ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+UPDATE Bookings SET approver_id = 2;
+ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+INSERT INTO HealthDeclarations VALUES (1, CURRENT_DATE, 37.6);
+-- TEST
+SELECT * FROM contact_tracing(1); -- Returns (2), (3), (4), (5)
+SELECT * FROM Bookings ORDER BY date, start_hour, floor, room;
+/*
+Returns:
+ floor | room |       date       |    start_hour    | creator_id | approver_id 
+-------+------+------------------+------------------+------------+-------------
+     1 |    1 | CURRENT_DATE - 2 |                1 |          1 |           2
+     1 |    1 | CURRENT_DATE - 2 |                2 |          2 |           2
+     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 2 |          4 |           2
+     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1 |          1 |           2
+     1 |    1 | CURRENT_DATE + 8 |                2 |          2 |           2
+*/
+SELECT * FROM Attends ORDER BY date, start_hour, floor, room, employee_id;
+/*
+Returns:
+ employee_id | floor | room |       date       |    start_hour    
+-------------+-------+------+------------------+------------------
+           1 |     1 |    1 | CURRENT_DATE - 2 |                1
+           2 |     1 |    1 | CURRENT_DATE - 2 |                1
+           1 |     1 |    1 | CURRENT_DATE - 2 |                2
+           2 |     1 |    1 | CURRENT_DATE - 2 |                2
+           3 |     1 |    1 | CURRENT_DATE - 2 |                2
+           1 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 2
+           4 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 2
+           5 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 2
+           1 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1
+           4 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1
+           2 |     1 |    1 | CURRENT_DATE + 8 |                2
+*/
 -- AFTER TEST
 CALL reset();
 -- END TEST

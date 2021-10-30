@@ -1,3 +1,15 @@
+CREATE OR REPLACE FUNCTION RoomCapacities
+(IN query_date DATE, OUT floor INT, OUT room INT, OUT date DATE, OUT capacity INT)
+RETURNS SETOF RECORD AS $$
+    SELECT floor, room, date, capacity
+    FROM Updates NATURAL JOIN (
+        SELECT floor, room, MAX(date) AS date
+        FROM Updates
+        WHERE date <= RoomCapacities.query_date
+        GROUP BY (floor, room)
+    ) AS LatestRelevantUpdate;
+$$ LANGUAGE sql;
+
 CREATE OR REPLACE FUNCTION removed_department_guard
 (IN department_id INT, OUT resigned BOOLEAN)
 RETURNS BOOLEAN AS $$
@@ -121,8 +133,6 @@ BEGIN
     UPDATE Employees SET resignation_date = date WHERE id = employee_id;
 END;
 $$ LANGUAGE plpgsql;
-
--------------------------- CORE --------------------------
 
 CREATE OR REPLACE VIEW RoomCapacity AS 
 SELECT floor, room, date, capacity
@@ -256,13 +266,15 @@ WITH CTE AS (
     FROM HealthDeclarations AS H
     WHERE H.date BETWEEN start_date AND end_date 
     GROUP BY H.id
-) SELECT E.id, COALESCE(
+), CTE2 AS (
+    SELECT E.id, COALESCE(
         (CASE WHEN E.resignation_date < end_date THEN resignation_date ELSE end_date END) - start_date - C.days_declared + 1,
         (CASE WHEN E.resignation_date < end_date THEN resignation_date ELSE end_date END) - start_date + 1
-    )
-FROM Employees AS E LEFT JOIN CTE AS C ON E.id = C.id
-WHERE (E.resignation_date IS NULL OR E.resignation_date >= start_date)
-    AND (C.days_declared IS NULL OR C.days_declared < end_date - start_date + 1);
+    ) AS number_of_days
+    FROM Employees AS E LEFT JOIN CTE AS C ON E.id = C.id
+    WHERE (E.resignation_date IS NULL OR E.resignation_date >= start_date)
+        AND (C.days_declared IS NULL OR C.days_declared < end_date - start_date + 1)
+    ) SELECT * FROM CTE2 ORDER BY number_of_days DESC;
 $$ LANGUAGE sql;
 
 CREATE OR REPLACE FUNCTION view_booking_report
@@ -270,7 +282,7 @@ CREATE OR REPLACE FUNCTION view_booking_report
 RETURNS SETOF RECORD AS $$
     SELECT floor AS floor_number, room AS room_number, date, start_hour, CASE WHEN approver_id IS NULL THEN FALSE ELSE TRUE END AS is_approved 
     FROM Bookings 
-    WHERE date = start_date AND creator_id = employee_id;
+    WHERE date >= start_date AND creator_id = employee_id ORDER BY date ASC, start_hour ASC;
 $$ LANGUAGE sql;
 
 CREATE OR REPLACE FUNCTION view_future_meeting
@@ -303,5 +315,63 @@ BEGIN
                                     WHERE id = manager_id)
             ORDER BY b.date ASC, b.start_hour ASC;
     END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE PROCEDURE declare_health
+(id INT, date DATE, temperature NUMERIC(3, 1))
+AS $$
+BEGIN
+    IF (EXISTS (SELECT * FROM HealthDeclarations AS H WHERE H.id = declare_health.id AND H.date = declare_health.date)) THEN
+        UPDATE HealthDeclarations AS H SET temperature = declare_health.temperature WHERE H.id = declare_health.id AND H.date = declare_health.date;
+        RETURN;
+    END IF;
+    INSERT INTO HealthDeclarations VALUES (id, date, temperature);
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION contact_tracing
+(IN id INT, OUT employee_id INT)
+RETURNS SETOF INT AS $$
+DECLARE
+    cursor refcursor;
+    time INT := extract(HOUR FROM CURRENT_TIME);
+BEGIN
+    If (NOT EXISTS (SELECT * FROM HealthDeclarations AS H WHERE H.id = contact_tracing.id AND H.date = CURRENT_DATE)) THEN
+        RAISE EXCEPTION 'Employee % has not declared temperature for today', contact_tracing.id;
+    END IF;
+    IF ((SELECT H.temperature FROM HealthDeclarations AS H WHERE H.id = contact_tracing.id AND H.date = CURRENT_DATE) <= 37.5) THEN
+        RETURN;
+    END IF;
+    ALTER TABLE Attends DISABLE TRIGGER lock_attends;
+    DELETE FROM Bookings AS B 
+    WHERE ((B.date = CURRENT_DATE AND B.start_hour > time) OR (B.date > CURRENT_DATE)) AND B.creator_id = contact_tracing.id;
+    DELETE FROM Attends AS A
+    WHERE ((A.date = CURRENT_DATE AND A.start_hour > time) OR (A.date > CURRENT_DATE)) AND A.employee_id = contact_tracing.id;
+    OPEN cursor FOR
+        WITH CTE AS (
+            SELECT A.*
+            FROM Attends AS A NATURAL JOIN Bookings AS B
+            WHERE B.approver_id IS NOT NULL
+                AND ((A.date BETWEEN CURRENT_DATE - 3 AND CURRENT_DATE - 1) OR (A.date = CURRENT_DATE AND A.start_hour <= time))
+        ) SELECT DISTINCT A.employee_id
+        FROM CTE AS A JOIN CTE AS B
+            ON A.floor = B.floor
+                AND A.room = B.room
+                AND A.date = B.date
+                AND A.start_hour = B.start_hour
+                AND A.employee_id IS DISTINCT FROM B.employee_id
+        WHERE B.employee_id = contact_tracing.id;
+    LOOP
+        FETCH NEXT FROM cursor INTO employee_id;
+        EXIT WHEN NOT FOUND;
+        DELETE FROM Bookings AS B 
+        WHERE B.creator_id = contact_tracing.employee_id AND ((B.date BETWEEN CURRENT_DATE + 1 AND CURRENT_DATE + 7) OR (B.date = CURRENT_DATE AND B.start_hour > time));
+        DELETE FROM Attends AS A 
+        WHERE A.employee_id = contact_tracing.employee_id AND ((A.date BETWEEN CURRENT_DATE + 1 AND CURRENT_DATE + 7) OR (A.date = CURRENT_DATE AND A.start_hour > time));
+        RETURN NEXT;
+    END LOOP;
+    CLOSE cursor;
+    ALTER TABLE Attends ENABLE TRIGGER lock_attends;
 END;
 $$ LANGUAGE plpgsql;

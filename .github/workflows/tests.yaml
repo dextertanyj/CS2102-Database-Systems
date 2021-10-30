@@ -1,5 +1,5 @@
 name: unit-test-actions
-on: [push]
+on: [push, pull_request]
 jobs:
   runner-job:
     runs-on: ubuntu-latest
@@ -19,23 +19,40 @@ jobs:
     steps:
       - name: Checkout repository code
         uses: actions/checkout@v2
+
+      - name: Checkout repository code
+        uses: actions/checkout@v2
+        with:
+          ref: master
+
+      - name: Checkout to merge commit
+        run: git checkout --progress --force ${{ github.sha }}
+
       - name: Install PostgreSQL client
         run: |
           sudo apt-get update
           sudo apt-get install --yes postgresql-client
+
       - name: Setup database
         run: |
           psql -h localhost -U postgres -c 'CREATE DATABASE project;'
+        env:
+          PGPASSWORD: postgres
+
+      - name: Test schema
+        run: |
           psql -h localhost -U postgres -d project -f schema.sql
         env:
           PGPASSWORD: postgres
-      - name: Setup python
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.8
-      - name: Install requirements
+
+      - name: Test procedures
         run: |
-          pip install -r requirements.txt
-      - name: Execute test script
+          psql -h localhost -U postgres -d project -f proc.sql
+        env:
+          PGPASSWORD: postgres
+                
+      - name: Test triggers
         run: |
-          pytest -s
+          psql -h localhost -U postgres -d project -f trigger.sql
+        env:
+          PGPASSWORD: postgres
