@@ -1127,7 +1127,7 @@ SELECT COUNT(*) FROM Attends; -- Returns 3
 CALL reset();
 -- TEST END
 
--- TEST unbook_room_non_existant_booking_failure
+-- TEST unbook_room_non_existent_booking_failure
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -1158,7 +1158,7 @@ SELECT COUNT(*) FROM Attends; -- Returns 3
 CALL reset();
 -- TEST END
 
--- TEST unbook_room_non_existant_room_failure
+-- TEST unbook_room_non_existent_room_failure
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -1915,6 +1915,313 @@ Returns:
            1 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1
            4 |     1 |    1 | CURRENT_DATE     | CURRENT_HOUR - 1
            2 |     1 |    1 | CURRENT_DATE + 8 |                2
+*/
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST join_meeting
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Superior 2', 'Contact 2', 'superior2@company.com', NULL, 1),
+    (3, 'Junior 3', 'Contact 3', 'junior3@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2);
+INSERT INTO Managers VALUES (1);
+INSERT INTO Seniors VALUES (2);
+INSERT INTO Juniors VALUES (3);
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 2);
+COMMIT;
+INSERT INTO Bookings VALUES 
+    (1, 1, CURRENT_DATE + 1, 10, 2),
+    (1, 1, CURRENT_DATE + 1, 11, 2);
+ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+ALTER TABLE Attends DISABLE TRIGGER employee_join_only_future_meetings_trigger;
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE - 1, 10, 2);
+ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+ALTER TABLE Attends ENABLE TRIGGER employee_join_only_future_meetings_trigger;
+-- TEST
+/* All tests below should return the tables below unless otherwise mentioned:
+
+ employee_id | floor | room |       date       | start_hour
+-------------+-------+------+------------------+------------
+           1 |     1 |    1 | CURRENT_DATE + 1 |         10
+           2 |     1 |    1 | CURRENT_DATE + 1 |         10
+(2 rows)
+
+ employee_id | floor | room |       date       | start_hour
+-------------+-------+------+------------------+------------
+           1 |     1 |    1 | CURRENT_DATE + 1 |         11
+           2 |     1 |    1 | CURRENT_DATE + 1 |         11
+(2 rows)
+*/
+---- success
+CALL join_meeting(1, 1, CURRENT_DATE + 1, 10, 12, 1);
+SELECT * FROM Attends WHERE ROW(floor, room, date, start_hour) = (1, 1, CURRENT_DATE + 1, 10);
+SELECT * FROM Attends WHERE ROW(floor, room, date, start_hour) = (1, 1, CURRENT_DATE + 1, 11);
+---- failure: meeting full
+CALL join_meeting(1, 1, CURRENT_DATE + 1, 10, 12, 3);
+SELECT * FROM Attends WHERE ROW(floor, room, date, start_hour) = (1, 1, CURRENT_DATE + 1, 10);
+SELECT * FROM Attends WHERE ROW(floor, room, date, start_hour) = (1, 1, CURRENT_DATE + 1, 11);
+---- failure: already joined
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 5);
+CALL join_meeting(1, 1, CURRENT_DATE + 1, 10, 12, 1);
+SELECT * FROM Attends WHERE ROW(floor, room, date, start_hour) = (1, 1, CURRENT_DATE + 1, 10);
+SELECT * FROM Attends WHERE ROW(floor, room, date, start_hour) = (1, 1, CURRENT_DATE + 1, 11);
+---- failure: meeting non existent
+CALL join_meeting(2, 2, CURRENT_DATE + 1, 10, 12, 3);    
+SELECT * FROM Attends WHERE ROW(floor, room, date, start_hour) = (1, 1, CURRENT_DATE + 1, 10);
+SELECT * FROM Attends WHERE ROW(floor, room, date, start_hour) = (1, 1, CURRENT_DATE + 1, 11);
+---- failure: cannot join meeting in the past
+CALL join_meeting(1, 1, CURRENT_DATE - 1, 10, 11, 3);  
+SELECT * FROM Attends WHERE ROW(floor, room, date, start_hour) = (1, 1, CURRENT_DATE - 1, 10);
+/* Expected table:
+ employee_id | floor | room |       date       | start_hour
+-------------+-------+------+------------------+------------
+           2 |     1 |    1 | CURRENT_DATE + 1 |         10
+(1 row)
+*/
+---- failure: non existent employee
+CALL join_meeting(1, 1, CURRENT_DATE + 1, 10, 12, 100);
+SELECT * FROM Attends WHERE ROW(floor, room, date, start_hour) = (1, 1, CURRENT_DATE + 1, 10);
+SELECT * FROM Attends WHERE ROW(floor, room, date, start_hour) = (1, 1, CURRENT_DATE + 1, 11);
+---- failure: meeting approved
+UPDATE Bookings SET approver_id = 1 WHERE ROW (floor, room, date, start_hour) = (1, 1, CURRENT_DATE + 1, 10);
+CALL join_meeting(1, 1, CURRENT_DATE + 1, 10, 11, 3);  
+SELECT * FROM Attends WHERE ROW(floor, room, date, start_hour) = (1, 1, CURRENT_DATE + 1, 10);
+SELECT * FROM Attends WHERE ROW(floor, room, date, start_hour) = (1, 1, CURRENT_DATE + 1, 11);
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST leave_meeting
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Superior 2', 'Contact 2', 'superior2@company.com', NULL, 1),
+    (3, 'Junior 3', 'Contact 3', 'junior3@company.com', NULL, 1),
+    (4, 'Junior 4', 'Contact 4', 'junior4@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2);
+INSERT INTO Managers VALUES (1);
+INSERT INTO Seniors VALUES (2);
+INSERT INTO Juniors VALUES (3), (4);
+INSERT INTO MeetingRooms VALUES (1, 1, 'Meeting Room 1', 1);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 10);
+COMMIT;
+INSERT INTO Bookings VALUES 
+    (1, 1, CURRENT_DATE + 1, 10, 2),
+    (1, 1, CURRENT_DATE + 1, 11, 2);
+INSERT INTO Attends VALUES 
+    (3, 1, 1, CURRENT_DATE + 1, 10),
+    (3, 1, 1, CURRENT_DATE + 1, 11),
+    (4, 1, 1, CURRENT_DATE + 1, 10),
+    (4, 1, 1, CURRENT_DATE + 1, 11),
+    (1, 1, 1, CURRENT_DATE + 1, 10),
+    (1, 1, 1, CURRENT_DATE + 1, 11);
+ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+ALTER TABLE Attends DISABLE TRIGGER employee_join_only_future_meetings_trigger;
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE - 1, 10, 2);
+INSERT INTO Attends VALUES (4, 1, 1, CURRENT_DATE - 1, 10);
+ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+ALTER TABLE Attends ENABLE TRIGGER employee_join_only_future_meetings_trigger;
+-- TEST
+/* All tests below should return the tables below unless otherwise mentioned:
+ employee_id | floor | room |       date       | start_hour
+-------------+-------+------+------------------+------------
+           1 |     1 |    1 | CURRENT_DATE + 1 |         10
+           2 |     1 |    1 | CURRENT_DATE + 1 |         10
+           3 |     1 |    1 | CURRENT_DATE + 1 |         10
+(3 rows)
+ employee_id | floor | room |       date       | start_hour
+-------------+-------+------+------------------+------------
+           1 |     1 |    1 | CURRENT_DATE + 1 |         11
+           2 |     1 |    1 | CURRENT_DATE + 1 |         11
+           3 |     1 |    1 | CURRENT_DATE + 1 |         11
+*/
+---- success
+CALL leave_meeting(1, 1, CURRENT_DATE + 1, 10, 12, 4);
+SELECT * FROM Attends WHERE ROW(floor, room, date, start_hour) = (1, 1, CURRENT_DATE + 1, 10);
+SELECT * FROM Attends WHERE ROW(floor, room, date, start_hour) = (1, 1, CURRENT_DATE + 1, 11);
+---- failure: employee trying to leave does not attend meeting
+CALL leave_meeting(1, 1, CURRENT_DATE + 1, 10, 12, 4);
+SELECT * FROM Attends WHERE ROW(floor, room, date, start_hour) = (1, 1, CURRENT_DATE + 1, 10);
+SELECT * FROM Attends WHERE ROW(floor, room, date, start_hour) = (1, 1, CURRENT_DATE + 1, 11);
+---- failure: meeting non existent
+CALL leave_meeting(2, 2, CURRENT_DATE + 1, 10, 12, 3);
+SELECT * FROM Attends WHERE ROW(floor, room, date, start_hour) = (1, 1, CURRENT_DATE + 1, 10);
+SELECT * FROM Attends WHERE ROW(floor, room, date, start_hour) = (1, 1, CURRENT_DATE + 1, 11);
+---- failure: non existent employee
+CALL leave_meeting(1, 1, CURRENT_DATE + 1, 10, 12, 100);
+SELECT * FROM Attends WHERE ROW(floor, room, date, start_hour) = (1, 1, CURRENT_DATE + 1, 10);
+SELECT * FROM Attends WHERE ROW(floor, room, date, start_hour) = (1, 1, CURRENT_DATE + 1, 11);
+---- failure: meeting creator cannot leave
+CALL leave_meeting(1, 1, CURRENT_DATE + 1, 10, 12, 2);
+SELECT * FROM Attends WHERE ROW(floor, room, date, start_hour) = (1, 1, CURRENT_DATE + 1, 10);
+SELECT * FROM Attends WHERE ROW(floor, room, date, start_hour) = (1, 1, CURRENT_DATE + 1, 11);
+---- failure: cannot leave approve meeting
+UPDATE Bookings SET approver_id = 1 WHERE ROW (floor, room, date, start_hour) = (1, 1, CURRENT_DATE + 1, 10);
+CALL leave_meeting(1, 1, CURRENT_DATE + 1, 10, 11, 3);
+SELECT * FROM Attends WHERE ROW(floor, room, date, start_hour) = (1, 1, CURRENT_DATE + 1, 10);
+SELECT * FROM Attends WHERE ROW(floor, room, date, start_hour) = (1, 1, CURRENT_DATE + 1, 11);
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST approve_meeting_manager
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+INSERT INTO Departments VALUES (2, 'Department 2');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Superior 2', 'Contact 2', 'superior2@company.com', NULL, 1),
+    (3, 'Manager 3', 'Contact 3', 'manager3@company.com', NULL, 2);
+INSERT INTO Superiors VALUES (1), (2), (3);
+INSERT INTO Managers VALUES (1), (3);
+INSERT INTO Seniors VALUES (2);
+INSERT INTO MeetingRooms VALUES (1, 1, 'Meeting Room 1', 1);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 10);
+COMMIT;
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 10, 2);
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 11, 2);
+-- TEST
+/* All tests below should return the tables below unless otherwise mentioned:
+ floor | room | date | start_hour | creator_id | approver_id
+-------+------+------+------------+------------+-------------
+(0 rows)
+*/
+---- failure: approver from different department
+CALL approve_meeting(1, 1, CURRENT_DATE + 1, 10, 12, 3); 
+SELECT * FROM Bookings WHERE approver_id IS NOT NULL;
+---- failure: approver does not exist
+CALL approve_meeting(1, 1, CURRENT_DATE + 1, 10, 12, 5); 
+SELECT * FROM Bookings WHERE approver_id IS NOT NULL;
+---- failure: approver is not a manager
+CALL approve_meeting(1, 1, CURRENT_DATE + 1, 10, 12, 2); 
+SELECT * FROM Bookings WHERE approver_id IS NOT NULL;
+---- failure: approving meeting that does not exist
+CALL approve_meeting(2, 2, CURRENT_DATE + 1, 10, 12, 1); -- CALL still goes through
+SELECT * FROM Bookings WHERE approver_id IS NOT NULL;
+---- success
+CALL approve_meeting(1, 1, CURRENT_DATE + 1, 10, 12, 1); 
+SELECT * FROM Bookings WHERE approver_id IS NOT NULL;
+/*
+cs2102_project=# SELECT * FROM Bookings WHERE approver_id IS NOT NULL;
+ floor | room |       date       | start_hour | creator_id | approver_id
+-------+------+------------------+------------+------------+-------------
+     1 |    1 | CURRENT_DATE + 1 |         10 |          2 |           1
+     1 |    1 | CURRENT_DATE + 1 |         11 |          2 |           1
+(2 rows)
+*/
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST view_future_meeting
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Superior 2', 'Contact 2', 'superior2@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2);
+INSERT INTO Seniors VALUES (2);
+INSERT INTO Managers VALUES (1);
+INSERT INTO MeetingRooms VALUES (1, 1, 'Meeting Room 1', 1);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 10);
+COMMIT;
+ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+ALTER TABLE Attends DISABLE TRIGGER employee_join_only_future_meetings_trigger;
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE - 1, 10, 2);
+ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+ALTER TABLE Attends ENABLE TRIGGER employee_join_only_future_meetings_trigger;
+INSERT INTO Bookings VALUES
+    (1, 1, CURRENT_DATE + 1, 11, 1),
+    (1, 1, CURRENT_DATE + 1, 10, 1),
+    (1, 1, CURRENT_DATE + 2, 10, 2),
+    (1, 1, CURRENT_DATE + 2, 11, 2);
+INSERT INTO Attends VALUES
+    (2, 1, 1, CURRENT_DATE + 1, 11),
+    (2, 1, 1, CURRENT_DATE + 1, 10);
+UPDATE Bookings SET approver_id = 1 WHERE date = CURRENT_DATE + 1;
+-- TEST
+SELECT * FROM Attends WHERE employee_id = 2;
+/* Expected: 
+ employee_id | floor | room |       date       | start_hour
+-------------+-------+------+------------------+------------
+           2 |     1 |    1 | CURRENT_DATE - 1 |         10
+           2 |     1 |    1 | CURRENT_DATE + 1 |         10
+           2 |     1 |    1 | CURRENT_DATE + 1 |         11
+           2 |     1 |    1 | CURRENT_DATE + 1 |         11
+           2 |     1 |    1 | CURRENT_DATE + 1 |         10
+(4 rows)
+*/
+SELECT * FROM view_future_meeting(CURRENT_DATE, 2);
+/* Expected: 
+ floor | room |       date       | start_hour
+-------+------+------------------+------------
+     1 |    1 | CURRENT_DATE + 1 |         10
+     1 |    1 | CURRENT_DATE + 1 |         11
+(2 rows)
+*/
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST view_manager_report
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1),
+    (2, 'Superior 2', 'Contact 2', 'superior2@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1), (2);
+INSERT INTO Seniors VALUES (2);
+INSERT INTO Managers VALUES (1);
+INSERT INTO MeetingRooms VALUES (1, 1, 'Meeting Room 1', 1);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 10);
+COMMIT;
+ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
+ALTER TABLE Attends DISABLE TRIGGER employee_join_only_future_meetings_trigger;
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE - 1, 10, 2);
+ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
+ALTER TABLE Attends ENABLE TRIGGER employee_join_only_future_meetings_trigger;
+INSERT INTO Bookings VALUES
+    (1, 1, CURRENT_DATE + 1, 11, 1),
+    (1, 1, CURRENT_DATE + 1, 10, 1),
+    (1, 1, CURRENT_DATE + 2, 10, 2),
+    (1, 1, CURRENT_DATE + 2, 11, 2);
+UPDATE Bookings SET approver_id = 1 WHERE ROW(date, start_hour) = (CURRENT_DATE + 2, 11);
+-- TEST
+SELECT * FROM Bookings;
+/* Expected:
+ floor | room |       date       | start_hour | creator_id | approver_id
+-------+------+------------------+------------+------------+-------------
+     1 |    1 | CURRENT_DATE - 1 |         10 |          2 |
+     1 |    1 | CURRENT_DATE + 1 |         11 |          1 |
+     1 |    1 | CURRENT_DATE + 1 |         10 |          1 |
+     1 |    1 | CURRENT_DATE + 1 |         10 |          2 |
+     1 |    1 | CURRENT_DATE + 1 |         11 |          2 |           1
+(5 rows)
+*/
+SELECT * FROM view_manager_report(CURRENT_DATE, 1);
+/* Expected:
+ floor | room |       date       | start_hour | creator_id | approver_id
+-------+------+------------------+------------+------------+-------------
+     1 |    1 | CURRENT_DATE + 1 |         10 |          1 |
+     1 |    1 | CURRENT_DATE + 1 |         11 |          1 |
+     1 |    1 | CURRENT_DATE + 1 |         10 |          2 |
+(3 rows)
 */
 -- AFTER TEST
 CALL reset();
