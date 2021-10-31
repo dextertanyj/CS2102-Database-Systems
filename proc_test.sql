@@ -2207,7 +2207,7 @@ SELECT * FROM Bookings;
 /* Expected:
  floor | room |       date       | start_hour | creator_id | approver_id
 -------+------+------------------+------------+------------+-------------
-     1 |    1 | CURRENT_DATE + 1 |         10 |          2 |
+     1 |    1 | CURRENT_DATE - 1 |         10 |          2 |
      1 |    1 | CURRENT_DATE + 1 |         11 |          1 |
      1 |    1 | CURRENT_DATE + 1 |         10 |          1 |
      1 |    1 | CURRENT_DATE + 1 |         10 |          2 |
