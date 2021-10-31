@@ -683,7 +683,7 @@ CREATE TRIGGER handle_resignation_trigger
 AFTER INSERT OR UPDATE OF resignation_date ON Employees
 FOR EACH ROW EXECUTE FUNCTION handle_resignation();
 
--- B-? Past bookings cannot be deleted for contact tracing purposes.
+-- B-16 Past bookings cannot be deleted for contact tracing purposes.
 CREATE OR REPLACE FUNCTION prevent_past_booking_removal()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -700,21 +700,7 @@ CREATE TRIGGER prevent_past_booking_removal_trigger
 BEFORE DELETE ON Bookings
 FOR EACH ROW EXECUTE FUNCTION prevent_past_booking_removal();
 
--- B-? Details of past bookings cannot be updated for contact tracing purposes.
-CREATE OR REPLACE FUNCTION prevent_past_booking_update()
-RETURNS TRIGGER AS $$
-BEGIN
-    RAISE EXCEPTION 'Unable to update past bookings.';
-END;
-$$ LANGUAGE plpgsql;
-
-DROP TRIGGER IF EXISTS prevent_past_booking_update_trigger ON Bookings;
-
-CREATE TRIGGER prevent_past_booking_update_trigger
-BEFORE UPDATE ON Bookings
-FOR EACH ROW EXECUTE FUNCTION prevent_past_booking_update();
-
--- A-? Past attendances cannot be deleted for contact tracing purposes.
+-- A-8 Past attendances cannot be deleted for contact tracing purposes.
 CREATE OR REPLACE FUNCTION prevent_past_attendance_removal()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -730,17 +716,3 @@ DROP TRIGGER IF EXISTS prevent_past_attendance_removal_trigger ON Attends;
 CREATE TRIGGER prevent_past_attendance_removal_trigger
 BEFORE DELETE ON Attends
 FOR EACH ROW EXECUTE FUNCTION prevent_past_attendance_removal();
-
--- A-? Details of past attendances cannot be updated for contact tracing purposes.
-CREATE OR REPLACE FUNCTION prevent_past_attendance_update()
-RETURNS TRIGGER AS $$
-BEGIN
-    RAISE EXCEPTION 'Unable to update past bookings.';
-END;
-$$ LANGUAGE plpgsql;
-
-DROP TRIGGER IF EXISTS prevent_past_attendance_update_trigger ON Attends;
-
-CREATE TRIGGER prevent_past_attendance_update_trigger
-BEFORE UPDATE ON Attends
-FOR EACH ROW EXECUTE FUNCTION prevent_past_attendance_update();
