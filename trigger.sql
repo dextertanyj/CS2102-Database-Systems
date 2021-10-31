@@ -326,7 +326,7 @@ DROP TRIGGER IF EXISTS check_resigned_health_declaration_trigger ON HealthDeclar
 
 CREATE TRIGGER check_resigned_health_declaration_trigger
 BEFORE INSERT OR UPDATE ON HealthDeclarations
-FOR EACH ROW EXECUTE FUNCTION check_resigned_health_delcaration();
+FOR EACH ROW EXECUTE FUNCTION check_resigned_health_declaration();
 
 -- A-5 When an employee resigns, they are no longer allowed to join any booked meetings.
 CREATE OR REPLACE FUNCTION check_resigned_attends() RETURNS TRIGGER AS $$
