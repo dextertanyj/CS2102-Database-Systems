@@ -322,7 +322,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS check_resigned_health_delcaration_trigger ON HealthDeclarations;
+DROP TRIGGER IF EXISTS check_resigned_health_declaration_trigger ON HealthDeclarations;
 
 CREATE TRIGGER check_resigned_health_declaration_trigger
 BEFORE INSERT OR UPDATE ON HealthDeclarations
