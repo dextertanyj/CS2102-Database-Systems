@@ -517,27 +517,6 @@ CREATE TRIGGER employee_join_only_future_meetings_trigger
 BEFORE INSERT OR UPDATE ON Attends
 FOR EACH ROW EXECUTE FUNCTION employee_join_only_future_meetings_trigger();
 
--- H-7 A health declaration cannot be made for any date other than the current date.
--- H-8 Past health declarations cannot be modified.
-CREATE OR REPLACE FUNCTION health_declaration_date_check()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF (NEW.date <> CURRENT_DATE) THEN
-        RAISE EXCEPTION 'Health declaration must be for today';
-    END IF;
-    IF (TG_OP = 'UPDATE' AND OLD.date <> CURRENT_DATE) THEN
-        RAISE EXCEPTION 'Unable to ammend past health declaration records';
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-DROP TRIGGER IF EXISTS health_declaration_date_check_trigger ON HealthDeclarations;
-
-CREATE TRIGGER health_declaration_date_check_trigger
-BEFORE INSERT OR UPDATE ON HealthDeclarations
-FOR EACH ROW EXECUTE FUNCTION health_declaration_date_check();
-
 -- MR-4 Each meeting room must have at least one relevant capacities entry.
 CREATE OR REPLACE FUNCTION check_meeting_room_updates()
 RETURNS TRIGGER AS $$
