@@ -1620,6 +1620,52 @@ SELECT * FROM Updates ORDER BY date, floor, room; -- Returns NULL
 CALL reset();
 -- END TEST
 
+-- TEST Update Capacities Failure
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
+COMMIT;
+BEGIN TRANSACTION;
+INSERT INTO MeetingRooms VALUES
+    (1, 1, 'Room 1-1', 1),
+    (2, 2, 'Room 2-2', 1);
+INSERT INTO Updates VALUES
+    (1, 1, 1, CURRENT_DATE + 1, 1),
+    (1, 2, 2, CURRENT_DATE, 1);
+COMMIT;
+-- TEST
+UPDATE Updates SET floor = 2, room = 2 WHERE floor = 1 AND room = 1;
+SELECT * FROM Updates ORDER BY date, floor, room; -- Returns (1, 1, 1, CURRENT_DATE + 1, 1), (1, 2, 2, CURRENT_DATE, 1)
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
+-- TEST Delete Success
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
+COMMIT;
+BEGIN TRANSACTION;
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE + 1, 1);
+COMMIT;
+-- TEST
+DELETE FROM MeetingRooms WHERE floor = 1 AND room = 1;
+SELECT * FROM Updates ORDER BY date, floor, room; -- Returns NULL
+-- AFTER TEST
+CALL reset();
+-- END TEST
+
 -- TEST Trigger B-9: approval_for_future_meetings_only_allow_future_meeting_bookings
 -- BEFORE TEST
 CALL reset();

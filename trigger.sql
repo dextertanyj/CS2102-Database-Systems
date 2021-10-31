@@ -110,9 +110,12 @@ FOR EACH ROW EXECUTE FUNCTION check_covering_superior();
 
 -- Delete Cases
 
--- Delete from Junior or Superior -> Must exist in either Juniors or Superiors
+-- Delete from Junior or Superior -> Either does not exist in Employees or must exist in either Juniors or Superiors
 CREATE OR REPLACE FUNCTION existing_employee_covering_check() RETURNS TRIGGER AS $$
 BEGIN
+    IF (SELECT id FROM Employees WHERE id = OLD.id) IS NULL THEN
+        RETURN COALESCE(NEW, OLD);
+    END IF;
     IF OLD.id NOT IN (SELECT id FROM Superiors UNION SELECT id FROM Juniors) THEN
         RAISE EXCEPTION 'Employee % does not have a rank', OLD.id;
     END IF;
@@ -134,7 +137,7 @@ AFTER UPDATE OR DELETE ON Superiors
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION existing_employee_covering_check();
 
--- Delete from Manager or Senior -> Either does not exist in Superior or must exist in either Seniors or Managers
+-- Delete from Manager or Senior -> Either does not exist in Superiors or must exist in either Seniors or Managers
 CREATE OR REPLACE FUNCTION existing_superior_covering_check() RETURNS TRIGGER AS $$
 BEGIN
     -- If OLD employee is not in Superiors, then they must have been deleted from Superiors.
@@ -252,7 +255,7 @@ $$ LANGUAGE plpgsql;
 DROP TRIGGER IF EXISTS update_capacity_perms ON Updates;
 
 CREATE TRIGGER update_capacity_perms
-BEFORE INSERT ON Updates
+BEFORE INSERT OR UPDATE ON Updates
 FOR EACH ROW EXECUTE FUNCTION check_update_capacity_perms();
 
 -- C-4 A meeting room can only have its capacity updated for a date not in the past, i.e. in the present or the future.
@@ -268,7 +271,7 @@ $$ LANGUAGE plpgsql;
 DROP TRIGGER IF EXISTS update_capacity_not_in_past ON Updates;
 
 CREATE TRIGGER update_capacity_not_in_past
-BEFORE INSERT ON Updates
+BEFORE INSERT OR UPDATE ON Updates
 FOR EACH ROW EXECUTE FUNCTION check_update_capacity_time();
 
 -- B-12 When an employee resigns, they are no longer allowed to book any meetings.
@@ -539,7 +542,7 @@ BEFORE INSERT OR UPDATE ON HealthDeclarations
 FOR EACH ROW EXECUTE FUNCTION health_declaration_date_check();
 
 -- MR-4 Each meeting room must have at least one relevant capacities entry.
-CREATE OR REPLACE FUNCTION check_meeting_room_updates()
+CREATE OR REPLACE FUNCTION check_capacities_participation()
 RETURNS TRIGGER AS $$
 BEGIN
     IF(NOT EXISTS(SELECT * FROM Updates AS U WHERE U.floor = NEW.floor AND U.room = NEW.room)) THEN
@@ -549,12 +552,32 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS check_meeting_room_updates_trigger ON MeetingRooms;
+DROP TRIGGER IF EXISTS check_capacities_participation_trigger ON MeetingRooms;
 
-CREATE CONSTRAINT TRIGGER check_meeting_room_updates_trigger 
+CREATE CONSTRAINT TRIGGER check_capacities_participation_trigger 
 AFTER INSERT OR UPDATE ON MeetingRooms
 DEFERRABLE INITIALLY DEFERRED
-FOR EACH ROW EXECUTE FUNCTION check_meeting_room_updates();
+FOR EACH ROW EXECUTE FUNCTION check_capacities_participation();
+
+CREATE OR REPLACE FUNCTION check_existing_capacities_participation()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF (NOT EXISTS (SELECT * FROM MeetingRooms AS M WHERE M.floor = OLD.floor AND M.room = OLD.room)) THEN
+        RETURN COALESCE(NEW, OLD);
+    END IF;
+    IF (NOT EXISTS (SELECT * FROM Updates AS U WHERE U.floor = OLD.floor AND U.room = OLD.room)) THEN
+        RAISE EXCEPTION 'Meeting room (floor: %, room: %) does not have an assigned capacity.', OLD.floor, OLD.room;
+    END IF;
+    RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS check_existing_capacities_participation_trigger ON Updates;
+
+CREATE CONSTRAINT TRIGGER check_existing_capacities_participation_trigger 
+AFTER UPDATE OR DELETE ON Updates
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW EXECUTE FUNCTION check_existing_capacities_participation();
 
 -- C-2 If a meeting room has its capacity changed, all future meetings that exceed the new capacity will be removed.
 CREATE OR REPLACE FUNCTION check_future_meetings_on_capacity_change_trigger()
@@ -589,15 +612,19 @@ DECLARE
                             AND room = NEW.room);
                             
     current_room_count INT := (SELECT COUNT(*)
-                                FROM Attends 
-                                WHERE floor = NEW.floor
-                                AND room = NEW.room
-                                AND date = NEW.date
-                                AND start_hour = NEW.start_hour);
+                                FROM Attends AS A
+                                WHERE A.floor = NEW.floor
+                                AND A.room = NEW.room
+                                AND A.date = NEW.date
+                                AND A.start_hour = NEW.start_hour);
 BEGIN
+    IF room_capacity IS NULL THEN
+        RAISE EXCEPTION 'Meeting room does not have an effective capacity record.';
+    END IF;
     IF TG_OP = 'INSERT' AND current_room_count >= room_capacity THEN
         RAISE EXCEPTION 'Cannot attend booking due to meeting room capacity limit reached';
-    ELSIF TG_OP = 'UPDATE' AND current_room_count >= room_capacity AND (NEW.floor <> OLD.floor OR NEW.room <> OLD.room OR NEW.date <> OLD.date OR NEW.start_hour <> OLD.start_hour) THEN
+    END IF;
+    IF TG_OP = 'UPDATE' AND current_room_count >= room_capacity AND (NEW.floor <> OLD.floor OR NEW.room <> OLD.room OR NEW.date <> OLD.date OR NEW.start_hour <> OLD.start_hour) THEN
         RAISE EXCEPTION 'Cannot attend booking due to meeting room capacity limit reached';
     END IF;
     RETURN NEW;
