@@ -599,7 +599,7 @@ DECLARE
                                 AND A.start_hour = NEW.start_hour);
 BEGIN
     IF room_capacity IS NULL THEN
-        RAISE EXCEPTION 'Meeting room (floor: %, room: %) does not have an effective capacity record.';
+        RAISE EXCEPTION 'Meeting room (floor: %, room: %) does not have an effective capacity record.', NEW.floor, NEW.room;
     END IF;
     IF TG_OP = 'INSERT' AND current_room_count >= room_capacity THEN
         RAISE EXCEPTION 'Meeting room capacity has been reached.';
