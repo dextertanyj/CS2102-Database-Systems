@@ -10,19 +10,26 @@ RETURNS SETOF RECORD AS $$
     ) AS LatestRelevantUpdate;
 $$ LANGUAGE sql;
 
+CREATE OR REPLACE PROCEDURE TimeGuard
+(start_hour INT, end_hour INT) AS $$
+BEGIN
+    IF (start_hour >= end_hour) THEN
+        RAISE EXCEPTION 'Meeting time period is invalid.';
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
 /****************
 ***** BASIC *****
 ****************/
 
 CREATE OR REPLACE PROCEDURE add_department 
-(id INT, name VARCHAR(255)) 
-AS $$
+(id INT, name VARCHAR(255)) AS $$
     INSERT INTO Departments VALUES (id, name);
 $$ LANGUAGE sql;
 
 CREATE OR REPLACE PROCEDURE remove_department
-(id INT)
-AS $$
+(id INT) AS $$
 DECLARE
 BEGIN
     IF (NOT EXISTS (SELECT * FROM Departments AS D WHERE D.id = remove_department.id)) THEN
@@ -36,8 +43,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE PROCEDURE add_room
-(floor INT, room INT, name VARCHAR(255), capacity INT, manager_id INT, effective_date DATE)
-AS $$
+(floor INT, room INT, name VARCHAR(255), capacity INT, manager_id INT, effective_date DATE) AS $$
 DECLARE
     department_id INT := NULL;
 BEGIN
@@ -48,8 +54,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE PROCEDURE change_capacity
-(floor INT, room INT, capacity INT, manager_id INT, date DATE)
-AS $$
+(floor INT, room INT, capacity INT, manager_id INT, date DATE) AS $$
 BEGIN
     IF (EXISTS
         (SELECT * FROM Updates AS U
@@ -115,8 +120,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE PROCEDURE remove_employee
-(id INT, date Date)
-AS $$
+(id INT, date Date) AS $$
 BEGIN
     IF (NOT EXISTS(SELECT * FROM Employees AS E WHERE E.id = remove_employee.id)) THEN
         RAISE EXCEPTION 'Employee % not found.', id;
@@ -136,9 +140,7 @@ CREATE OR REPLACE FUNCTION search_room
 (IN required_capacity INT, IN date DATE, IN start_hour INT, IN end_hour INT, OUT floor INT, OUT room INT, OUT department_id INT, OUT capacity INT)
 RETURNS SETOF RECORD AS $$
 BEGIN
-    IF (start_hour >= end_hour) THEN
-        RAISE EXCEPTION 'Meeting time period is invalid.';
-    END IF;
+    CALL TimeGuard(start_hour, end_hour);
     IF (required_capacity < 1) THEN
         RAISE EXCEPTION 'Capacity should be greater than 0.';
     END IF;
@@ -158,9 +160,7 @@ CREATE OR REPLACE PROCEDURE book_room
 (floor INT, room INT, date DATE, start_hour INT, end_hour INT, employee_id INT)
 AS $$
 BEGIN
-    IF (start_hour >= end_hour) THEN
-        RAISE EXCEPTION 'Meeting time period is invalid.';
-    END IF;
+    CALL TimeGuard(start_hour, end_hour);
     WHILE start_hour < end_hour LOOP
         INSERT INTO Bookings VALUES (book_room.floor, book_room.room, book_room.date, book_room.start_hour, book_room.employee_id);
         start_hour := start_hour + 1;
@@ -174,9 +174,7 @@ AS $$
 DECLARE
     loop_hour INT := start_hour;
 BEGIN
-    IF (start_hour >= end_hour) THEN
-        RAISE EXCEPTION 'Meeting time period is invalid.';
-    END IF;
+    CALL TimeGuard(start_hour, end_hour);
     WHILE loop_hour < end_hour LOOP
         IF (NOT EXISTS 
             (SELECT * FROM Bookings AS B 
@@ -212,9 +210,7 @@ CREATE OR REPLACE PROCEDURE join_meeting
 (floor INT, room INT, date DATE, start_hour INT, end_hour INT, employee_id INT)
 AS $$
 BEGIN
-    IF (start_hour >= end_hour) THEN
-        RAISE EXCEPTION 'Meeting time period is invalid.';
-    END IF;
+    CALL TimeGuard(start_hour, end_hour);
     WHILE start_hour < end_hour LOOP
         INSERT INTO Attends VALUES (employee_id, floor, room, date, start_hour);
         start_hour := start_hour + 1;
@@ -228,9 +224,7 @@ AS $$
 DECLARE
     loop_hour INT := start_hour;
 BEGIN
-    IF (start_hour >= end_hour) THEN
-        RAISE EXCEPTION 'Meeting time period is invalid.';
-    END IF;
+    CALL TimeGuard(start_hour, end_hour);
     WHILE loop_hour < end_hour LOOP
         IF (NOT EXISTS 
             (SELECT * FROM Attends AS A
@@ -258,9 +252,7 @@ CREATE OR REPLACE PROCEDURE approve_meeting
 (floor INT, room INT, date DATE, start_hour INT, end_hour INT, manager_id INT)
 AS $$
 BEGIN
-    IF (start_hour >= end_hour) THEN
-        RAISE EXCEPTION 'Meeting time period is invalid.';
-    END IF;
+    CALL TimeGuard(start_hour, end_hour);
     WHILE start_hour < end_hour LOOP
         UPDATE Bookings AS B SET approver_id = manager_id
         WHERE B.floor = approve_meeting.floor
