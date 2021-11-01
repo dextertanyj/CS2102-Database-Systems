@@ -666,20 +666,22 @@ FOR EACH ROW EXECUTE FUNCTION lock_removed_department();
 -- E-7 When an employee resigns, the employee is removed from all future meetings, approved or otherwise.
 -- E-8 When an employee resigns, the employee has all their future booked meetings cancelled, approved or otherwise.
 -- E-9 When an employee resigns, all future approvals granted by the employee are revoked.
-CREATE OR REPLACE FUNCTION resigned_employee_cleanup()
+CREATE OR REPLACE FUNCTION handle_resignation()
 RETURNS TRIGGER AS $$
 BEGIN
     IF (NEW.resignation_date IS NOT NULL) THEN
         DELETE FROM Bookings AS B WHERE B.date > NEW.resignation_date AND B.creator_id = NEW.id;
         DELETE FROM Attends AS A WHERE A.date > NEW.resignation_date AND A.employee_id = NEW.id;
-        UPDATE Bookings AS B SET approver_id = NULL WHERE B.date > NEW.resignation_date AND B.approver_id = NEW.id;
+        UPDATE Bookings AS B SET approver_id = NULL 
+        WHERE (B.date > CURRENT_DATE OR (B.date = CURRENT_DATE AND B.start_hour > extract(HOUR FROM CURRENT_TIME)))
+            AND B.approver_id = NEW.id;
     END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS resigned_employee_cleanup_trigger ON Employees;
+DROP TRIGGER IF EXISTS handle_resignation_trigger ON Employees;
 
-CREATE TRIGGER resigned_employee_cleanup_trigger
+CREATE TRIGGER handle_resignation_trigger
 AFTER INSERT OR UPDATE OF resignation_date ON Employees
-FOR EACH ROW EXECUTE FUNCTION resigned_employee_cleanup();
+FOR EACH ROW EXECUTE FUNCTION handle_resignation();

@@ -1371,9 +1371,9 @@ INSERT INTO Bookings VALUES
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL);
 UPDATE Bookings SET approver_id = 2 WHERE floor = 1 AND room = 1;
--- ALTER TABLE Employees DISABLE TRIGGER resigned_employee_cleanup_trigger;
+-- ALTER TABLE Employees DISABLE TRIGGER handle_resignation_trigger;
 UPDATE Employees SET resignation_date = CURRENT_DATE WHERE id = 2;
--- ALTER TABLE Employees ENABLE TRIGGER resigned_employee_cleanup_trigger;
+-- ALTER TABLE Employees ENABLE TRIGGER handle_resignation_trigger;
 -- TEST
 UPDATE Bookings SET approver_id = NULL WHERE floor = 1 AND room = 1 AND start_hour = 1;
 UPDATE Bookings SET approver_id = 1 WHERE floor = 1 AND room = 1 AND start_hour = 2;
@@ -1406,9 +1406,9 @@ INSERT INTO Bookings VALUES
 UPDATE Bookings SET approver_id = 2 WHERE floor = 1 AND room = 1 AND start_hour = 1;
 UPDATE Bookings SET approver_id = 3 WHERE floor = 1 AND room = 1 AND start_hour = 2;
 UPDATE Bookings SET approver_id = 4 WHERE floor = 1 AND room = 1 AND start_hour = 3;
--- ALTER TABLE Employees DISABLE TRIGGER resigned_employee_cleanup_trigger;
+-- ALTER TABLE Employees DISABLE TRIGGER handle_resignation_trigger;
 UPDATE Employees SET resignation_date = CURRENT_DATE WHERE id = 1 OR id = 4;
--- ALTER TABLE Employees ENABLE TRIGGER resigned_employee_cleanup_trigger;
+-- ALTER TABLE Employees ENABLE TRIGGER handle_resignation_trigger;
 -- TEST
 ALTER TABLE Bookings DISABLE TRIGGER check_resignation_booking_create_approve_trigger;
 UPDATE Bookings SET approver_id = NULL WHERE floor = 1 AND room = 1 AND start_hour = 1; -- Exception
@@ -1924,6 +1924,7 @@ INSERT INTO Bookings VALUES
     (1, 1, CURRENT_DATE - 1, 3, 1, NULL),
     (1, 1, CURRENT_DATE - 1, 2, 2, NULL),
     (1, 1, CURRENT_DATE - 1, 4, 2, NULL),
+    (1, 1, CURRENT_DATE - 1, 6, 2, NULL), -- Approved
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL), -- Removed
     (1, 1, CURRENT_DATE + 1, 2, 2, NULL),
     (1, 1, CURRENT_DATE + 1, 3, 1, NULL), -- Approved, Removed
@@ -1955,6 +1956,7 @@ Returns:
      1 |    1 | CURRENT_DATE - 2 |          1 |          1 |            
      1 |    1 | CURRENT_DATE - 1 |          2 |          2 |            
      1 |    1 | CURRENT_DATE - 1 |          4 |          2 |           2
+     1 |    1 | CURRENT_DATE - 1 |          6 |          2 |           1
      1 |    1 | CURRENT_DATE + 1 |          2 |          2 |            
      1 |    1 | CURRENT_DATE + 1 |          4 |          2 |           2
      1 |    1 | CURRENT_DATE + 1 |          6 |          2 |            
@@ -1972,6 +1974,7 @@ Returns:
            1 |     1 |    1 | CURRENT_DATE - 2 |          1
            2 |     1 |    1 | CURRENT_DATE - 1 |          2
            2 |     1 |    1 | CURRENT_DATE - 1 |          4
+           2 |     1 |    1 | CURRENT_DATE - 1 |          6
            2 |     1 |    1 | CURRENT_DATE + 1 |          2
            2 |     1 |    1 | CURRENT_DATE + 1 |          4
            2 |     1 |    1 | CURRENT_DATE + 1 |          6
