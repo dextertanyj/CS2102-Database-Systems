@@ -354,24 +354,26 @@ RETURNS SETOF INT AS $$
 DECLARE
     cursor refcursor;
     time INT := extract(HOUR FROM CURRENT_TIME);
+    declaration_date DATE := NULL;
 BEGIN
-    If (NOT EXISTS (SELECT * FROM HealthDeclarations AS H WHERE H.id = contact_tracing.id AND H.date = CURRENT_DATE)) THEN
-        RAISE EXCEPTION 'Employee % has not declared temperature for today.', id;
+    If (NOT EXISTS (SELECT * FROM HealthDeclarations AS H WHERE H.id = contact_tracing.id ORDER BY date DESC LIMIT 1)) THEN
+        RAISE EXCEPTION 'Employee % does not have a declared temperature.', id;
     END IF;
-    IF ((SELECT H.temperature FROM HealthDeclarations AS H WHERE H.id = contact_tracing.id AND H.date = CURRENT_DATE) <= 37.5) THEN
+    IF ((SELECT H.temperature FROM HealthDeclarations AS H WHERE H.id = contact_tracing.id ORDER BY date DESC LIMIT 1) <= 37.5) THEN
         RETURN;
     END IF;
+    SELECT H.date INTO declaration_date FROM HealthDeclarations AS H WHERE H.id = contact_tracing.id ORDER BY date DESC LIMIT 1;
     ALTER TABLE Attends DISABLE TRIGGER lock_attends;
     DELETE FROM Bookings AS B 
-    WHERE ((B.date = CURRENT_DATE AND B.start_hour > time) OR (B.date > CURRENT_DATE)) AND B.creator_id = contact_tracing.id;
+    WHERE ((B.date = declaration_date AND B.start_hour > time) OR (B.date > declaration_date)) AND B.creator_id = contact_tracing.id;
     DELETE FROM Attends AS A
-    WHERE ((A.date = CURRENT_DATE AND A.start_hour > time) OR (A.date > CURRENT_DATE)) AND A.employee_id = contact_tracing.id;
+    WHERE ((A.date = declaration_date AND A.start_hour > time) OR (A.date > declaration_date)) AND A.employee_id = contact_tracing.id;
     OPEN cursor FOR
         WITH CTE AS (
             SELECT A.*
             FROM Attends AS A NATURAL JOIN Bookings AS B
             WHERE B.approver_id IS NOT NULL
-                AND ((A.date BETWEEN CURRENT_DATE - 3 AND CURRENT_DATE - 1) OR (A.date = CURRENT_DATE AND A.start_hour <= time))
+                AND ((A.date BETWEEN declaration_date - 3 AND declaration_date - 1) OR (A.date = declaration_date AND A.start_hour <= time))
         ) SELECT DISTINCT A.employee_id
         FROM CTE AS A JOIN CTE AS B
             ON A.floor = B.floor
@@ -384,9 +386,9 @@ BEGIN
         FETCH NEXT FROM cursor INTO employee_id;
         EXIT WHEN NOT FOUND;
         DELETE FROM Bookings AS B 
-        WHERE B.creator_id = contact_tracing.employee_id AND ((B.date BETWEEN CURRENT_DATE + 1 AND CURRENT_DATE + 7) OR (B.date = CURRENT_DATE AND B.start_hour > time));
+        WHERE B.creator_id = contact_tracing.employee_id AND ((B.date BETWEEN declaration_date + 1 AND declaration_date + 7) OR (B.date = declaration_date AND B.start_hour > time));
         DELETE FROM Attends AS A 
-        WHERE A.employee_id = contact_tracing.employee_id AND ((A.date BETWEEN CURRENT_DATE + 1 AND CURRENT_DATE + 7) OR (A.date = CURRENT_DATE AND A.start_hour > time));
+        WHERE A.employee_id = contact_tracing.employee_id AND ((A.date BETWEEN declaration_date + 1 AND declaration_date + 7) OR (A.date = declaration_date AND A.start_hour > time));
         RETURN NEXT;
     END LOOP;
     CLOSE cursor;
