@@ -1,12 +1,12 @@
 /******************************************************************************
 * E-5 Each employee must be one and only one of the three kinds of employees. *
 ******************************************************************************/
--- Non Overlap Constraints
+/* Non Overlap Constraints */
 -- Insert or update of Juniors -> Must not exist in Superiors
 CREATE OR REPLACE FUNCTION check_junior_overlap() RETURNS TRIGGER AS $$
 BEGIN
     IF NEW.id IN (SELECT id FROM Superiors) THEN
-        RAISE EXCEPTION 'Employee % already exists in Superiors', NEW.id;
+        RAISE EXCEPTION 'Employee % already exists in Superiors.', NEW.id;
     END IF;
     RETURN NEW;
 END;
@@ -22,7 +22,7 @@ FOR EACH ROW EXECUTE FUNCTION check_junior_overlap();
 CREATE OR REPLACE FUNCTION check_superior_overlap() RETURNS TRIGGER AS $$
 BEGIN
     IF NEW.id IN (SELECT id FROM Juniors) THEN
-        RAISE EXCEPTION 'Employee % already exists in Juniors', NEW.id;
+        RAISE EXCEPTION 'Employee % already exists in Juniors.', NEW.id;
     END IF;
     RETURN NEW;
 END;
@@ -38,7 +38,7 @@ FOR EACH ROW EXECUTE FUNCTION check_superior_overlap();
 CREATE OR REPLACE FUNCTION check_senior_overlap() RETURNS TRIGGER AS $$
 BEGIN
     IF NEW.id IN (SELECT id FROM Managers) THEN
-        RAISE EXCEPTION 'Employee % already exists in Managers', NEW.id;
+        RAISE EXCEPTION 'Employee % already exists in Managers.', NEW.id;
     END IF;
     RETURN NEW;
 END;
@@ -54,7 +54,7 @@ FOR EACH ROW EXECUTE FUNCTION check_senior_overlap();
 CREATE OR REPLACE FUNCTION check_manager_overlap() RETURNS TRIGGER AS $$
 BEGIN
     IF NEW.id IN (SELECT id FROM Seniors) THEN
-        RAISE EXCEPTION 'Employee % already exists in Seniors', NEW.id;
+        RAISE EXCEPTION 'Employee % already exists in Seniors.', NEW.id;
     END IF;
     RETURN NEW;
 END;
@@ -66,17 +66,14 @@ CREATE TRIGGER non_overlap_manager
 BEFORE INSERT OR UPDATE ON Managers
 FOR EACH ROW EXECUTE FUNCTION check_manager_overlap();
 
--- Covering Constraints
-
--- Insert Cases
-
+/* Covering Constraints - Insert Cases */
 -- Insert into Employees -> Must exist in either Juniors or Superiors
 CREATE OR REPLACE FUNCTION check_covering_employee() RETURNS TRIGGER AS $$
 BEGIN
 	IF NEW.id NOT IN (
         SELECT id FROM Juniors UNION
         SELECT id FROM Superiors) THEN
-		RAISE EXCEPTION 'Employee % must exist either as Junior, Senior or Manager', NEW.id;
+		RAISE EXCEPTION 'Employee % must exist either as a Junior, Senior or Manager.', NEW.id;
 	END IF;
     RETURN NEW;
 END;
@@ -95,7 +92,7 @@ BEGIN
 	IF NEW.id NOT IN (
         SELECT id FROM Seniors UNION
         SELECT id FROM Managers) THEN
-		RAISE EXCEPTION 'Superior % must exist either as Senior or Manager', NEW.id;
+		RAISE EXCEPTION 'Superior % must exist either as a Senior or Manager.', NEW.id;
 	END IF;
     RETURN NEW;
 END;
@@ -108,16 +105,15 @@ AFTER INSERT ON Superiors
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION check_covering_superior();
 
--- Delete Cases
-
+/* Covering Constraints - Delete Cases */
 -- Delete from Junior or Superior -> Either does not exist in Employees or must exist in either Juniors or Superiors
 CREATE OR REPLACE FUNCTION existing_employee_covering_check() RETURNS TRIGGER AS $$
 BEGIN
     IF (SELECT id FROM Employees WHERE id = OLD.id) IS NULL THEN
         RETURN COALESCE(NEW, OLD);
     END IF;
-    IF OLD.id NOT IN (SELECT id FROM Superiors UNION SELECT id FROM Juniors) THEN
-        RAISE EXCEPTION 'Employee % does not have a rank', OLD.id;
+    IF OLD.id NOT IN (SELECT id FROM Juniors UNION SELECT id FROM Superiors) THEN
+        RAISE EXCEPTION 'Employee % must exist either as a Junior, Senior or Manager.', OLD.id;
     END IF;
     RETURN COALESCE(NEW, OLD);
 END;
@@ -146,7 +142,7 @@ BEGIN
         RETURN COALESCE(NEW, OLD);
     END IF;
     IF OLD.id NOT IN (SELECT id FROM Seniors UNION SELECT id FROM Managers) THEN
-        RAISE EXCEPTION 'Employee % does not have a rank', OLD.id;
+        RAISE EXCEPTION 'Superior % must exist either as a Senior or Manager.', OLD.id;
     END IF;
     RETURN COALESCE(NEW, OLD);
 END;
@@ -177,7 +173,7 @@ DECLARE
 BEGIN
     SELECT H.temperature FROM HealthDeclarations AS H INTO temperature WHERE date = CURRENT_DATE AND id = NEW.employee_id;
     IF (temperature IS NOT NULL AND temperature > 37.5) THEN
-		RAISE EXCEPTION 'Unable to join meeting as employee is having a fever';
+		RAISE EXCEPTION 'Employee % is unable to join the meeting as they are having a fever.', NEW.employee_id;
 	END IF;
 	RETURN NEW;
 END;
@@ -211,23 +207,23 @@ BEGIN
             IF OLD.date >= (SELECT resignation_date FROM Employees WHERE id = OLD.employee_id) THEN
                 RETURN OLD;
             END IF;
-            RAISE EXCEPTION 'Booking (floor: %, room: %, date: %, start_hour: %) has already been approved.', 
+            RAISE EXCEPTION 'Booking (floor: %, room: %, date: %, time: %) has already been approved.', 
                 OLD.floor, OLD.room, OLD.date, OLD.start_hour;
         END IF;
         RETURN OLD;
     ELSIF TG_OP = 'UPDATE' THEN
         IF old_approver_id IS NOT NULL THEN
-            RAISE EXCEPTION 'Previous booking (floor: %, room: %, date: %, start_hour: %) has already been approved.', 
+            RAISE EXCEPTION 'Previous booking (floor: %, room: %, date: %, time: %) has already been approved.', 
                 OLD.floor, OLD.room, OLD.date, OLD.start_hour;
         END IF;
         IF new_approver_id IS NOT NULL THEN
-            RAISE EXCEPTION 'Incoming booking (floor: %, room: %, date: %, start_hour: %) has already been approved.', 
+            RAISE EXCEPTION 'Incoming booking (floor: %, room: %, date: %, time: %) has already been approved.', 
                 NEW.floor, NEW.room, NEW.date, NEW.start_hour;
         END IF;
         RETURN NEW;
     ELSE
         IF new_approver_id IS NOT NULL THEN
-            RAISE EXCEPTION 'Booking (floor: %, room: %, date: %, start_hour: %) has already been approved.', 
+            RAISE EXCEPTION 'Booking (floor: %, room: %, date: %, time: %) has already been approved.', 
                 NEW.floor, NEW.room, NEW.date, NEW.start_hour;           
         END IF;
         RETURN NEW;
@@ -238,7 +234,7 @@ $$ LANGUAGE plpgsql;
 DROP TRIGGER IF EXISTS lock_attends ON Attends;
 
 CREATE TRIGGER lock_attends
-BEFORE DELETE OR INSERT OR UPDATE ON Attends
+BEFORE INSERT OR UPDATE OR DELETE ON Attends
 FOR EACH ROW EXECUTE FUNCTION check_attends_change();
 
 -- C-1 A manager from the same department as the meeting room may change the meeting room capacity.
@@ -246,7 +242,7 @@ CREATE OR REPLACE FUNCTION check_update_capacity_perms() RETURNS TRIGGER AS $$
 BEGIN
     IF (SELECT department_id FROM Employees WHERE id = NEW.manager_id) <>
         (SELECT department_id FROM MeetingRooms WHERE floor = NEW.floor AND room = NEW.room) THEN
-        RAISE EXCEPTION 'Manager does not have permissions to update this room';
+        RAISE EXCEPTION 'Employee % does not have permissions to update the capacity of this meeting room.', NEW.manager_id;
     END IF;
     RETURN NEW;
 END;
@@ -262,7 +258,7 @@ FOR EACH ROW EXECUTE FUNCTION check_update_capacity_perms();
 CREATE OR REPLACE FUNCTION check_update_capacity_time() RETURNS TRIGGER AS $$
 BEGIN
     IF NEW.date < CURRENT_DATE THEN
-        RAISE EXCEPTION 'Meeting room capacity cannot be changed in the past';
+        RAISE EXCEPTION 'Meeting room capacity can only be updated for the future.';
     END IF;
     RETURN NEW;
 END;
@@ -281,7 +277,7 @@ DECLARE
 BEGIN
 	SELECT E.resignation_date INTO resignation_date FROM Employees AS E WHERE E.id = NEW.creator_id;
 	IF (resignation_date IS NOT NULL) THEN
-		RAISE EXCEPTION 'Unable to book meeting as employee has resigned';
+		RAISE EXCEPTION 'Employee % has resigned.', NEW.creator_id;
 	END IF ;
 	RETURN NEW;
 END;
@@ -300,7 +296,7 @@ DECLARE
 BEGIN
 	SELECT E.resignation_date INTO resignation_date FROM Employees AS E WHERE E.id = NEW.approver_id;
 	IF (resignation_date IS NOT NULL) THEN
-		RAISE EXCEPTION 'Unable to approve meeting as employee has resigned';
+		RAISE EXCEPTION 'Employee % has resigned.', NEW.approver_id;
 	END IF ;
 	RETURN NEW;
 END;
@@ -319,7 +315,7 @@ DECLARE
 BEGIN
 	SELECT E.resignation_date INTO resignation_date FROM Employees AS E WHERE E.id = NEW.id;
 	IF (resignation_date IS NOT NULL) THEN
-		RAISE EXCEPTION 'Unable to declare health status as employee has resigned';
+		RAISE EXCEPTION 'Employee % has resigned.', NEW.id;
 	END IF;
 	RETURN NEW;
 END;
@@ -338,7 +334,7 @@ DECLARE
 BEGIN
 	SELECT E.resignation_date INTO resignation_date FROM Employees AS E WHERE E.id = NEW.employee_id;
 	IF (resignation_date IS NOT NULL) THEN
-		RAISE EXCEPTION 'Employee attempting to attend meeting has resigned.';
+		RAISE EXCEPTION 'Employee % has resigned.', NEW.employee_id;
 	END IF;
 	RETURN NEW;
 END;
@@ -357,7 +353,7 @@ DECLARE
 BEGIN
 	SELECT E.resignation_date INTO resignation_date FROM Employees AS E WHERE E.id = NEW.manager_id;
 	IF (resignation_date IS NOT NULL) THEN
-		RAISE EXCEPTION 'Employee attempting to update meeting room capacity has resigned.';
+		RAISE EXCEPTION 'Employee % has resigned.', NEW.manager_id;
 	END IF;
 	RETURN NEW;
 END;
@@ -376,7 +372,7 @@ DECLARE
 BEGIN
     SELECT H.temperature FROM HealthDeclarations AS H INTO temperature WHERE date = CURRENT_DATE AND id = NEW.creator_id;
     IF (temperature IS NOT NULL AND temperature > 37.5) THEN
-		RAISE EXCEPTION 'Unable to book meeting as employee is having a fever';
+		RAISE EXCEPTION 'Employee % is having a fever.', NEW.creator_id;
 	END IF;
 	RETURN NEW;
 END;
@@ -385,7 +381,7 @@ $$ LANGUAGE plpgsql;
 DROP TRIGGER IF EXISTS check_fever_booking_trigger ON Bookings;
 
 CREATE TRIGGER check_fever_booking_trigger
-BEFORE INSERT OR UPDATE OF creator_id ON Bookings
+BEFORE INSERT OR UPDATE ON Bookings
 FOR EACH ROW EXECUTE FUNCTION check_fever_booking();
 
 -- B-5 The employee booking the room immediately joins the booked meeting.
@@ -394,7 +390,12 @@ RETURNS TRIGGER AS $$
 BEGIN
     IF (NEW.creator_id IS DISTINCT FROM OLD.creator_id) THEN
         IF (TG_OP = 'UPDATE') THEN
-            DELETE FROM Attends WHERE employee_id = OLD.creator_id AND floor = OLD.floor AND room = OLD.room AND date = OLD.date AND start_hour = OLD.start_hour;
+            DELETE FROM Attends 
+            WHERE employee_id = OLD.creator_id 
+                AND floor = OLD.floor 
+                AND room = OLD.room 
+                AND date = OLD.date 
+                AND start_hour = OLD.start_hour;
         END IF;
         IF (NOT EXISTS 
             (SELECT * 
@@ -431,7 +432,7 @@ BEGIN
             AND B.date = OLD.date 
             AND B.start_hour = OLD.start_hour)
     ) THEN
-        RAISE EXCEPTION 'Unable to update or remove employee attendance';
+        RAISE EXCEPTION 'Employee % cannot leave the meeting as they are the host.', OLD.employee_id;
     END IF;
     OLD = COALESCE(NEW, OLD);
     RETURN OLD;
@@ -453,7 +454,7 @@ BEGIN
         IS DISTINCT FROM 
         (SELECT department_id FROM MeetingRooms AS M WHERE M.floor = NEW.floor AND M.room = NEW.room))
     ) THEN 
-        RAISE EXCEPTION 'Manager does not have permissions to approve selected meeting';
+        RAISE EXCEPTION 'Employee % does not have permissions to approve this booking.', NEW.approver_id;
     END IF;
     RETURN NEW;
 END;
@@ -462,7 +463,7 @@ $$ LANGUAGE plpgsql;
 DROP TRIGGER IF EXISTS meeting_approver_department_check_trigger ON Bookings;
 
 CREATE TRIGGER meeting_approver_department_check_trigger
-BEFORE INSERT OR UPDATE OF approver_id ON Bookings
+BEFORE INSERT OR UPDATE ON Bookings
 FOR EACH ROW EXECUTE FUNCTION meeting_approver_department_check();
 
 -- B-4 A booking can only be made for future meetings.
@@ -470,7 +471,7 @@ CREATE OR REPLACE FUNCTION booking_date_check()
 RETURNS TRIGGER AS $$
 BEGIN
     IF ((NEW.date < CURRENT_DATE) OR (NEW.date = CURRENT_DATE AND NEW.start_hour <= extract(HOUR FROM CURRENT_TIME))) THEN
-        RAISE EXCEPTION 'Booking date and time must be in the future';
+        RAISE EXCEPTION 'Bookings can only be made for the future.';
     END IF;
     RETURN NEW;
 END;
@@ -489,7 +490,7 @@ DECLARE
     current_hours_into_the_day INT := DATE_PART('HOUR', CURRENT_TIMESTAMP);
 BEGIN
     IF (NEW.approver_id IS NOT NULL AND (NEW.date < CURRENT_DATE OR (NEW.date = CURRENT_DATE AND NEW.start_hour <= current_hours_into_the_day))) THEN
-        RAISE EXCEPTION 'Cannot approve meetings of the past';
+        RAISE EXCEPTION 'Approvals can only be given for future bookings.';
     END IF;
     RETURN NEW;
 END;
@@ -508,7 +509,7 @@ DECLARE
     current_hours_into_the_day INT := DATE_PART('HOUR', CURRENT_TIMESTAMP);
 BEGIN
     IF (NEW.date < CURRENT_DATE OR (NEW.date = CURRENT_DATE AND NEW.start_hour <= current_hours_into_the_day)) THEN
-        RAISE EXCEPTION 'Cannot join meetings in the past';
+        RAISE EXCEPTION 'Joining a meeting can only be done for future meetings.';
 END IF;
     RETURN NEW;
 END;
@@ -520,33 +521,12 @@ CREATE TRIGGER employee_join_only_future_meetings_trigger
 BEFORE INSERT OR UPDATE ON Attends
 FOR EACH ROW EXECUTE FUNCTION employee_join_only_future_meetings_trigger();
 
--- H-7 A health declaration cannot be made for any date other than the current date.
--- H-8 Past health declarations cannot be modified.
-CREATE OR REPLACE FUNCTION health_declaration_date_check()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF (NEW.date <> CURRENT_DATE) THEN
-        RAISE EXCEPTION 'Health declaration must be for today';
-    END IF;
-    IF (TG_OP = 'UPDATE' AND OLD.date <> CURRENT_DATE) THEN
-        RAISE EXCEPTION 'Unable to ammend past health declaration records';
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-DROP TRIGGER IF EXISTS health_declaration_date_check_trigger ON HealthDeclarations;
-
-CREATE TRIGGER health_declaration_date_check_trigger
-BEFORE INSERT OR UPDATE ON HealthDeclarations
-FOR EACH ROW EXECUTE FUNCTION health_declaration_date_check();
-
 -- MR-4 Each meeting room must have at least one relevant capacities entry.
 CREATE OR REPLACE FUNCTION check_capacities_participation()
 RETURNS TRIGGER AS $$
 BEGIN
     IF(NOT EXISTS(SELECT * FROM Updates AS U WHERE U.floor = NEW.floor AND U.room = NEW.room)) THEN
-        RAISE EXCEPTION 'Meeting room must have an assigned capacity';
+        RAISE EXCEPTION 'Meeting room (floor: %, room: %) does not have an assigned capacity.', NEW.floor, NEW.room;
     END IF;
     RETURN NEW;
 END;
@@ -619,13 +599,13 @@ DECLARE
                                 AND A.start_hour = NEW.start_hour);
 BEGIN
     IF room_capacity IS NULL THEN
-        RAISE EXCEPTION 'Meeting room does not have an effective capacity record.';
+        RAISE EXCEPTION 'Meeting room (floor: %, room: %) does not have an effective capacity record.', NEW.floor, NEW.room;
     END IF;
     IF TG_OP = 'INSERT' AND current_room_count >= room_capacity THEN
-        RAISE EXCEPTION 'Cannot attend booking due to meeting room capacity limit reached';
+        RAISE EXCEPTION 'Meeting room capacity has been reached.';
     END IF;
     IF TG_OP = 'UPDATE' AND current_room_count >= room_capacity AND (NEW.floor <> OLD.floor OR NEW.room <> OLD.room OR NEW.date <> OLD.date OR NEW.start_hour <> OLD.start_hour) THEN
-        RAISE EXCEPTION 'Cannot attend booking due to meeting room capacity limit reached';
+        RAISE EXCEPTION 'Meeting room capacity has been reached.';
     END IF;
     RETURN NEW;
 END;
@@ -650,7 +630,7 @@ BEGIN
     IF (resignation_date < OLD.date AND OLD.approver_id IS DISTINCT FROM NEW.approver_id) THEN
         RETURN NEW;
     END IF;
-    RAISE EXCEPTION 'Unable to modify approved booking';
+    RAISE EXCEPTION 'Unable to modify approved booking.';
 END;
 $$ LANGUAGE plpgsql;
 
@@ -666,7 +646,7 @@ CREATE OR REPLACE FUNCTION lock_removed_department()
 RETURNS TRIGGER AS $$
 BEGIN
     IF ((SELECT removal_date FROM Departments AS D WHERE D.id = NEW.department_id) IS NOT NULL) THEN
-        RAISE EXCEPTION 'Department % has already been removed', NEW.department_id;
+        RAISE EXCEPTION 'Department % has already been removed.', NEW.department_id;
     END IF;
     RETURN NEW;
 END;
@@ -675,32 +655,34 @@ $$ LANGUAGE plpgsql;
 DROP TRIGGER IF EXISTS lock_removed_department_employees_trigger ON Employees;
 
 CREATE TRIGGER lock_removed_department_employees_trigger
-BEFORE INSERT OR UPDATE OF department_id ON Employees
+BEFORE INSERT OR UPDATE ON Employees
 FOR EACH ROW EXECUTE FUNCTION lock_removed_department();
 
 DROP TRIGGER IF EXISTS lock_removed_department_meeting_rooms_trigger ON MeetingRooms;
 
 CREATE TRIGGER lock_removed_department_meeting_rooms_trigger
-BEFORE INSERT OR UPDATE OF department_id ON MeetingRooms
+BEFORE INSERT OR UPDATE ON MeetingRooms
 FOR EACH ROW EXECUTE FUNCTION lock_removed_department();
 
 -- E-7 When an employee resigns, the employee is removed from all future meetings, approved or otherwise.
 -- E-8 When an employee resigns, the employee has all their future booked meetings cancelled, approved or otherwise.
 -- E-9 When an employee resigns, all future approvals granted by the employee are revoked.
-CREATE OR REPLACE FUNCTION resigned_employee_cleanup()
+CREATE OR REPLACE FUNCTION handle_resignation()
 RETURNS TRIGGER AS $$
 BEGIN
     IF (NEW.resignation_date IS NOT NULL) THEN
         DELETE FROM Bookings AS B WHERE B.date > NEW.resignation_date AND B.creator_id = NEW.id;
         DELETE FROM Attends AS A WHERE A.date > NEW.resignation_date AND A.employee_id = NEW.id;
-        UPDATE Bookings AS B SET approver_id = NULL WHERE B.date > NEW.resignation_date AND B.approver_id = NEW.id;
+        UPDATE Bookings AS B SET approver_id = NULL 
+        WHERE (B.date > CURRENT_DATE OR (B.date = CURRENT_DATE AND B.start_hour > extract(HOUR FROM CURRENT_TIME)))
+            AND B.approver_id = NEW.id;
     END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS resigned_employee_cleanup_trigger ON Employees;
+DROP TRIGGER IF EXISTS handle_resignation_trigger ON Employees;
 
-CREATE TRIGGER resigned_employee_cleanup_trigger
-AFTER INSERT OR UPDATE OF resignation_date ON Employees
-FOR EACH ROW EXECUTE FUNCTION resigned_employee_cleanup();
+CREATE TRIGGER handle_resignation_trigger
+AFTER INSERT OR UPDATE ON Employees
+FOR EACH ROW EXECUTE FUNCTION handle_resignation();

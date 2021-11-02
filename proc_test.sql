@@ -547,10 +547,10 @@ CALL reset();
 * SEARCH ROOM *
 **************/
 
--- TEST search_room
+-- TEST
 -- BEFORE TEST
 CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1'), (2, 'Department 2'), (3, 'Department 3');
+INSERT INTO Departments VALUES (1, 'Department 1');
 BEGIN TRANSACTION;
 INSERT INTO Employees VALUES
     (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
@@ -561,7 +561,7 @@ BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES
     (1, 1, 'Room 1', 1),
     (1, 2, 'Room 2', 1),
-    (2, 1, 'Room 3', 2);
+    (2, 1, 'Room 3', 1);
 INSERT INTO Updates VALUES
     (1, 1, 1, CURRENT_DATE, 10),
     (1, 1, 2, CURRENT_DATE, 5),
@@ -571,10 +571,6 @@ INSERT INTO Bookings VALUES
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 3, 1, NULL);
-INSERT INTO Attends VALUES
-    (1, 1, 1, CURRENT_DATE + 1, 1),
-    (1, 1, 1, CURRENT_DATE + 1, 2),
-    (1, 1, 1, CURRENT_DATE + 1, 3);
 -- TEST
 SELECT search_room(10, CURRENT_DATE + 1, 4, 8); -- Returns (1, 1, 1, 10), (2, 1, 2, 10)
 SELECT search_room(5, CURRENT_DATE + 1, 4, 8); -- Returns (1, 2, 1, 5), (1, 1, 1, 10), (2, 1, 2, 10)
@@ -582,6 +578,67 @@ SELECT search_room(10, CURRENT_DATE + 1, 1, 4); -- Returns (2, 1, 2, 10)
 SELECT search_room(10, CURRENT_DATE + 1, 3, 4); -- Returns (2, 1, 2, 10)
 SELECT search_room(10, CURRENT_DATE + 1, 4, 5); -- Returns (1, 1, 1, 10), (2, 1, 2, 10)
 SELECT search_room(10, CURRENT_DATE + 2, 1, 3); -- Returns (1, 1, 1, 10), (2, 1, 2, 10)
+-- AFTER TEST
+CALL reset();
+-- TEST END
+
+-- TEST No Effective Capacity
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
+COMMIT;
+BEGIN TRANSACTION;
+INSERT INTO MeetingRooms VALUES
+    (1, 1, 'Room 1', 1),
+    (1, 2, 'Room 2', 1),
+    (2, 1, 'Room 3', 1);
+INSERT INTO Updates VALUES
+    (1, 1, 1, CURRENT_DATE, 10),
+    (1, 1, 2, CURRENT_DATE, 5),
+    (1, 2, 1, CURRENT_DATE + 5, 10);
+COMMIT;
+INSERT INTO Bookings VALUES 
+    (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
+    (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
+    (1, 1, CURRENT_DATE + 1, 3, 1, NULL);
+-- TEST
+SELECT search_room(5, CURRENT_DATE + 1, 4, 8); -- Returns (1, 1, 1, 10), (2, 1, 2, 10)
+-- AFTER TEST
+CALL reset();
+-- TEST END
+
+-- TEST Multiple Capacities
+-- BEFORE TEST
+CALL reset();
+INSERT INTO Departments VALUES (1, 'Department 1');
+BEGIN TRANSACTION;
+INSERT INTO Employees VALUES
+    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
+INSERT INTO Superiors VALUES (1);
+INSERT INTO Managers VALUES (1);
+COMMIT;
+BEGIN TRANSACTION;
+INSERT INTO MeetingRooms VALUES
+    (1, 1, 'Room 1', 1);
+ALTER TABLE Updates DISABLE TRIGGER update_capacity_not_in_past;
+INSERT INTO Updates VALUES
+    (1, 1, 1, CURRENT_DATE - 10, 20),
+    (1, 1, 1, CURRENT_DATE, 10),
+    (1, 1, 1, CURRENT_DATE + 2, 5);
+ALTER TABLE Updates ENABLE TRIGGER update_capacity_not_in_past;
+COMMIT;
+-- TEST
+SELECT search_room(25, CURRENT_DATE - 1, 1, 2); -- Returns NULL
+SELECT search_room(15, CURRENT_DATE - 1, 1, 2); -- Returns (1, 1, 1, 20)
+SELECT search_room(15, CURRENT_DATE + 1, 1, 2); -- Returns NULL
+SELECT search_room(10, CURRENT_DATE + 1, 1, 2); -- Returns (1, 1, 1, 10)
+SELECT search_room(10, CURRENT_DATE + 3, 1, 2); -- Returns NULL
+SELECT search_room(5, CURRENT_DATE + 3, 1, 2); -- Returns (1, 1, 1, 5)
 -- AFTER TEST
 CALL reset();
 -- TEST END

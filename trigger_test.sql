@@ -1348,139 +1348,6 @@ SELECT * FROM Bookings ORDER BY date, start_hour, floor, room; -- Returns (1, 1,
 CALL reset();
 -- END TEST
 
-/************************************************************************************
-* H-7 A health declaration cannot be made for any date other than the current date. *
-************************************************************************************/
-
--- TEST Insert Success
--- BEFORE TEST
-CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1');
-BEGIN TRANSACTION;
-INSERT INTO Employees VALUES
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
-INSERT INTO Superiors VALUES (1);
-INSERT INTO Managers VALUES (1);
-COMMIT;
--- TEST
-INSERT INTO HealthDeclarations VALUES (1, CURRENT_DATE, 37.0); -- Success
-SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (1, CURRENT_DATE, 37.0)
--- AFTER TEST
-CALL reset();
--- END TEST
-
--- TEST Update Success
--- BEFORE TEST
-CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1');
-BEGIN TRANSACTION;
-INSERT INTO Employees VALUES
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
-INSERT INTO Superiors VALUES (1);
-INSERT INTO Managers VALUES (1);
-COMMIT;
-INSERT INTO HealthDeclarations VALUES (1, CURRENT_DATE, 37.0);
--- TEST
-UPDATE HealthDeclarations SET temperature = 37.5 WHERE id = 1; -- Success
-SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (1, CURRENT_DATE, 37.5)
--- AFTER TEST
-CALL reset();
--- END TEST
-
--- TEST Insert Future Failure
--- BEFORE TEST
-CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1');
-BEGIN TRANSACTION;
-INSERT INTO Employees VALUES
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
-INSERT INTO Superiors VALUES (1);
-INSERT INTO Managers VALUES (1);
-COMMIT;
--- TEST
-INSERT INTO HealthDeclarations VALUES (1, CURRENT_DATE + 1, 37.0); -- Exception
-SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns NULL
--- AFTER TEST
-CALL reset();
--- END TEST
-
--- TEST Update Future Failure
--- BEFORE TEST
-CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1');
-BEGIN TRANSACTION;
-INSERT INTO Employees VALUES
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
-INSERT INTO Superiors VALUES (1);
-INSERT INTO Managers VALUES (1);
-COMMIT;
-INSERT INTO HealthDeclarations VALUES (1, CURRENT_DATE, 37.0);
--- TEST
-UPDATE HealthDeclarations SET date = CURRENT_DATE + 1 WHERE id = 1; -- Exception
-SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (1, CURRENT_DATE, 37.0)
--- AFTER TEST
-CALL reset();
--- END TEST
-
--- TEST Insert Past Failure
--- BEFORE TEST
-CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1');
-BEGIN TRANSACTION;
-INSERT INTO Employees VALUES
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
-INSERT INTO Superiors VALUES (1);
-INSERT INTO Managers VALUES (1);
-COMMIT;
--- TEST
-INSERT INTO HealthDeclarations VALUES (1, CURRENT_DATE - 1, 37.0); -- Exception
-SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns NULL
--- AFTER TEST
-CALL reset();
--- END TEST
-
--- TEST Update Past Failure
--- BEFORE TEST
-CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1');
-BEGIN TRANSACTION;
-INSERT INTO Employees VALUES
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
-INSERT INTO Superiors VALUES (1);
-INSERT INTO Managers VALUES (1);
-COMMIT;
-INSERT INTO HealthDeclarations VALUES (1, CURRENT_DATE, 37.0);
--- TEST
-UPDATE HealthDeclarations SET date = CURRENT_DATE - 1 WHERE id = 1; -- Exception
-SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (1, CURRENT_DATE, 37.0)
--- AFTER TEST
-CALL reset();
--- END TEST
-
-/***************************************************
-* H-8 Past health declarations cannot be modified. *
-***************************************************/
-
--- TEST Update Failure
--- BEFORE TEST
-CALL reset();
-INSERT INTO Departments VALUES (1, 'Department 1');
-BEGIN TRANSACTION;
-INSERT INTO Employees VALUES
-    (1, 'Manager 1', 'Contact 1', 'manager1@company.com', NULL, 1);
-INSERT INTO Superiors VALUES (1);
-INSERT INTO Managers VALUES (1);
-COMMIT;
-ALTER TABLE HealthDeclarations DISABLE TRIGGER health_declaration_date_check_trigger;
-INSERT INTO HealthDeclarations VALUES (1, CURRENT_DATE - 1, 37.0);
-ALTER TABLE HealthDeclarations ENABLE TRIGGER health_declaration_date_check_trigger;
--- TEST
-UPDATE HealthDeclarations SET temperature = 37.5, date = CURRENT_DATE WHERE date = CURRENT_DATE - 1; -- Exception
-SELECT * FROM HealthDeclarations ORDER BY id, date; -- Returns (1, CURRENT_DATE - 1, 37.0)
--- AFTER TEST
-CALL reset();
--- END TEST
-
 /***************************************************************************************************************************
 * B-14 A approved booked meeting can no longer have any of its details changed, except for the revocation of its approver. *
 ***************************************************************************************************************************/
@@ -1504,9 +1371,9 @@ INSERT INTO Bookings VALUES
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL);
 UPDATE Bookings SET approver_id = 2 WHERE floor = 1 AND room = 1;
--- ALTER TABLE Employees DISABLE TRIGGER resigned_employee_cleanup_trigger;
+-- ALTER TABLE Employees DISABLE TRIGGER handle_resignation_trigger;
 UPDATE Employees SET resignation_date = CURRENT_DATE WHERE id = 2;
--- ALTER TABLE Employees ENABLE TRIGGER resigned_employee_cleanup_trigger;
+-- ALTER TABLE Employees ENABLE TRIGGER handle_resignation_trigger;
 -- TEST
 UPDATE Bookings SET approver_id = NULL WHERE floor = 1 AND room = 1 AND start_hour = 1;
 UPDATE Bookings SET approver_id = 1 WHERE floor = 1 AND room = 1 AND start_hour = 2;
@@ -1539,9 +1406,9 @@ INSERT INTO Bookings VALUES
 UPDATE Bookings SET approver_id = 2 WHERE floor = 1 AND room = 1 AND start_hour = 1;
 UPDATE Bookings SET approver_id = 3 WHERE floor = 1 AND room = 1 AND start_hour = 2;
 UPDATE Bookings SET approver_id = 4 WHERE floor = 1 AND room = 1 AND start_hour = 3;
--- ALTER TABLE Employees DISABLE TRIGGER resigned_employee_cleanup_trigger;
+-- ALTER TABLE Employees DISABLE TRIGGER handle_resignation_trigger;
 UPDATE Employees SET resignation_date = CURRENT_DATE WHERE id = 1 OR id = 4;
--- ALTER TABLE Employees ENABLE TRIGGER resigned_employee_cleanup_trigger;
+-- ALTER TABLE Employees ENABLE TRIGGER handle_resignation_trigger;
 -- TEST
 ALTER TABLE Bookings DISABLE TRIGGER check_resignation_booking_create_approve_trigger;
 UPDATE Bookings SET approver_id = NULL WHERE floor = 1 AND room = 1 AND start_hour = 1; -- Exception
@@ -2057,6 +1924,7 @@ INSERT INTO Bookings VALUES
     (1, 1, CURRENT_DATE - 1, 3, 1, NULL),
     (1, 1, CURRENT_DATE - 1, 2, 2, NULL),
     (1, 1, CURRENT_DATE - 1, 4, 2, NULL),
+    (1, 1, CURRENT_DATE - 1, 6, 2, NULL), -- Approved
     (1, 1, CURRENT_DATE + 1, 1, 1, NULL), -- Removed
     (1, 1, CURRENT_DATE + 1, 2, 2, NULL),
     (1, 1, CURRENT_DATE + 1, 3, 1, NULL), -- Approved, Removed
@@ -2088,6 +1956,7 @@ Returns:
      1 |    1 | CURRENT_DATE - 2 |          1 |          1 |            
      1 |    1 | CURRENT_DATE - 1 |          2 |          2 |            
      1 |    1 | CURRENT_DATE - 1 |          4 |          2 |           2
+     1 |    1 | CURRENT_DATE - 1 |          6 |          2 |           1
      1 |    1 | CURRENT_DATE + 1 |          2 |          2 |            
      1 |    1 | CURRENT_DATE + 1 |          4 |          2 |           2
      1 |    1 | CURRENT_DATE + 1 |          6 |          2 |            
@@ -2105,6 +1974,7 @@ Returns:
            1 |     1 |    1 | CURRENT_DATE - 2 |          1
            2 |     1 |    1 | CURRENT_DATE - 1 |          2
            2 |     1 |    1 | CURRENT_DATE - 1 |          4
+           2 |     1 |    1 | CURRENT_DATE - 1 |          6
            2 |     1 |    1 | CURRENT_DATE + 1 |          2
            2 |     1 |    1 | CURRENT_DATE + 1 |          4
            2 |     1 |    1 | CURRENT_DATE + 1 |          6
