@@ -24,7 +24,6 @@ INSERT INTO Departments VALUES
 (9, 'Department 9', CURRENT_DATE),
 (10, 'Department 10', CURRENT_DATE);
 
-BEGIN TRANSACTION;
 INSERT INTO Employees VALUES
 (1, 'Junior 1', 'Contact 1', 'junior1@company.com', NULL, 1),
 (2, 'Junior 2', 'Contact 2', 'junior2@company.com', NULL, 1),
@@ -86,11 +85,13 @@ INSERT INTO Employees VALUES
 (58, 'Manager 58', 'Contact 58', 'manager58@company.com', CURRENT_DATE - 30, 2),
 (59, 'Manager 59', 'Contact 59', 'manager59@company.com', CURRENT_DATE - 30, 2),
 (60, 'Manager 60', 'Contact 60', 'manager60@company.com', CURRENT_DATE - 30, 2);
+
 INSERT INTO Juniors VALUES
 (1), (2), (3), (4), (5),
 (6), (7), (8), (9), (10),
 (31), (32), (33), (34), (35),
 (36), (37), (38), (39), (40);
+
 INSERT INTO Superiors VALUES
 (11), (12), (13), (14), (15),
 (16), (17), (18), (19), (20),
@@ -100,19 +101,19 @@ INSERT INTO Superiors VALUES
 (46), (47), (48), (49), (50),
 (51), (52), (53), (54), (55),
 (56), (57), (58), (59), (60);
+
 INSERT INTO Seniors VALUES
 (11), (12), (13), (14), (15),
 (16), (17), (18), (19), (20),
 (41), (42), (43), (44), (45),
 (46), (47), (48), (49), (50);
+
 INSERT INTO Managers VALUES
 (21), (22), (23), (24), (25),
 (26), (27), (28), (29), (30),
 (51), (52), (53), (54), (55),
 (56), (57), (58), (59), (60);
-COMMIT;
 
-BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES
 (1, 1, 'Room 1-1', 1),
 (1, 2, 'Room 1-2', 1),
@@ -124,6 +125,7 @@ INSERT INTO MeetingRooms VALUES
 (4, 2, 'Room 4-2', 2),
 (5, 1, 'Room 5-1', 2),
 (5, 2, 'Room 5-2', 2);
+
 INSERT INTO Updates VALUES
 (21, 1, 1, CURRENT_DATE, 5),
 (21, 1, 2, CURRENT_DATE, 5),
@@ -135,7 +137,6 @@ INSERT INTO Updates VALUES
 (26, 4, 2, CURRENT_DATE, 10),
 (26, 5, 1, CURRENT_DATE + 30, 10),
 (26, 5, 2, CURRENT_DATE + 30, 10);
-COMMIT;
 
 INSERT INTO HealthDeclarations VALUES 
 (1, CURRENT_DATE, 37.0),
@@ -152,21 +153,20 @@ INSERT INTO HealthDeclarations VALUES
 (22, CURRENT_DATE, 37.0),
 (23, CURRENT_DATE, 37.0),
 (24, CURRENT_DATE, 37.6),
-(25, CURRENT_DATE, 37.6);
--- (7, CURRENT_DATE - 1, 37.0),
--- (8, CURRENT_DATE + 1, 37.0),
--- (9, CURRENT_DATE - 1, 37.6),
--- (10, CURRENT_DATE + 1, 37.6),
--- (17, CURRENT_DATE - 1, 37.0),
--- (18, CURRENT_DATE + 1, 37.0),
--- (19, CURRENT_DATE - 1, 37.6),
--- (20, CURRENT_DATE + 1, 37.6),
--- (27, CURRENT_DATE - 1, 37.0),
--- (28, CURRENT_DATE + 1, 37.0),
--- (29, CURRENT_DATE - 1, 37.6),
--- (30, CURRENT_DATE + 1, 37.6);
+(25, CURRENT_DATE, 37.6),
+(7, CURRENT_DATE - 1, 37.0),
+(8, CURRENT_DATE + 1, 37.0),
+(9, CURRENT_DATE - 1, 37.6),
+(10, CURRENT_DATE + 1, 37.6),
+(17, CURRENT_DATE - 1, 37.0),
+(18, CURRENT_DATE + 1, 37.0),
+(19, CURRENT_DATE - 1, 37.6),
+(20, CURRENT_DATE + 1, 37.6),
+(27, CURRENT_DATE - 1, 37.0),
+(28, CURRENT_DATE + 1, 37.0),
+(29, CURRENT_DATE - 1, 37.6),
+(30, CURRENT_DATE + 1, 37.6);
 
-ALTER TABLE Attends DISABLE TRIGGER lock_attends;
 INSERT INTO Bookings VALUES
 (1, 1, CURRENT_DATE + 1, 1, 11, NULL),
 (1, 1, CURRENT_DATE + 1, 2, 11, NULL),
@@ -192,4 +192,3 @@ INSERT INTO Bookings VALUES
 (4, 1, CURRENT_DATE + 2, 4, 16, 26),
 (4, 1, CURRENT_DATE + 2, 5, 16, 26),
 (4, 1, CURRENT_DATE + 2, 6, 16, 26);
-ALTER TABLE Attends ENABLE TRIGGER lock_attends;
