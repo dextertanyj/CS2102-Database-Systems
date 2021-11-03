@@ -300,6 +300,10 @@ SELECT * FROM Attends ORDER BY date, start_hour, floor, room, employee_id; -- Re
 CALL reset();
 -- END TEST
 
+/**********************************************************************************************************************************
+* A-4 Once approved, there should be no more changes in the participants and the participants will definitely attend the meeting. *
+**********************************************************************************************************************************/
+
 -- TEST A4 no changes to attendance in already approved bookings
 -- BEFORE TEST
 CALL reset();
@@ -363,6 +367,10 @@ DELETE FROM Attends WHERE employee_id = 8; -- Failure, employee should still att
 CALL reset();
 -- END TEST
 
+/***************************************************************************************************
+* C-1 A manager from the same department as the meeting room may change the meeting room capacity. *
+***************************************************************************************************/
+
 -- TEST C1 Only managers in same department have permissions to change capacity
 -- BEFORE TEST
 CALL reset();
@@ -390,6 +398,10 @@ INSERT INTO Updates VALUES (1, 3, 101, CURRENT_DATE, 10); -- Success
 -- AFTER TEST
 CALL reset();
 -- END TEST
+
+/************************************************************************************
+* C-4 A meeting room can only have its capacity updated for a date not in the past. *
+************************************************************************************/
 
 -- TEST C4 Meeting room can only have Updates not in the past (present and future only)
 -- BEFORE TEST
@@ -1533,7 +1545,11 @@ SELECT * FROM Updates ORDER BY date, floor, room; -- Returns NULL
 CALL reset();
 -- END TEST
 
--- TEST Trigger B-9: approval_for_future_meetings_only_allow_future_meeting_bookings
+/**************************************************************************
+* B-8 A manager can only approve a booked meeting if it is in the future. *
+**************************************************************************/
+
+-- approval_for_future_meetings_only_allow_future_meeting_bookings
 -- BEFORE TEST
 CALL reset();
 INSERT INTO Departments VALUES (1, 'Department 1');
@@ -1571,18 +1587,24 @@ INSERT INTO Managers VALUES (1);
 INSERT INTO Seniors VALUES (2);
 COMMIT;
 BEGIN TRANSACTION;
+ALTER TABLE Updates DISABLE TRIGGER update_capacity_not_in_past;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
-INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 1);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 2, 1);
+ALTER TABLE Updates ENABLE TRIGGER update_capacity_not_in_past;
 COMMIT;
 -- TEST
 INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE - 1, 1, 2, NULL);
-UPDATE Bookings SET approver_id = 1 WHERE ROW (floor, room, date, start_hour) = (1, 1, CURRENT_DATE - 1, 1); -- RAISE EXCEPTION: Cannot approve or update meetings of the past
+UPDATE Bookings SET approver_id = 1 WHERE ROW (floor, room, date, start_hour) = (1, 1, CURRENT_DATE - 1, 1); -- RAISE EXCEPTION: Approvals can only be given for future bookings.
 SELECT COUNT(*) from Bookings WHERE approver_id IS NOT NULL; -- Expected: 0
 -- AFTER TEST
 ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
 ALTER TABLE Attends ENABLE TRIGGER employee_join_only_future_meetings_trigger;
 CALL reset();
 -- END TEST
+
+/*************************************************
+* A-2 An employee can only join future meetings. *
+*************************************************/
 
 -- TEST employee_join_only_future_meetings_trigger_success
 -- BEFORE TEST
@@ -1622,16 +1644,22 @@ INSERT INTO Managers VALUES (1);
 INSERT INTO Seniors VALUES (2);
 COMMIT;
 BEGIN TRANSACTION;
+ALTER TABLE Updates DISABLE TRIGGER update_capacity_not_in_past;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
-INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 1);
+INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 2, 1);
+ALTER TABLE Updates ENABLE TRIGGER update_capacity_not_in_past;
 COMMIT;
 -- TEST
-INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE - 1, 1, 2, NULL); -- EXCEPTION RAISE: Cannot join meetings in the past
+INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE - 1, 1, 2, NULL); -- EXCEPTION RAISE: Joining a meeting can only be done for future meetings.
 SELECT COUNT(*) from Attends; -- Expected: 0
 -- AFTER TEST
 ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
 CALL reset();
 -- END TEST
+
+/********************************************************************************************************************
+* C-2 If a meeting room has its capacity changed, all future meetings that exceed the new capacity will be removed. *
+********************************************************************************************************************/
 
 -- TEST check_future_meetings_on_capacity_change_trigger_success
 CALL reset();
@@ -1648,6 +1676,7 @@ INSERT INTO Managers VALUES (1);
 INSERT INTO Seniors VALUES (2);
 INSERT INTO Juniors VALUES (3), (4), (5);
 COMMIT;
+ALTER TABLE Updates DISABLE TRIGGER update_capacity_not_in_past;
 BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 3, 8);
@@ -1664,8 +1693,13 @@ INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE, 2);
 SELECT COUNT(*) from Bookings; -- Expected: 0
 SELECT COUNT(*) from Attends; -- Expected: 0
 -- AFTER TEST
+ALTER TABLE Updates ENABLE TRIGGER update_capacity_not_in_past;
 CALL reset();
 -- END TEST
+
+/****************************************************************************************************
+* A-6 The number of people attending a meeting should not exceed the latest past capacity declared. *
+****************************************************************************************************/
 
 -- TEST check_meeting_capacity_trigger_insert
 -- BEFORE TEST
@@ -1683,8 +1717,10 @@ INSERT INTO Seniors VALUES (2);
 INSERT INTO Juniors VALUES (3), (4);
 COMMIT;
 BEGIN TRANSACTION;
+ALTER TABLE Updates DISABLE TRIGGER update_capacity_not_in_past;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 3);
+ALTER TABLE Updates ENABLE TRIGGER update_capacity_not_in_past;
 COMMIT;
 -- TEST
 INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 2, NULL);
@@ -1713,10 +1749,13 @@ INSERT INTO Seniors VALUES (2);
 INSERT INTO Juniors VALUES (3), (4), (5);
 COMMIT;
 BEGIN TRANSACTION;
+ALTER TABLE Updates DISABLE TRIGGER update_capacity_not_in_past;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1', 1);
 INSERT INTO MeetingRooms VALUES (1, 2, 'Room 2', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 3);
 INSERT INTO Updates VALUES (1, 1, 2, CURRENT_DATE - 1, 3);
+ALTER TABLE Updates ENABLE TRIGGER update_capacity_not_in_past;
+
 COMMIT;
 INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 1, 1, NULL);
 INSERT INTO Bookings VALUES (1, 2, CURRENT_DATE + 1, 1, 2, NULL);
