@@ -1757,8 +1757,10 @@ INSERT INTO Superiors VALUES (1), (2);
 INSERT INTO Managers VALUES (1);
 INSERT INTO Seniors VALUES (2);
 INSERT INTO Juniors VALUES (3);
+ALTER TABLE Updates DISABLE TRIGGER update_capacity_not_in_past;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 2);
+ALTER TABLE Updates ENABLE TRIGGER update_capacity_not_in_past;
 COMMIT;
 INSERT INTO Bookings VALUES 
     (1, 1, CURRENT_DATE + 1, 10, 2),
@@ -1836,8 +1838,10 @@ INSERT INTO Superiors VALUES (1), (2);
 INSERT INTO Managers VALUES (1);
 INSERT INTO Seniors VALUES (2);
 INSERT INTO Juniors VALUES (3), (4);
-INSERT INTO MeetingRooms VALUES (1, 1, 'Meeting Room 1', 1);
+ALTER TABLE Updates DISABLE TRIGGER update_capacity_not_in_past;
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 10);
+ALTER TABLE Updates ENABLE TRIGGER update_capacity_not_in_past;
 COMMIT;
 INSERT INTO Bookings VALUES 
     (1, 1, CURRENT_DATE + 1, 10, 2),
@@ -1911,8 +1915,10 @@ INSERT INTO Employees VALUES
 INSERT INTO Superiors VALUES (1), (2), (3);
 INSERT INTO Managers VALUES (1), (3);
 INSERT INTO Seniors VALUES (2);
-INSERT INTO MeetingRooms VALUES (1, 1, 'Meeting Room 1', 1);
+ALTER TABLE Updates DISABLE TRIGGER update_capacity_not_in_past;
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 10);
+ALTER TABLE Updates ENABLE TRIGGER update_capacity_not_in_past;
 COMMIT;
 INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 10, 2);
 INSERT INTO Bookings VALUES (1, 1, CURRENT_DATE + 1, 11, 2);
@@ -1960,8 +1966,10 @@ INSERT INTO Employees VALUES
 INSERT INTO Superiors VALUES (1), (2);
 INSERT INTO Seniors VALUES (2);
 INSERT INTO Managers VALUES (1);
-INSERT INTO MeetingRooms VALUES (1, 1, 'Meeting Room 1', 1);
+ALTER TABLE Updates DISABLE TRIGGER update_capacity_not_in_past;
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 10);
+ALTER TABLE Updates ENABLE TRIGGER update_capacity_not_in_past;
 COMMIT;
 ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
 ALTER TABLE Attends DISABLE TRIGGER employee_join_only_future_meetings_trigger;
@@ -2012,8 +2020,10 @@ INSERT INTO Employees VALUES
 INSERT INTO Superiors VALUES (1), (2);
 INSERT INTO Seniors VALUES (2);
 INSERT INTO Managers VALUES (1);
-INSERT INTO MeetingRooms VALUES (1, 1, 'Meeting Room 1', 1);
+ALTER TABLE Updates DISABLE TRIGGER update_capacity_not_in_past;
+INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
 INSERT INTO Updates VALUES (1, 1, 1, CURRENT_DATE - 1, 10);
+ALTER TABLE Updates ENABLE TRIGGER update_capacity_not_in_past;
 COMMIT;
 ALTER TABLE Bookings DISABLE TRIGGER booking_date_check_trigger;
 ALTER TABLE Attends DISABLE TRIGGER employee_join_only_future_meetings_trigger;
@@ -2034,8 +2044,8 @@ SELECT * FROM Bookings;
      1 |    1 | CURRENT_DATE - 1 |         10 |          2 |
      1 |    1 | CURRENT_DATE + 1 |         11 |          1 |
      1 |    1 | CURRENT_DATE + 1 |         10 |          1 |
-     1 |    1 | CURRENT_DATE + 1 |         10 |          2 |
-     1 |    1 | CURRENT_DATE + 1 |         11 |          2 |           1
+     1 |    1 | CURRENT_DATE + 2 |         10 |          2 |
+     1 |    1 | CURRENT_DATE + 2 |         11 |          2 |           1
 (5 rows)
 */
 SELECT * FROM view_manager_report(CURRENT_DATE, 1);
@@ -2044,7 +2054,7 @@ SELECT * FROM view_manager_report(CURRENT_DATE, 1);
 -------+------+------------------+------------+------------+-------------
      1 |    1 | CURRENT_DATE + 1 |         10 |          1 |
      1 |    1 | CURRENT_DATE + 1 |         11 |          1 |
-     1 |    1 | CURRENT_DATE + 1 |         10 |          2 |
+     1 |    1 | CURRENT_DATE + 2 |         10 |          2 |
 (3 rows)
 */
 -- AFTER TEST
