@@ -1082,18 +1082,15 @@ INSERT INTO Managers VALUES (3);
 COMMIT;
 BEGIN TRANSACTION;
 INSERT INTO MeetingRooms VALUES (1, 1, 'Room 1-1', 1);
-INSERT INTO Updates VALUES (3, 1, 1, CURRENT_DATE - 2, 10);
+INSERT INTO Updates VALUES (3, 1, 1, CURRENT_DATE, 10);
 COMMIT;
 INSERT INTO Bookings VALUES
-    (1, 1, CURRENT_DATE - 1, 1, 1, NULL),
-    (1, 1, CURRENT_DATE, 1, 1, NULL),
+    (1, 1, CURRENT_DATE + 1, 1, 1, NULL),
     (1, 1, CURRENT_DATE + 1, 2, 1, NULL),
     (1, 1, CURRENT_DATE + 2, 1, 1, NULL),
-    (1, 1, CURRENT_DATE + 3, 1, 1, 3),
-    (1, 1, CURRENT_DATE, 2, 2, NULL),
-    (1, 1, CURRENT_DATE, 3, 2, NULL);
+    (1, 1, CURRENT_DATE + 3, 1, 1, 3);
 -- TEST
-SELECT * FROM view_booking_report(CURRENT_DATE, 1); -- Expected: (1,1,CURRENT_DATE,1,f), (1,1,CURRENT_DATE + 1,2,f), (1,1,CURRENT_DATE + 2,1,f)
+SELECT * FROM view_booking_report(CURRENT_DATE, 1); -- Expected: (1,1,CURRENT_DATE,1,f), (1,1,CURRENT_DATE + 1,2,f), (1,1,CURRENT_DATE + 2,1,f), (1,1,CURRENT_DATE + 3, 1, t)
 -- AFTER TEST
 ALTER TABLE Bookings ENABLE TRIGGER booking_date_check_trigger;
 ALTER TABLE Attends ENABLE TRIGGER lock_attends;
