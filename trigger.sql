@@ -601,10 +601,7 @@ BEGIN
     IF room_capacity IS NULL THEN
         RAISE EXCEPTION 'Meeting room (floor: %, room: %) does not have an effective capacity record.', NEW.floor, NEW.room;
     END IF;
-    IF TG_OP = 'INSERT' AND current_room_count >= room_capacity THEN
-        RAISE EXCEPTION 'Meeting room capacity has been reached.';
-    END IF;
-    IF TG_OP = 'UPDATE' AND current_room_count >= room_capacity AND (NEW.floor <> OLD.floor OR NEW.room <> OLD.room OR NEW.date <> OLD.date OR NEW.start_hour <> OLD.start_hour) THEN
+    IF current_room_count > room_capacity THEN
         RAISE EXCEPTION 'Meeting room capacity has been reached.';
     END IF;
     RETURN NEW;
@@ -614,7 +611,7 @@ $$ LANGUAGE plpgsql;
 DROP TRIGGER IF EXISTS check_meeting_capacity_trigger ON Attends;
 
 CREATE TRIGGER check_meeting_capacity_trigger
-BEFORE INSERT OR UPDATE ON Attends
+AFTER INSERT OR UPDATE ON Attends
 FOR EACH ROW EXECUTE FUNCTION check_meeting_capacity_trigger();
 
 -- B-14 A approved booked meeting can no longer have any of its details changed, except for the revocation of its approver.
