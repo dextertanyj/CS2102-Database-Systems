@@ -92,8 +92,7 @@ CREATE TABLE Attends(
     room INTEGER,
     date DATE,
     start_hour INTEGER,
-    PRIMARY KEY (employee_id, floor, room, date, start_hour),
-    UNIQUE (employee_id, date, start_hour),
+    PRIMARY KEY (employee_id, date, start_hour),
     FOREIGN KEY (employee_id) REFERENCES Employees (id),
     FOREIGN KEY (floor, room , date, start_hour) REFERENCES Bookings (floor, room, date, start_hour) ON DELETE CASCADE
 );
