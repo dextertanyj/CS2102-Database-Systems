@@ -20,9 +20,9 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE PROCEDURE CheckFuture
-(date DATE, time INT) AS $$
+(date DATE, start_hour INT) AS $$
 BEGIN
-    IF date < CURRENT_DATE OR date == CURRENT_DATE AND time <= extract(HOUR FROM CURRENT_TIME) THEN
+    IF date < CURRENT_DATE OR date == CURRENT_DATE AND start_hour <= extract(HOUR FROM CURRENT_TIME) THEN
         RAISE EXCEPTION 'Date and time must be in the future.';
     END IF;
 END;
