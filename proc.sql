@@ -19,6 +19,15 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE PROCEDURE CheckFuture
+(date DATE, time INT) AS $$
+BEGIN
+    IF date < CURRENT_DATE OR date == CURRENT_DATE AND time <= extract(HOUR FROM CURRENT_TIME) THEN
+        RAISE EXCEPTION 'Date and time must be in the future.';
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
 /****************
 ***** BASIC *****
 ****************/
@@ -175,6 +184,7 @@ DECLARE
     loop_hour INT := start_hour;
 BEGIN
     CALL TimeGuard(start_hour, end_hour);
+    CALL CheckFuture(date, start_hour);
     WHILE loop_hour < end_hour LOOP
         IF (NOT EXISTS 
             (SELECT * FROM Bookings AS B 
@@ -225,6 +235,7 @@ DECLARE
     loop_hour INT := start_hour;
 BEGIN
     CALL TimeGuard(start_hour, end_hour);
+    CALL CheckFuture(date, start_hour);
     WHILE loop_hour < end_hour LOOP
         IF (NOT EXISTS 
             (SELECT * FROM Attends AS A
