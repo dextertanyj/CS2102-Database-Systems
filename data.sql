@@ -12,287 +12,278 @@ TRUNCATE
     Updates 
 CASCADE;
 
+-- contact_tracing
+-- The employee is removed from all future meeting room booking, approved or not.
+/* 
+    'SELECT * FROM contact_tracing(1);' -> junior 1 remains in 'SELECT * FROM attends;'
+    'SELECT * FROM contact_tracing(2);' -> junior 2 is removed from 'SELECT * FROM attends;'
+*/
 INSERT INTO Departments VALUES
-(1, 'Department 1', NULL),
-(2, 'Department 2', NULL),
-(3, 'Department 3', NULL),
-(4, 'Department 4', NULL),
-(5, 'Department 5', NULL),
-(6, 'Department 6', CURRENT_DATE),
-(7, 'Department 7', CURRENT_DATE),
-(8, 'Department 8', CURRENT_DATE),
-(9, 'Department 9', CURRENT_DATE),
-(10, 'Department 10', CURRENT_DATE);
+(1, 'Department 1', NULL);
 
 INSERT INTO Employees VALUES
 (1, 'Junior 1', 'Contact 1', 'junior1@company.com', NULL, 1),
 (2, 'Junior 2', 'Contact 2', 'junior2@company.com', NULL, 1),
-(3, 'Junior 3', 'Contact 3', 'junior3@company.com', NULL, 1),
-(4, 'Junior 4', 'Contact 4', 'junior4@company.com', NULL, 1),
-(5, 'Junior 5', 'Contact 5', 'junior5@company.com', NULL, 1),
-(6, 'Junior 6', 'Contact 6', 'junior6@company.com', NULL, 2),
-(7, 'Junior 7', 'Contact 7', 'junior7@company.com', NULL, 2),
-(8, 'Junior 8', 'Contact 8', 'junior8@company.com', NULL, 2),
-(9, 'Junior 9', 'Contact 9', 'junior9@company.com', NULL, 2),
-(10, 'Junior 10', 'Contact 10', 'junior10@company.com', NULL, 2),
-(11, 'Senior 11', 'Contact 11', 'senior11@company.com', NULL, 1),
-(12, 'Senior 12', 'Contact 12', 'senior12@company.com', NULL, 1),
-(13, 'Senior 13', 'Contact 13', 'senior13@company.com', NULL, 1),
-(14, 'Senior 14', 'Contact 14', 'senior14@company.com', NULL, 1),
-(15, 'Senior 15', 'Contact 15', 'senior15@company.com', NULL, 1),
-(16, 'Senior 16', 'Contact 16', 'senior16@company.com', NULL, 2),
-(17, 'Senior 17', 'Contact 17', 'senior17@company.com', NULL, 2),
-(18, 'Senior 18', 'Contact 18', 'senior18@company.com', NULL, 2),
-(19, 'Senior 19', 'Contact 19', 'senior19@company.com', NULL, 2),
-(20, 'Senior 20', 'Contact 20', 'senior20@company.com', NULL, 2),
-(21, 'Manager 21', 'Contact 21', 'manager21@company.com', NULL, 1),
-(22, 'Manager 22', 'Contact 22', 'manager22@company.com', NULL, 1),
-(23, 'Manager 23', 'Contact 23', 'manager23@company.com', NULL, 1),
-(24, 'Manager 24', 'Contact 24', 'manager24@company.com', NULL, 1),
-(25, 'Manager 25', 'Contact 25', 'manager25@company.com', NULL, 1),
-(26, 'Manager 26', 'Contact 26', 'manager26@company.com', NULL, 2),
-(27, 'Manager 27', 'Contact 27', 'manager27@company.com', NULL, 2),
-(28, 'Manager 28', 'Contact 28', 'manager28@company.com', NULL, 2),
-(29, 'Manager 29', 'Contact 29', 'manager29@company.com', NULL, 2),
-(30, 'Manager 30', 'Contact 30', 'manager30@company.com', NULL, 2),
-(31, 'Junior 31', 'Contact 31', 'junior31@company.com', CURRENT_DATE, 1),
-(32, 'Junior 32', 'Contact 32', 'junior32@company.com', CURRENT_DATE, 1),
-(33, 'Junior 33', 'Contact 33', 'junior33@company.com', CURRENT_DATE, 1),
-(34, 'Junior 34', 'Contact 34', 'junior34@company.com', CURRENT_DATE, 1),
-(35, 'Junior 35', 'Contact 35', 'junior35@company.com', CURRENT_DATE, 1),
-(36, 'Junior 36', 'Contact 36', 'junior36@company.com', CURRENT_DATE - 30, 2),
-(37, 'Junior 37', 'Contact 37', 'junior37@company.com', CURRENT_DATE - 30, 2),
-(38, 'Junior 38', 'Contact 38', 'junior38@company.com', CURRENT_DATE - 30, 2),
-(39, 'Junior 39', 'Contact 39', 'junior39@company.com', CURRENT_DATE - 30, 2),
-(40, 'Junior 40', 'Contact 40', 'junior40@company.com', CURRENT_DATE - 30, 2),
-(41, 'Senior 41', 'Contact 41', 'senior41@company.com', CURRENT_DATE, 1),
-(42, 'Senior 42', 'Contact 42', 'senior42@company.com', CURRENT_DATE, 1),
-(43, 'Senior 43', 'Contact 43', 'senior43@company.com', CURRENT_DATE, 1),
-(44, 'Senior 44', 'Contact 44', 'senior44@company.com', CURRENT_DATE, 1),
-(45, 'Senior 45', 'Contact 45', 'senior45@company.com', CURRENT_DATE, 1),
-(46, 'Senior 46', 'Contact 46', 'senior46@company.com', CURRENT_DATE - 30, 2),
-(47, 'Senior 47', 'Contact 47', 'senior47@company.com', CURRENT_DATE - 30, 2),
-(48, 'Senior 48', 'Contact 48', 'senior48@company.com', CURRENT_DATE - 30, 2),
-(49, 'Senior 49', 'Contact 49', 'senior49@company.com', CURRENT_DATE - 30, 2),
-(50, 'Senior 50', 'Contact 50', 'senior50@company.com', CURRENT_DATE - 30, 2),
-(51, 'Manager 51', 'Contact 51', 'manager51@company.com', CURRENT_DATE, 1),
-(52, 'Manager 52', 'Contact 52', 'manager52@company.com', CURRENT_DATE, 1),
-(53, 'Manager 53', 'Contact 53', 'manager53@company.com', CURRENT_DATE, 1),
-(54, 'Manager 54', 'Contact 54', 'manager54@company.com', CURRENT_DATE, 1),
-(55, 'Manager 55', 'Contact 55', 'manager55@company.com', CURRENT_DATE, 1),
-(56, 'Manager 56', 'Contact 56', 'manager56@company.com', CURRENT_DATE - 30, 2),
-(57, 'Manager 57', 'Contact 57', 'manager57@company.com', CURRENT_DATE - 30, 2),
-(58, 'Manager 58', 'Contact 58', 'manager58@company.com', CURRENT_DATE - 30, 2),
-(59, 'Manager 59', 'Contact 59', 'manager59@company.com', CURRENT_DATE - 30, 2),
-(60, 'Manager 60', 'Contact 60', 'manager60@company.com', CURRENT_DATE - 30, 2);
+(31, 'Senior 31', 'Contact 31', 'senior31@company.com', NULL, 1),
+(61, 'Manager 61', 'Contact 61', 'manager61@company.com', NULL, 1);
 
 INSERT INTO Juniors VALUES
-(1), (2), (3), (4), (5),
-(6), (7), (8), (9), (10),
-(31), (32), (33), (34), (35),
-(36), (37), (38), (39), (40);
+(1), (2);
 
 INSERT INTO Superiors VALUES
-(11), (12), (13), (14), (15),
-(16), (17), (18), (19), (20),
-(21), (22), (23), (24), (25),
-(26), (27), (28), (29), (30),
-(41), (42), (43), (44), (45),
-(46), (47), (48), (49), (50),
-(51), (52), (53), (54), (55),
-(56), (57), (58), (59), (60);
+(31), (61);
 
 INSERT INTO Seniors VALUES
-(11), (12), (13), (14), (15),
-(16), (17), (18), (19), (20),
-(41), (42), (43), (44), (45),
-(46), (47), (48), (49), (50);
+(31);
 
 INSERT INTO Managers VALUES
-(21), (22), (23), (24), (25),
-(26), (27), (28), (29), (30),
-(51), (52), (53), (54), (55),
-(56), (57), (58), (59), (60);
+(61);
 
 INSERT INTO MeetingRooms VALUES
-(1, 1, 'Room 1-1', 1),
-(1, 2, 'Room 1-2', 1),
-(2, 1, 'Room 2-1', 1),
-(2, 2, 'Room 2-2', 1),
-(3, 1, 'Room 3-1', 1),
-(3, 2, 'Room 3-2', 2),
-(4, 1, 'Room 4-1', 2),
-(4, 2, 'Room 4-2', 2),
-(5, 1, 'Room 5-1', 2),
-(5, 2, 'Room 5-2', 2);
+(1, 1, 'Room 1-1', 1);
 
 INSERT INTO Updates VALUES
-(21, 1, 1, CURRENT_DATE, 5),
-(21, 1, 2, CURRENT_DATE, 5),
-(21, 2, 1, CURRENT_DATE, 5),
-(21, 2, 2, CURRENT_DATE + 30, 5),
-(21, 3, 1, CURRENT_DATE + 30, 5),
-(26, 3, 2, CURRENT_DATE, 10),
-(26, 4, 1, CURRENT_DATE, 10),
-(26, 4, 2, CURRENT_DATE, 10),
-(26, 5, 1, CURRENT_DATE + 30, 10),
-(26, 5, 2, CURRENT_DATE + 30, 10);
+(61, 1, 1, CURRENT_DATE, 5);
 
 INSERT INTO HealthDeclarations VALUES 
 (1, CURRENT_DATE, 37.0),
-(2, CURRENT_DATE, 37.0),
-(3, CURRENT_DATE, 37.0),
-(4, CURRENT_DATE, 37.6),
-(5, CURRENT_DATE, 37.6),
-(11, CURRENT_DATE, 37.0),
-(12, CURRENT_DATE, 37.0),
-(13, CURRENT_DATE, 37.0),
-(14, CURRENT_DATE, 37.6),
-(15, CURRENT_DATE, 37.6),
-(21, CURRENT_DATE, 37.0),
-(22, CURRENT_DATE, 37.0),
-(23, CURRENT_DATE, 37.0),
-(24, CURRENT_DATE, 37.6),
-(25, CURRENT_DATE, 37.6),
-(7, CURRENT_DATE - 1, 37.0),
-(8, CURRENT_DATE + 1, 37.0),
-(9, CURRENT_DATE - 1, 37.6),
-(10, CURRENT_DATE + 1, 37.6),
-(17, CURRENT_DATE - 1, 37.0),
-(18, CURRENT_DATE + 1, 37.0),
-(19, CURRENT_DATE - 1, 37.6),
-(20, CURRENT_DATE + 1, 37.6),
-(27, CURRENT_DATE - 1, 37.0),
-(28, CURRENT_DATE + 1, 37.0),
-(29, CURRENT_DATE - 1, 37.6),
-(30, CURRENT_DATE + 1, 37.6);
+(2, CURRENT_DATE, 37.6),
+(31, CURRENT_DATE, 37.0);
 
 INSERT INTO Bookings VALUES
-(1, 1, CURRENT_DATE + 1, 1, 11, NULL),
-(1, 1, CURRENT_DATE + 1, 2, 11, NULL),
-(1, 1, CURRENT_DATE + 1, 3, 11, NULL),
-(1, 1, CURRENT_DATE + 1, 4, 11, 21),
-(1, 1, CURRENT_DATE + 1, 5, 11, 21),
-(1, 1, CURRENT_DATE + 1, 6, 11, 21),
-(1, 2, CURRENT_DATE + 2, 1, 11, NULL),
-(1, 2, CURRENT_DATE + 2, 2, 11, NULL),
-(1, 2, CURRENT_DATE + 2, 3, 11, NULL),
-(1, 2, CURRENT_DATE + 2, 4, 11, 21),
-(1, 2, CURRENT_DATE + 2, 5, 11, 21),
-(1, 2, CURRENT_DATE + 2, 6, 11, 21),
-(3, 2, CURRENT_DATE + 1, 1, 16, NULL),
-(3, 2, CURRENT_DATE + 1, 2, 16, NULL),
-(3, 2, CURRENT_DATE + 1, 3, 16, NULL),
-(3, 2, CURRENT_DATE + 1, 4, 16, 26),
-(3, 2, CURRENT_DATE + 1, 5, 16, 26),
-(3, 2, CURRENT_DATE + 1, 6, 16, 26),
-(4, 1, CURRENT_DATE + 2, 1, 16, NULL),
-(4, 1, CURRENT_DATE + 2, 2, 16, NULL),
-(4, 1, CURRENT_DATE + 2, 3, 16, NULL),
-(4, 1, CURRENT_DATE + 2, 4, 16, 26),
-(4, 1, CURRENT_DATE + 2, 5, 16, 26),
-(4, 1, CURRENT_DATE + 2, 6, 16, 26);
+(1, 1, CURRENT_DATE + 1, 1, 31, 61);
 
 INSERT INTO Attends VALUES
-(11, 1, 1, CURRENT_DATE + 1, 1),
-(11, 1, 1, CURRENT_DATE + 1, 2),
-(11, 1, 1, CURRENT_DATE + 1, 3),
-(11, 1, 1, CURRENT_DATE + 1, 4),
-(11, 1, 1, CURRENT_DATE + 1, 5),
-(11, 1, 1, CURRENT_DATE + 1, 6),
-(11, 1, 2, CURRENT_DATE + 2, 1),
-(11, 1, 2, CURRENT_DATE + 2, 2),
-(11, 1, 2, CURRENT_DATE + 2, 3),
-(11, 1, 2, CURRENT_DATE + 2, 4),
-(11, 1, 2, CURRENT_DATE + 2, 5),
-(11, 1, 2, CURRENT_DATE + 2, 6),
-(16, 3, 2, CURRENT_DATE + 1, 1),
-(16, 3, 2, CURRENT_DATE + 1, 2),
-(16, 3, 2, CURRENT_DATE + 1, 3),
-(16, 3, 2, CURRENT_DATE + 1, 4),
-(16, 3, 2, CURRENT_DATE + 1, 5),
-(16, 3, 2, CURRENT_DATE + 1, 6),
-(16, 4, 1, CURRENT_DATE + 2, 1),
-(16, 4, 1, CURRENT_DATE + 2, 2),
-(16, 4, 1, CURRENT_DATE + 2, 3),
-(16, 4, 1, CURRENT_DATE + 2, 4),
-(16, 4, 1, CURRENT_DATE + 2, 5),
-(16, 4, 1, CURRENT_DATE + 2, 6),
+-- Insert creators
+(31, 1, 1, CURRENT_DATE + 1, 1),
+-- Insert participants
 (1, 1, 1, CURRENT_DATE + 1, 1),
-(1, 1, 1, CURRENT_DATE + 1, 2),
-(1, 1, 1, CURRENT_DATE + 1, 3),
-(1, 1, 1, CURRENT_DATE + 1, 4),
-(1, 1, 1, CURRENT_DATE + 1, 5),
-(1, 1, 1, CURRENT_DATE + 1, 6),
-(2, 1, 1, CURRENT_DATE + 1, 1),
-(2, 1, 1, CURRENT_DATE + 1, 2),
-(2, 1, 1, CURRENT_DATE + 1, 3),
-(2, 1, 1, CURRENT_DATE + 1, 4),
-(2, 1, 1, CURRENT_DATE + 1, 5),
-(2, 1, 1, CURRENT_DATE + 1, 6),
-(3, 1, 1, CURRENT_DATE + 1, 1),
-(3, 1, 1, CURRENT_DATE + 1, 2),
-(3, 1, 1, CURRENT_DATE + 1, 3),
-(3, 1, 1, CURRENT_DATE + 1, 4),
-(3, 1, 1, CURRENT_DATE + 1, 5),
-(3, 1, 1, CURRENT_DATE + 1, 6),
-(4, 1, 1, CURRENT_DATE + 1, 1),
-(4, 1, 1, CURRENT_DATE + 1, 2),
-(4, 1, 1, CURRENT_DATE + 1, 3),
-(4, 1, 1, CURRENT_DATE + 1, 4),
-(4, 1, 1, CURRENT_DATE + 1, 5),
-(4, 1, 1, CURRENT_DATE + 1, 6),
-(1, 4, 1, CURRENT_DATE + 2, 1),
-(1, 4, 1, CURRENT_DATE + 2, 2),
-(1, 4, 1, CURRENT_DATE + 2, 3),
-(1, 4, 1, CURRENT_DATE + 2, 4),
-(1, 4, 1, CURRENT_DATE + 2, 5),
-(1, 4, 1, CURRENT_DATE + 2, 6),
-(2, 4, 1, CURRENT_DATE + 2, 1),
-(2, 4, 1, CURRENT_DATE + 2, 2),
-(2, 4, 1, CURRENT_DATE + 2, 3),
-(2, 4, 1, CURRENT_DATE + 2, 4),
-(2, 4, 1, CURRENT_DATE + 2, 5),
-(2, 4, 1, CURRENT_DATE + 2, 6),
-(3, 4, 1, CURRENT_DATE + 2, 1),
-(3, 4, 1, CURRENT_DATE + 2, 2),
-(3, 4, 1, CURRENT_DATE + 2, 3),
-(3, 4, 1, CURRENT_DATE + 2, 4),
-(3, 4, 1, CURRENT_DATE + 2, 5),
-(3, 4, 1, CURRENT_DATE + 2, 6),
-(4, 4, 1, CURRENT_DATE + 2, 1),
-(4, 4, 1, CURRENT_DATE + 2, 2),
-(4, 4, 1, CURRENT_DATE + 2, 3),
-(4, 4, 1, CURRENT_DATE + 2, 4),
-(4, 4, 1, CURRENT_DATE + 2, 5),
-(4, 4, 1, CURRENT_DATE + 2, 6),
-(5, 4, 1, CURRENT_DATE + 2, 1),
-(5, 4, 1, CURRENT_DATE + 2, 2),
-(5, 4, 1, CURRENT_DATE + 2, 3),
-(5, 4, 1, CURRENT_DATE + 2, 4),
-(5, 4, 1, CURRENT_DATE + 2, 5),
-(5, 4, 1, CURRENT_DATE + 2, 6),
-(6, 4, 1, CURRENT_DATE + 2, 1),
-(6, 4, 1, CURRENT_DATE + 2, 2),
-(6, 4, 1, CURRENT_DATE + 2, 3),
-(6, 4, 1, CURRENT_DATE + 2, 4),
-(6, 4, 1, CURRENT_DATE + 2, 5),
-(6, 4, 1, CURRENT_DATE + 2, 6),
-(7, 4, 1, CURRENT_DATE + 2, 1),
-(7, 4, 1, CURRENT_DATE + 2, 2),
-(7, 4, 1, CURRENT_DATE + 2, 3),
-(7, 4, 1, CURRENT_DATE + 2, 4),
-(7, 4, 1, CURRENT_DATE + 2, 5),
-(7, 4, 1, CURRENT_DATE + 2, 6),
-(8, 4, 1, CURRENT_DATE + 2, 1),
-(8, 4, 1, CURRENT_DATE + 2, 2),
-(8, 4, 1, CURRENT_DATE + 2, 3),
-(8, 4, 1, CURRENT_DATE + 2, 4),
-(8, 4, 1, CURRENT_DATE + 2, 5),
-(8, 4, 1, CURRENT_DATE + 2, 6),
-(9, 4, 1, CURRENT_DATE + 2, 1),
-(9, 4, 1, CURRENT_DATE + 2, 2),
-(9, 4, 1, CURRENT_DATE + 2, 3),
-(9, 4, 1, CURRENT_DATE + 2, 4),
-(9, 4, 1, CURRENT_DATE + 2, 5),
-(9, 4, 1, CURRENT_DATE + 2, 6);
+(2, 1, 1, CURRENT_DATE + 1, 1);
+
+-- contact_tracing
+-- If the employee is the one booking the room, the booking is cancelled, approved or not.
+-- This employee cannot book a room until they are no longer having fever.
+/* 
+    'SELECT * FROM contact_tracing(32);' -> Booking for floor 1 room 2 @ start_hour = 1 is cancelled, junior 3 and senior 32 removed from attends
+    'INSERT INTO Bookings VALUES (1, 2, CURRENT_DATE + 1, 1, 32, 62);' -> Senior 32 unable to book because he has a fever
+*/
+INSERT INTO Departments VALUES
+(2, 'Department 2', NULL);
+
+INSERT INTO Employees VALUES
+(3, 'Junior 3', 'Contact 3', 'junior3@company.com', NULL, 2),
+(32, 'Senior 32', 'Contact 32', 'senior32@company.com', NULL, 2),
+(62, 'Manager 62', 'Contact 62', 'manager62@company.com', NULL, 2);
+
+INSERT INTO Juniors VALUES
+(3);
+
+INSERT INTO Superiors VALUES
+(32), (62);
+
+INSERT INTO Seniors VALUES
+(32);
+
+INSERT INTO Managers VALUES
+(62);
+
+INSERT INTO MeetingRooms VALUES
+(1, 2, 'Room 1-2', 2);
+
+INSERT INTO Updates VALUES
+(62, 1, 2, CURRENT_DATE, 5);
+
+INSERT INTO HealthDeclarations VALUES
+(3, CURRENT_DATE, 37.0),
+(32, CURRENT_DATE, 37.6);
+
+INSERT INTO Bookings VALUES
+(1, 2, CURRENT_DATE + 1, 1, 32, 62);
+
+INSERT INTO Attends VALUES
+-- Insert creators
+(32, 1, 2, CURRENT_DATE + 1, 1),
+-- Insert participants
+(3, 1, 2, CURRENT_DATE + 1, 1);
+
+-- contact_tracing
+-- All employees in the same approved meeting room from the past 3 (i.e., from day D-3 to day D) days are contacted.
+-- These employees are removed from future meeting in the next 7 days (i.e., from day D to day D+7).
+/* 
+    'SELECT * FROM contact_tracing(33);' -> Senior 33 bookings from day D to day D+7 are removed, junior 4 and senior 33 attendance from day D to day D+7 are removed
+*/
+INSERT INTO Departments VALUES
+(3, 'Department 3', NULL);
+
+INSERT INTO Employees VALUES
+(4, 'Junior 4', 'Contact 4', 'junior4@company.com', NULL, 3),
+(33, 'Senior 33', 'Contact 33', 'senior33@company.com', NULL, 3),
+(63, 'Manager 63', 'Contact 63', 'manager63@company.com', NULL, 3);
+
+INSERT INTO Juniors VALUES
+(4);
+
+INSERT INTO Superiors VALUES
+(33), (63);
+
+INSERT INTO Seniors VALUES
+(33);
+
+INSERT INTO Managers VALUES
+(63);
+
+INSERT INTO MeetingRooms VALUES
+(1, 3, 'Room 1-3', 3);
+
+INSERT INTO Updates VALUES
+(63, 1, 3, CURRENT_DATE - 4, 5);
+
+INSERT INTO HealthDeclarations VALUES
+(4, CURRENT_DATE, 37.0),
+(33, CURRENT_DATE, 37.6);
+
+INSERT INTO Bookings VALUES
+(1, 3, CURRENT_DATE - 3, 1, 33, 63),
+(1, 3, CURRENT_DATE - 2, 1, 33, 63),
+(1, 3, CURRENT_DATE - 1, 1, 33, 63),
+(1, 3, CURRENT_DATE, 1, 33, 63),
+(1, 3, CURRENT_DATE + 1, 1, 33, 63),
+(1, 3, CURRENT_DATE + 2, 1, 33, 63),
+(1, 3, CURRENT_DATE + 3, 1, 33, 63),
+(1, 3, CURRENT_DATE + 4, 1, 33, 63),
+(1, 3, CURRENT_DATE + 5, 1, 33, 63),
+(1, 3, CURRENT_DATE + 6, 1, 33, 63),
+(1, 3, CURRENT_DATE + 7, 1, 33, 63);
+
+INSERT INTO Attends VALUES
+-- Insert creators
+(33, 1, 3, CURRENT_DATE - 3, 1),
+(33, 1, 3, CURRENT_DATE - 2, 1),
+(33, 1, 3, CURRENT_DATE - 1, 1),
+(33, 1, 3, CURRENT_DATE, 1),
+(33, 1, 3, CURRENT_DATE + 1, 1),
+(33, 1, 3, CURRENT_DATE + 2, 1),
+(33, 1, 3, CURRENT_DATE + 3, 1),
+(33, 1, 3, CURRENT_DATE + 4, 1),
+(33, 1, 3, CURRENT_DATE + 5, 1),
+(33, 1, 3, CURRENT_DATE + 6, 1),
+(33, 1, 3, CURRENT_DATE + 7, 1),
+-- Insert participants
+(4, 1, 3, CURRENT_DATE - 3, 1),
+(4, 1, 3, CURRENT_DATE - 2, 1),
+(4, 1, 3, CURRENT_DATE - 1, 1),
+(4, 1, 3, CURRENT_DATE, 1),
+(4, 1, 3, CURRENT_DATE + 1, 1),
+(4, 1, 3, CURRENT_DATE + 2, 1),
+(4, 1, 3, CURRENT_DATE + 3, 1),
+(4, 1, 3, CURRENT_DATE + 4, 1),
+(4, 1, 3, CURRENT_DATE + 5, 1),
+(4, 1, 3, CURRENT_DATE + 6, 1),
+(4, 1, 3, CURRENT_DATE + 7, 1);
+
+-- change_capacity
+-- This routine is used to change the capacity of the room.
+/*
+    'CALL change_capacity(1, 4, 5, 64, CURRENT_DATE);' -> Changes room capacity of 'Room 1-4' from 0 to 5
+*/
+INSERT INTO Departments VALUES
+(4, 'Department 4', NULL);
+
+INSERT INTO Employees VALUES
+(64, 'Manager 64', 'Contact 64', 'manager64@company.com', NULL, 4);
+
+INSERT INTO Superiors VALUES
+(64);
+
+INSERT INTO Managers VALUES
+(64);
+
+INSERT INTO MeetingRooms VALUES
+(1, 4, 'Room 1-4', 4);
+
+INSERT INTO Updates VALUES
+(64, 1, 4, CURRENT_DATE, 0);
+
+-- Resignation
+-- they are no longer allowed to book or approve any meetings rooms.
+/*
+    'INSERT INTO Bookings VALUES (1, 5, CURRENT_DATE + 1, 1, 67, NULL);' -> Resigned manager 67 unable to book meeting room
+    'INSERT INTO Bookings VALUES (1, 5, CURRENT_DATE + 1, 1, 65, 67);' -> Resigned manager 67 unable to approve meeting room
+    'INSERT INTO Updates VALUES (67, 1, 5, CURRENT_DATE + 1, 10);' -> Resigned manager 67 unable to update room capacity
+    'INSERT INTO Attends VALUES (67, 1, 5, CURRENT_DATE, 1);' -> Resigned manager 67 unable to join meeting
+    'INSERT INTO HealthDeclarations VALUES (67, CURRENT_DATE, 37.0);' -> Resigned manager 67 unable to declare temperature
+*/
+INSERT INTO Departments VALUES
+(5, 'Department 5', NULL);
+
+INSERT INTO Employees VALUES
+(65, 'Manager 65', 'Contact 65', 'manager65@company.com', NULL, 5),
+(66, 'Manager 66', 'Contact 66', 'manager66@company.com', NULL, 5),
+(67, 'Manager 67', 'Contact 67', 'manager67@company.com', CURRENT_DATE, 5);
+
+INSERT INTO Superiors VALUES
+(65), (66), (67);
+
+INSERT INTO Managers VALUES
+(65), (66), (67);
+
+INSERT INTO MeetingRooms VALUES
+(1, 5, 'Room 1-5', 5);
+
+INSERT INTO Updates VALUES
+(65, 1, 5, CURRENT_DATE, 5);
+
+INSERT INTO Bookings VALUES
+(1, 5, CURRENT_DATE, 1, 65, 66);
+
+INSERT INTO Attends VALUES
+-- Insert creators
+(65, 1, 5, CURRENT_DATE, 1);
+
+
+-- Resignation
+-- Additionally, any future records (e.g., future meetings) are removed.
+/*
+    'UPDATE Employees SET resignation_date = CURRENT_DATE WHERE id = 68;' -> Future bookings, attendances, and healthdeclarations >= resignation_date of resigned manager 68 are removed
+*/
+INSERT INTO Departments VALUES
+(6, 'Department 6', NULL);
+
+INSERT INTO Employees VALUES
+(68, 'Manager 68', 'Contact 68', 'manager68@company.com', NULL, 6),
+(69, 'Manager 69', 'Contact 69', 'manager69@company.com', NULL, 6);
+
+INSERT INTO Superiors VALUES
+(68), (69);
+
+INSERT INTO Managers VALUES
+(68), (69);
+
+INSERT INTO MeetingRooms VALUES
+(1, 6, 'Room 1-6', 6);
+
+INSERT INTO Updates VALUES
+(68, 1, 6, CURRENT_DATE, 5);
+
+INSERT INTO HealthDeclarations VALUES 
+(68, CURRENT_DATE, 37.0),
+(68, CURRENT_DATE + 1, 37.0),
+(68, CURRENT_DATE + 2, 37.0),
+(68, CURRENT_DATE + 3, 37.0),
+(68, CURRENT_DATE + 4, 37.0),
+(68, CURRENT_DATE + 5, 37.0);
+
+INSERT INTO Bookings VALUES
+(1, 6, CURRENT_DATE + 1, 1, 68, 69),
+(1, 6, CURRENT_DATE + 2, 1, 68, 69),
+(1, 6, CURRENT_DATE + 3, 1, 68, 69),
+(1, 6, CURRENT_DATE + 4, 1, 68, 69),
+(1, 6, CURRENT_DATE + 5, 1, 68, 69);
+
+INSERT INTO Attends VALUES
+-- Insert creators
+(68, 1, 6, CURRENT_DATE + 1, 1),
+(68, 1, 6, CURRENT_DATE + 2, 1),
+(68, 1, 6, CURRENT_DATE + 3, 1),
+(68, 1, 6, CURRENT_DATE + 4, 1),
+(68, 1, 6, CURRENT_DATE + 5, 1);
