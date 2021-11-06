@@ -673,6 +673,7 @@ BEGIN
         UPDATE Bookings AS B SET approver_id = NULL 
         WHERE (B.date > CURRENT_DATE OR (B.date = CURRENT_DATE AND B.start_hour > extract(HOUR FROM CURRENT_TIME)))
             AND B.approver_id = NEW.id;
+        DELETE FROM HealthDeclarations AS H WHERE H.date > NEW.resignation_date AND H.id = NEW.id;
     END IF;
     RETURN NEW;
 END;
