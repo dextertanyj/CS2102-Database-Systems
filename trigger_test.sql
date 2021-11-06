@@ -1982,6 +1982,12 @@ ALTER TABLE Bookings DISABLE TRIGGER approval_only_for_future_meetings_trigger;
 UPDATE Bookings SET approver_id = 2 WHERE start_hour = 3 OR start_hour = 4;
 UPDATE Bookings SET approver_id = 1 WHERE start_hour = 6;
 ALTER TABLE Bookings ENABLE TRIGGER approval_only_for_future_meetings_trigger;
+INSERT INTO HealthDeclarations VALUES
+    (1, CURRENT_DATE - 3, 37.0),
+    (1, CURRENT_DATE - 2, 37.0),
+    (1, CURRENT_DATE - 1, 37.0),
+    (1, CURRENT_DATE, 37.0),
+    (1, CURRENT_DATE + 1, 37.0);
 -- TEST
 UPDATE Employees SET resignation_date = CURRENT_DATE - 2 WHERE id = 1;
 SELECT * FROM Bookings ORDER BY date, start_hour, floor, room;
@@ -2017,6 +2023,14 @@ Returns:
            2 |     1 |    1 | CURRENT_DATE + 1 |          2
            2 |     1 |    1 | CURRENT_DATE + 1 |          4
            2 |     1 |    1 | CURRENT_DATE + 1 |          6
+*/
+SELECT * FROM HealthDeclarations ORDER BY date, id;
+/*
+Returns:
+ id |       date       | temperature 
+----+------------------+-------------
+  1 | CURRENT_DATE - 3 |        37.0
+  1 | CURRENT_DATE - 2 |        37.0
 */
 -- AFTER TEST
 CALL reset();
