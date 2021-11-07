@@ -72,7 +72,7 @@ INSERT INTO Attends VALUES
     Senior 33 bookings and attends past D+7 days are removed, bookings and attends of senior 34 are not removed past D+7
 */
 INSERT INTO Departments VALUES
-(3, 'Department 2', NULL);
+(2, 'Department 2', NULL);
 
 INSERT INTO Employees VALUES
 (1, 'Junior 1', 'Contact 1', 'junior1@company.com', NULL, 2),
@@ -157,7 +157,7 @@ INSERT INTO Attends VALUES
 (1, 1, 2, CURRENT_DATE + 8, 1),
 (2, 1, 2, CURRENT_DATE + 8, 1),
 (3, 1, 2, CURRENT_DATE + 8, 1),
-(34, 1, 2, CURRENT_DATE + 8, 1),
+(33, 1, 2, CURRENT_DATE + 8, 1),
 (35, 1, 2, CURRENT_DATE + 8, 1),
 (36, 1, 2, CURRENT_DATE + 8, 1),
 (37, 1, 2, CURRENT_DATE + 8, 1),
@@ -194,24 +194,24 @@ INSERT INTO Updates VALUES
 (63, 1, 3, CURRENT_DATE, 4);
 
 INSERT INTO Bookings VALUES
-(1, 5, CURRENT_DATE + 2, 1, 63, 64),
-(1, 5, CURRENT_DATE + 2, 2, 63, 64),
-(1, 5, CURRENT_DATE + 2, 3, 63, 64),
-(1, 5, CURRENT_DATE + 2, 4, 63, 64);
+(1, 3, CURRENT_DATE + 2, 1, 63, 64),
+(1, 3, CURRENT_DATE + 2, 2, 63, 64),
+(1, 3, CURRENT_DATE + 2, 3, 63, 64),
+(1, 3, CURRENT_DATE + 2, 4, 63, 64);
 
 INSERT INTO Attends VALUES
 -- Insert creators
-(63, 1, 5, CURRENT_DATE + 2, 1),
-(63, 1, 5, CURRENT_DATE + 2, 2),
-(63, 1, 5, CURRENT_DATE + 2, 3),
-(63, 1, 5, CURRENT_DATE + 2, 4),
+(63, 1, 3, CURRENT_DATE + 2, 1),
+(63, 1, 3, CURRENT_DATE + 2, 2),
+(63, 1, 3, CURRENT_DATE + 2, 3),
+(63, 1, 3, CURRENT_DATE + 2, 4),
 -- Insert participants
-(4, 1, 5, CURRENT_DATE + 2, 2),
-(4, 1, 5, CURRENT_DATE + 2, 3),
-(5, 1, 5, CURRENT_DATE + 2, 3),
-(4, 1, 5, CURRENT_DATE + 2, 4),
-(5, 1, 5, CURRENT_DATE + 2, 4),
-(6, 1, 5, CURRENT_DATE + 2, 4);
+(4, 1, 3, CURRENT_DATE + 2, 2),
+(4, 1, 3, CURRENT_DATE + 2, 3),
+(5, 1, 3, CURRENT_DATE + 2, 3),
+(4, 1, 3, CURRENT_DATE + 2, 4),
+(5, 1, 3, CURRENT_DATE + 2, 4),
+(6, 1, 3, CURRENT_DATE + 2, 4);
 
 -- Resignation
 -- Additionally, any future records (e.g., future meetings) are removed.
@@ -264,7 +264,7 @@ INSERT INTO Attends VALUES
 INSERT INTO Departments VALUES
 (5, 'Department 5', NULL),
 (6, 'Department 6', NULL),
-(7, 'Department 7', NULL);
+(7, 'Department 7', NULL),
 (8, 'Department 8', NULL),
 (9, 'Department 9', NULL),
 (10, 'Department 10', NULL);
@@ -331,8 +331,8 @@ INSERT INTO Employees VALUES
 (68, 'Manager 68', 'Contact 68', 'manager68@company.com', NULL, 6),
 (69, 'Manager 69', 'Contact 69', 'manager69@company.com', NULL, 7),
 (70, 'Manager 70', 'Contact 70', 'manager70@company.com', NULL, 8),
-(71, 'Manager 70', 'Contact 70', 'manager70@company.com', NULL, 9),
-(72, 'Manager 70', 'Contact 70', 'manager70@company.com', NULL, 10);
+(71, 'Manager 71', 'Contact 71', 'manager71@company.com', NULL, 9),
+(72, 'Manager 72', 'Contact 72', 'manager72@company.com', NULL, 10);
 
 INSERT INTO Juniors VALUES
 (7), (8), (9), (10), 
