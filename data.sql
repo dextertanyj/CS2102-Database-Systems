@@ -260,9 +260,32 @@ INSERT INTO Attends VALUES
 (66, 1, 4, CURRENT_DATE + 1, 2),
 (65, 1, 4, CURRENT_DATE - 1, 2);
 
+-- Non Compliance Demo
+
+INSERT INTO Departments VALUES
+(5, 'Department 5', NULL);
+
+INSERT INTO Employees VALUES
+(7, 'Junior 7', 'Contact 7', 'junior7@company.com', NULL, 5),
+(8, 'Junior 8', 'Contact 8', 'junior8@company.com', NULL, 5),
+(9, 'Junior 9', 'Contact 9', 'junior9@company.com', CURRENT_DATE - 8, 5);
+
+INSERT INTO Juniors VALUES
+(7), (8), (9);
+
+INSERT INTO HealthDeclarations VALUES
+(7, CURRENT_DATE - 10, 37.0),
+(7, CURRENT_DATE - 9, 37.0),
+(7, CURRENT_DATE - 8, 37.0),
+(7, CURRENT_DATE - 7, 37.0),
+(7, CURRENT_DATE - 6, 37.0),
+(8, CURRENT_DATE - 9, 37.0),
+(8, CURRENT_DATE - 7, 37.0),
+(9, CURRENT_DATE - 10, 37.0),
+(9, CURRENT_DATE - 9, 37.0);
+
 -- Add more dummy data to fulfil minimum 10 records requirement, and generate some new tuples to isolate dummy data for tables requiring foreign key
 INSERT INTO Departments VALUES
-(5, 'Department 5', NULL),
 (6, 'Department 6', NULL),
 (7, 'Department 7', NULL),
 (8, 'Department 8', NULL),
@@ -270,7 +293,7 @@ INSERT INTO Departments VALUES
 (10, 'Department 10', NULL);
 
 INSERT INTO MeetingRooms VALUES
-(1, 5, 'Room 1-8', 5),
+(1, 5, 'Room 1-5', 6),
 (2, 1, 'Room 2-1', 6),
 (2, 2, 'Room 2-2', 7),
 (2, 3, 'Room 2-3', 8),
@@ -278,9 +301,6 @@ INSERT INTO MeetingRooms VALUES
 (2, 5, 'Room 2-5', 10);
 
 INSERT INTO Employees VALUES
-(7, 'Junior 7', 'Contact 7', 'junior7@company.com', NULL, 5),
-(8, 'Junior 8', 'Contact 8', 'junior8@company.com', NULL, 5),
-(9, 'Junior 9', 'Contact 9', 'junior9@company.com', NULL, 5),
 (10, 'Junior 10', 'Contact 10', 'junior10@company.com', NULL, 6),
 (11, 'Junior 11', 'Contact 11', 'junior11@company.com', NULL, 6),
 (12, 'Junior 12', 'Contact 12', 'junior12@company.com', NULL, 6),
@@ -303,9 +323,9 @@ INSERT INTO Employees VALUES
 (29, 'Junior 29', 'Contact 29', 'junior29@company.com', NULL, 9),
 (30, 'Junior 30', 'Contact 30', 'junior30@company.com', NULL, 10),
 
-(38, 'Senior 38', 'Contact 38', 'senior38@company.com', NULL, 5),
-(39, 'Senior 39', 'Contact 39', 'senior39@company.com', NULL, 5),
-(40, 'Senior 40', 'Contact 40', 'senior40@company.com', NULL, 5),
+(38, 'Senior 38', 'Contact 38', 'senior38@company.com', NULL, 6),
+(39, 'Senior 39', 'Contact 39', 'senior39@company.com', NULL, 6),
+(40, 'Senior 40', 'Contact 40', 'senior40@company.com', NULL, 6),
 (41, 'Senior 41', 'Contact 41', 'senior41@company.com', NULL, 6),
 (42, 'Senior 42', 'Contact 42', 'senior42@company.com', NULL, 6),
 (43, 'Senior 43', 'Contact 43', 'senior43@company.com', NULL, 6),
@@ -327,15 +347,14 @@ INSERT INTO Employees VALUES
 (59, 'Senior 59', 'Contact 59', 'senior59@company.com', NULL, 10),
 (60, 'Senior 60', 'Contact 60', 'senior60@company.com', NULL, 10),
 
-(67, 'Manager 67', 'Contact 67', 'manager67@company.com', NULL, 5),
-(68, 'Manager 68', 'Contact 68', 'manager68@company.com', NULL, 6),
-(69, 'Manager 69', 'Contact 69', 'manager69@company.com', NULL, 7),
-(70, 'Manager 70', 'Contact 70', 'manager70@company.com', NULL, 8),
-(71, 'Manager 71', 'Contact 71', 'manager71@company.com', NULL, 9),
-(72, 'Manager 72', 'Contact 72', 'manager72@company.com', NULL, 10);
+(67, 'Manager 67', 'Contact 67', 'manager67@company.com', NULL, 6),
+(68, 'Manager 68', 'Contact 68', 'manager68@company.com', NULL, 7),
+(69, 'Manager 69', 'Contact 69', 'manager69@company.com', NULL, 8),
+(70, 'Manager 70', 'Contact 70', 'manager70@company.com', NULL, 9),
+(71, 'Manager 71', 'Contact 71', 'manager71@company.com', NULL, 10);
 
 INSERT INTO Juniors VALUES
-(7), (8), (9), (10), 
+(10), 
 (11), (12), (13), (14), (15), (16), (17), (18), (19), (20),
 (21), (22), (23), (24), (25), (26), (27), (28), (29), (30);
 
@@ -343,7 +362,7 @@ INSERT INTO Superiors VALUES
 (38), (39), (40),
 (41), (42), (43), (44), (45), (46), (47), (48), (49), (50),
 (51), (52), (53), (54), (55), (56), (57), (58), (59), (60),
-(67), (68), (69), (70), (71), (72);
+(67), (68), (69), (70), (71);
 
 INSERT INTO Seniors VALUES
 (38), (39), (40),
@@ -351,15 +370,15 @@ INSERT INTO Seniors VALUES
 (51), (52), (53), (54), (55), (56), (57), (58), (59), (60);
 
 INSERT INTO Managers VALUES
-(67), (68), (69), (70), (71), (72);
+(67), (68), (69), (70), (71);
 
 INSERT INTO Updates VALUES
 (67, 1, 5, CURRENT_DATE, 5),
-(68, 2, 1, CURRENT_DATE, 5),
-(69, 2, 2, CURRENT_DATE, 5),
-(70, 2, 3, CURRENT_DATE, 5),
-(71, 2, 4, CURRENT_DATE, 5),
-(72, 2, 5, CURRENT_DATE, 5);
+(67, 2, 1, CURRENT_DATE, 5),
+(68, 2, 2, CURRENT_DATE, 5),
+(69, 2, 3, CURRENT_DATE, 5),
+(70, 2, 4, CURRENT_DATE, 5),
+(71, 2, 5, CURRENT_DATE, 5);
 
 INSERT INTO HealthDeclarations VALUES
 (11, CURRENT_DATE, 37.0),
