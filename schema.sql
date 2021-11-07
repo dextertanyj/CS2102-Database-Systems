@@ -13,7 +13,7 @@ DROP TABLE IF EXISTS
 CASCADE;
 
 CREATE TABLE Departments(
-    id SERIAL,
+    id INT,
     name VARCHAR(255) NOT NULL,
     removal_date DATE,
     PRIMARY KEY (id)
@@ -88,8 +88,8 @@ CREATE TABLE Bookings(
 
 CREATE TABLE Attends(
     employee_id INTEGER,
-    floor INTEGER,
-    room INTEGER,
+    floor INTEGER NOT NULL,
+    room INTEGER NOT NULL,
     date DATE,
     start_hour INTEGER,
     PRIMARY KEY (employee_id, date, start_hour),
