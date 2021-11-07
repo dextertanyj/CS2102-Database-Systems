@@ -258,6 +258,7 @@ INSERT INTO Attends VALUES
 (65, 1, 4, CURRENT_DATE - 1, 1), 
 (66, 1, 4, CURRENT_DATE - 1, 2), 
 (66, 1, 4, CURRENT_DATE + 1, 2),
+-- Insert participants
 (65, 1, 4, CURRENT_DATE - 1, 2);
 
 -- Non Compliance Demo
@@ -395,3 +396,6 @@ INSERT INTO HealthDeclarations VALUES
 (68, CURRENT_DATE, 37.0),
 (69, CURRENT_DATE, 37.0),
 (70, CURRENT_DATE, 37.0);
+
+ALTER SEQUENCE employees_id_seq RESTART WITH 72;
+ALTER SEQUENCE departments_id_seq RESTART WITH 11; 
