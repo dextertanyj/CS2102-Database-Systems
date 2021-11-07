@@ -398,4 +398,3 @@ INSERT INTO HealthDeclarations VALUES
 (70, CURRENT_DATE, 37.0);
 
 ALTER SEQUENCE employees_id_seq RESTART WITH 72;
-ALTER SEQUENCE departments_id_seq RESTART WITH 11; 
